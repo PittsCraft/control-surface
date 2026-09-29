@@ -294,7 +294,9 @@ def test_a_directory_that_is_not_a_source_is_refused_before_anything_is_removed(
     (tmp_path / "bare").mkdir()
     (tmp_path / "bare" / "install.py").write_bytes((ROOT / "install.py").read_bytes())
 
-    result = run_clone(tmp_path / "bare", str(host))
+    # Beside no sources the file is a lone script: it downloads, here from a missing local archive.
+    missing = (tmp_path / "nowhere").as_uri() + "/{ref}.tar.gz"
+    result = run_clone(tmp_path / "bare", str(host), "--archive-url", missing)
 
     assert result.returncode == 2
     assert (host / ".claude/agents/surface-checker.md").exists()

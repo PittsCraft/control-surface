@@ -528,7 +528,23 @@ def main(argv: list[str], clone_root: Path | None) -> int:
         return EXIT_USAGE
 
 
+def find_clone_root(script: object) -> Path | None:
+    """Return the directory of the sources when this file runs from a clone, else None.
+
+    Under `python3 -` `__file__` may be absent (older interpreters) or be the string "<stdin>"
+    (newer ones). Only a real file whose directory holds the sources is a clone.
+    """
+    if not isinstance(script, str):
+        return None
+    path = Path(script)
+    try:
+        if not path.is_file():
+            return None
+        root = path.resolve().parent
+        return root if (root / "skills").is_dir() and (root / "templates").is_dir() else None
+    except OSError:
+        return None
+
+
 if __name__ == "__main__":
-    # Under `python3 -` there is no __file__: the script came from standard input.
-    script = globals().get("__file__")
-    sys.exit(main(sys.argv[1:], Path(script).resolve().parent if script else None))
+    sys.exit(main(sys.argv[1:], find_clone_root(globals().get("__file__"))))

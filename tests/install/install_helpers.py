@@ -118,3 +118,56 @@ def run_piped(
         cwd=cwd,
         env=GIT_ENV,
     )
+
+
+REDIRECT_DEFAULT_ARCHIVE = """\
+import urllib.request as _request
+_urlopen = _request.urlopen
+_request.urlopen = lambda url, *a, **k: _urlopen(url.replace({public!r}, {local!r}), *a, **k)
+"""
+
+
+def other_pythons() -> list[str]:
+    """Interpreters of other minor versions that `uv` already has, to run the piped tests on."""
+    found: list[str] = []
+    for version in ("3.11", "3.12", "3.13"):
+        if f"{sys.version_info[0]}.{sys.version_info[1]}" == version:
+            continue
+        result = subprocess.run(
+            ["uv", "python", "find", "--offline", version],  # noqa: S607
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            found.append(result.stdout.strip())
+    return found[:1]
+
+
+def run_piped_default(
+    *args: str, cwd: Path, archive_dir: Path, tmp: Path, python: str = sys.executable
+) -> subprocess.CompletedProcess[str]:
+    """Run exactly the documented `python3 -`, with no --archive-url: the default URL is used.
+
+    The tests have no network, so a sitecustomize on PYTHONPATH redirects the public archive URL
+    to the local archives. The script itself, and its `__file__`, are left as Python makes them.
+    """
+    installer = load_installer()
+    hook = tmp / "hook"
+    hook.mkdir(exist_ok=True)
+    (hook / "sitecustomize.py").write_text(
+        REDIRECT_DEFAULT_ARCHIVE.format(
+            public=installer.DEFAULT_ARCHIVE_URL.split("{ref}")[0],
+            local=archive_dir.as_uri() + "/",
+        ),
+        encoding="utf-8",
+    )
+    return subprocess.run(
+        [python, "-", *args],
+        input=INSTALL_PY.read_text(encoding="utf-8"),
+        capture_output=True,
+        check=False,
+        text=True,
+        cwd=cwd,
+        env={**GIT_ENV, "PYTHONPATH": str(hook)},
+    )
