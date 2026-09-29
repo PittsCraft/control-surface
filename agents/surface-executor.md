@@ -16,8 +16,8 @@ The state script is `.claude/skills/surface-status/scripts/surface-status`, run 
 - Modify `overview.md`: it is the contract the developer approved, frozen.
 - Push, or write in the pull request.
 - Start gates in the background and wait for a notification. You run every gate in the foreground, with a timeout, and read its exit code.
-- `cd`: every command runs from the root of the repository, with paths from there. A `cd` moves the shell you share with the dispatcher, and a `cd` followed by git stops for an approval.
-- Hide a command from the developer's permission rules: a variable or a function standing for a command, an expansion such as `$?` or `$(...)`, a redirection or a here-document into a file, `sed -i`. Write and edit files with Write and Edit, and run the state script, git and the gates as plain commands; their exit code comes back with their result, never echo it. A rule reads a plain command; anything else stops for an approval, and nobody is there to give it.
+- `cd` and `git -C`: every command runs from the root of the repository, with paths from there. A `cd` moves the shell you share with the dispatcher, and a `cd` followed by git stops for an approval, as does `git -C`, which the permission rules do not read as the git command it runs.
+- Hide a command from the developer's permission rules: a variable or a function standing for a command, a command run by another such as `find -exec`, an expansion such as `$?` or `$(...)`, a redirection or a here-document into a file, `sed -i`. Write and edit files with Write and Edit, and run the state script, git and the gates as plain commands; their exit code comes back with their result, never echo it. A rule reads a plain command; anything else stops for an approval, and nobody is there to give it.
 
 ## What you read
 

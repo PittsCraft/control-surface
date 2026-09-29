@@ -28,7 +28,7 @@ This command pins Opus and the effort `high` for the turn that invokes it, and o
 
 It is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository, below written `surface-status`, and `<plan>` is the plan folder. Read its answers with `--json` and branch on the exit code, never on prose. Exit 0: accepted, or one plan found. Exit 1: refused, or no single plan found; a refusal carries `refused.code` and `refused.reason`: tell the developer and never work around it. Exit 2: a usage error or a journal it cannot read: report the message and stop.
 
-Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval. Plain commands only, which the developer's permission rules can read: no variable or function standing for a command, no expansion such as `$?` or `$(...)`, no here-document; the exit code comes back with the result, never echo it.
+Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval, nor `git -C`, which the permission rules do not read as the git command it runs. Plain commands only, which the developer's permission rules can read: no variable or function standing for a command, no command run by another such as `find -exec`, no expansion such as `$?` or `$(...)`, no here-document; the exit code comes back with the result, never echo it.
 
 Found when this command loaded:
 
@@ -123,7 +123,7 @@ The developer amends a plan only when they have the hand: awaiting approval, or 
 - Commit only the files of the plan folder, by path, following the repository's conventions. Each journal line goes in the commit of the files it describes. Never other changes of the working tree.
 - Before the first push of the branch (it has no upstream yet), read the CI configuration. If its triggers react to a push of this branch or to the opening of a pull request, draft included, warn the developer, say what would run, and wait for their agreement. Write their answer into `interview.md` under "Git", so a relaunch does not ask again. Declined: push nothing, say the plan is committed locally, and go to step 11.
 - Push the branch, setting its upstream.
-- The pull request opens as a draft at the first `plan-drafted`. Its description is the text `surface-status pr-body` prints, and nothing else. No pull request yet: `gh pr create --draft`, with a title after the repository's conventions and that description. One exists: replace its description with `gh pr edit --body`. Refresh it the same way at the end of every launch that pushes.
+- The pull request opens as a draft at the first `plan-drafted`. Its description is the text `surface-status pr-body` prints, and nothing else (it takes no argument, since it describes every plan of the branch). No pull request yet: `gh pr create --draft`, with a title after the repository's conventions and that description. One exists: replace its description with `gh pr edit --body`. Refresh it the same way at the end of every launch that pushes.
 - Nothing else is written on the pull request, and you never mark it ready for review. Its comments are read only when the developer asks for it explicitly.
 - Without `gh` or a remote, say so, give the description, and stop after the commit.
 
