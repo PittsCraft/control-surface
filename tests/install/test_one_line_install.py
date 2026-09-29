@@ -1,5 +1,6 @@
 """ADR 0027: the installer fed through standard input, from a directory that is no clone."""
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,8 +12,10 @@ from install_helpers import (
     load_installer,
     make_archive,
     make_source,
+    other_pythons,
     run_clone,
     run_piped,
+    run_piped_default,
 )
 
 COMMIT = "3f2a9c1d5e7b40a86c1d2e3f4a5b6c7d8e9f0a1b"
@@ -206,3 +209,53 @@ def test_the_default_archive_is_the_public_repository() -> None:
     assert installer.archive_url(installer.DEFAULT_ARCHIVE_URL, "feature/x").endswith(
         "/archive/feature/x.tar.gz"
     )
+
+
+# Every interpreter the piped run is checked on: the running one, and another one when available.
+PYTHONS = [sys.executable, *other_pythons()]
+
+
+@pytest.mark.parametrize("python", PYTHONS)
+def test_documented_one_line_install_from_an_empty_repository(
+    tmp_path: Path, archives: Path, python: str
+) -> None:
+    """No flags at all, as in the README: `python3 -` must download, not assume a clone."""
+    host = tmp_path / "host"
+    git_init(host)
+
+    result = run_piped_default(cwd=host, archive_dir=archives, tmp=tmp_path, python=python)
+
+    assert result.returncode == 0, result.stderr
+    assert installed_label(host) == "plan skill main\n"
+
+
+@pytest.mark.parametrize("python", PYTHONS)
+def test_documented_one_line_check_from_a_repository(
+    tmp_path: Path, archives: Path, python: str
+) -> None:
+    host = tmp_path / "host"
+    git_init(host)
+    run_piped_default(cwd=host, archive_dir=archives, tmp=tmp_path, python=python)
+    commit_all(host)
+
+    result = run_piped_default(
+        "--check", cwd=host, archive_dir=archives, tmp=tmp_path, python=python
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "no drift" in result.stdout
+
+
+def test_a_stdin_file_name_is_not_a_clone(tmp_path: Path) -> None:
+    installer = load_installer()
+    clone = make_source(tmp_path / "clone")
+    (clone / "install.py").write_text("", encoding="utf-8")
+
+    assert installer.find_clone_root("<stdin>") is None
+    assert installer.find_clone_root(None) is None
+    assert installer.find_clone_root(str(tmp_path / "missing.py")) is None
+    lone = tmp_path / "lone"
+    lone.mkdir()
+    (lone / "install.py").write_text("", encoding="utf-8")
+    assert installer.find_clone_root(str(lone / "install.py")) is None
+    assert installer.find_clone_root(str(clone / "install.py")) == clone.resolve()
