@@ -15,6 +15,7 @@ from surface_status.events import (
     Abandoned,
     AmendmentReceived,
     Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -84,6 +85,10 @@ PARAMS: Mapping[str, tuple[Param, ...]] = {
     ),
     "plan-amended": (
         Param("slice", Kind.SLICE, "the slice that deviated"),
+        Param("why", Kind.LINE, "the reason, on one line"),
+    ),
+    "break-suspected": (
+        Param("slice", Kind.SLICE, "the slice during which the break is suspected"),
         Param("why", Kind.LINE, "the reason, on one line"),
     ),
     "suspicion-dismissed": (
@@ -209,6 +214,8 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
                 plan=plan,
                 slices=slices,
             )
+        case "break-suspected":
+            return BreakSuspected(slice_=_number(values, "slice"), why=_text(values, "why"))
         case "suspicion-dismissed":
             return SuspicionDismissed(
                 slice_=_number(values, "slice"), report=_text(values, "report")

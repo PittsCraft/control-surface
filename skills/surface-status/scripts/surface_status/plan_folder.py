@@ -15,6 +15,7 @@ from surface_status.events import (
     Abandoned,
     AmendmentReceived,
     Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -129,6 +130,7 @@ def cited_files(event: Event) -> tuple[str, ...]:  # noqa: C901, PLR0911 (one ar
             | InterviewClosed()
             | AmendmentReceived()
             | SliceDone()
+            | BreakSuspected()
             | FixDone()
             | Blocked()
             | Resumed()

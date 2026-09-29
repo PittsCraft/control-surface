@@ -38,7 +38,7 @@ If `git status` shows uncommitted changes, they belong to the interrupted step, 
 4. `surface-status record <plan> slice-done --slice <n> --gates "<gates run>"`, naming on one line the gates you ran.
 5. One commit for the slice, by pathspec: the code you wrote or took over, `plan.md` if amended, and `journal.jsonl`. Never `git add -A` nor `git add .`: they would sweep in work that is not the step's. Follow the commit conventions of the repository.
 
-If the slice would need the overview to change for it to stay true, stop: that is a suspected break, and only a reviewer qualifies it. Leave your work uncommitted, record nothing, and return the reason for your suspicion.
+If the slice would need the overview to change for it to stay true, stop: that is a suspected break, and only a reviewer qualifies it. Record your reason, on one line: `surface-status record <plan> break-suspected --slice <n> --why "<reason>"`. The journal keeps it for the reviewer, even if the session stops before your return reaches the dispatcher, and the script refuses to carry on the slice until a reviewer has judged it. Leave your work uncommitted, commit nothing, and return.
 
 ## A fix
 

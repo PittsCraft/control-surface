@@ -41,6 +41,7 @@ EXECUTION_LOOP = (
     "`plan-change-proposed`",
     "`conform`, `abandoned`",
     "Ceiling reached, and work left to the agents",
+    "`executing`, a break suspected",
     "`executing`",
     "`reviewing`, the last event a clean review, nothing changed since",
     "`reviewing`, no green gate run since the last change",

@@ -11,9 +11,9 @@ STATES = list(State)
 PAIRS = [(name, state) for name in EVENT_NAMES for state in STATES]
 
 
-def test_there_are_ten_states_and_190_pairs() -> None:
+def test_there_are_ten_states_and_200_pairs() -> None:
     assert len(STATES) == 10
-    assert len(PAIRS) == 190
+    assert len(PAIRS) == 200
 
 
 def test_the_table_is_the_expected_one() -> None:
@@ -54,10 +54,10 @@ def test_terminal_states_accept_nothing(name: str, state: State) -> None:
     assert not isinstance(admit(state_in(state), valid_event(name), CONTEXT), Accepted)
 
 
-def test_the_accepted_pairs_number_31() -> None:
+def test_the_accepted_pairs_number_32() -> None:
     accepted = [
         (name, state)
         for name, state in PAIRS
         if isinstance(admit(state_in(state), valid_event(name)), Accepted)
     ]
-    assert len(accepted) == 31
+    assert len(accepted) == 32

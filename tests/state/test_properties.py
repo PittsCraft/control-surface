@@ -14,6 +14,8 @@ from state_strategies import Run, contexts, events, runs
 from state_support import EXPECTED
 
 from surface_status.events import (
+    AmendmentReceived,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -21,12 +23,13 @@ from surface_status.events import (
     GateResult,
     GatesRun,
     PlanAmended,
+    PlanChangeProposed,
     ReviewDone,
     SliceDone,
     SuspicionDismissed,
 )
 from surface_status.guards import Accepted, RecordContext, Refusal, RefusalCode, admit, fold
-from surface_status.machine import PlanState, State
+from surface_status.machine import PlanState, State, Suspicion
 
 
 def raises_a_counter(prev: PlanState, event: Event) -> int | None:
@@ -38,6 +41,17 @@ def raises_a_counter(prev: PlanState, event: Event) -> int | None:
     if isinstance(event, GatesRun) and event.result is not GateResult.PASS:
         return prev.execution_passes
     return None
+
+
+def unjudged(journal: list[Event]) -> Suspicion | None:
+    """Independent statement of the pending suspicion: the last one no judgment followed."""
+    pending: Suspicion | None = None
+    for event in journal:
+        if isinstance(event, BreakSuspected):
+            pending = Suspicion(event.slice_, event.why)
+        elif isinstance(event, SuspicionDismissed | PlanChangeProposed | AmendmentReceived):
+            pending = None
+    return pending
 
 
 def check_attempt(
@@ -57,6 +71,10 @@ def check_attempt(
             context.overview_hash != prev.approved_overview
         ):
             assert isinstance(result, Refusal), "the overview changed after approval"
+        if prev.suspicion is not None and isinstance(
+            event, SliceDone | PlanAmended | BreakSuspected
+        ):
+            assert isinstance(result, Refusal), "the work went on past an unjudged suspicion"
     if isinstance(result, Accepted):
         assert result.state.state in allowed
         assert result.state.planning_passes <= context.ceiling
@@ -149,6 +167,15 @@ class PlanMachine(RuleBasedStateMachine):
         if self.state is not None:
             assert 0 <= self.state.planning_passes <= self.ceiling
             assert 0 <= self.state.execution_passes <= self.ceiling
+
+    @invariant()
+    def a_suspicion_waits_for_its_judgment(self) -> None:
+        expected = unjudged(self.journal)
+        suspicion = None if self.state is None else self.state.suspicion
+        assert suspicion == expected
+        if self.state is not None and suspicion is not None:
+            assert self.state.state in {State.EXECUTING, State.BLOCKED, State.ABANDONED}
+            assert suspicion.slice_ in self.state.remaining
 
     @invariant()
     def the_slices_done_and_the_state_are_coherent(self) -> None:

@@ -11,6 +11,7 @@ from surface_status.events import (
     Abandoned,
     AmendmentReceived,
     Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -61,6 +62,7 @@ EVENTS: dict[type[Event], SearchStrategy[Event]] = {
     PlanApproved: st.builds(PlanApproved, rev=_counts, overview=_hashes),
     SliceDone: st.builds(SliceDone, slice_=_slice, gates=_texts),
     PlanAmended: st.builds(PlanAmended, slice_=_slice, why=_texts, plan=_hashes, slices=_slices),
+    BreakSuspected: st.builds(BreakSuspected, slice_=_slice, why=_texts),
     SuspicionDismissed: st.builds(SuspicionDismissed, slice_=_slice, report=_texts),
     PlanChangeProposed: st.builds(PlanChangeProposed, proposal=_texts, slice_=_slice),
     GatesRun: st.builds(GatesRun, run=_counts, result=st.sampled_from(GateResult)),
@@ -120,6 +122,7 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
     slices = folder.declared_slices()
     review = state.last_review if state else None
     check = state.last_check if state else None
+    suspected = state.suspicion.slice_ if state and state.suspicion else 1
     match name:
         case "plan-opened":
             return PlanOpened(slug=folder.name)
@@ -145,10 +148,15 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
             return SliceDone(slice_=data.draw(st.sampled_from(pending)), gates="lint")
         case "plan-amended":
             return PlanAmended(slice_=1, why="renamed", plan=plan, slices=slices)
+        case "break-suspected":
+            pending = state.remaining if state and state.remaining else (1, 2)
+            return BreakSuspected(slice_=data.draw(st.sampled_from(pending)), why="a new field")
         case "suspicion-dismissed":
-            return SuspicionDismissed(slice_=1, report=write(folder, folder.next_suspicion()))
+            report = write(folder, folder.next_suspicion())
+            return SuspicionDismissed(slice_=suspected, report=report)
         case "plan-change-proposed":
-            return PlanChangeProposed(proposal=write(folder, folder.next_plan_change()), slice_=1)
+            change = write(folder, folder.next_plan_change())
+            return PlanChangeProposed(proposal=change, slice_=suspected)
         case "gates-run":
             run = folder.next_gate_run()
             write(folder, gate_run_name(run))
@@ -197,7 +205,7 @@ def onward(state: PlanState | None) -> str | None:  # noqa: C901, PLR0911 (one a
         case State.AWAITING_APPROVAL:
             return "plan-approved"
         case State.EXECUTING:
-            return "slice-done"
+            return "slice-done" if state.suspicion is None else "suspicion-dismissed"
         case State.REVIEWING:
             if state.gates is not GateResult.PASS:
                 return "gates-run"

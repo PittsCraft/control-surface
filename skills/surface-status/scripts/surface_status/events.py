@@ -78,6 +78,13 @@ class PlanAmended:
 
 
 @dataclass(frozen=True, slots=True)
+class BreakSuspected:
+    name: ClassVar[str] = "break-suspected"
+    slice_: int
+    why: str  # one line: the executor's reason, kept until a reviewer judges it
+
+
+@dataclass(frozen=True, slots=True)
 class SuspicionDismissed:
     name: ClassVar[str] = "suspicion-dismissed"
     slice_: int
@@ -161,6 +168,7 @@ Event: TypeAlias = (
     | PlanApproved
     | SliceDone
     | PlanAmended
+    | BreakSuspected
     | SuspicionDismissed
     | PlanChangeProposed
     | GatesRun
@@ -184,6 +192,7 @@ EVENT_TYPES: tuple[type[Event], ...] = (
     PlanApproved,
     SliceDone,
     PlanAmended,
+    BreakSuspected,
     SuspicionDismissed,
     PlanChangeProposed,
     GatesRun,

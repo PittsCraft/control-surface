@@ -19,6 +19,7 @@ from surface_status.events import (
     Abandoned,
     AmendmentReceived,
     Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -55,6 +56,7 @@ class RefusalCode(StrEnum):
     FILE_MISSING = "file-missing"
     HASH_STALE = "hash-stale"
     SLICES_STALE = "slices-stale"
+    SUSPICION = "suspicion"  # a suspected break waits for a reviewer's judgment
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,7 +135,36 @@ def _check_approved(prev: PlanState, event: PlanApproved) -> Refusal | None:
     return None
 
 
-def _check_slice(prev: PlanState, event: SliceDone) -> Refusal | None:
+def _check_unjudged(prev: PlanState) -> Refusal | None:
+    """Refuse to carry on past a suspected break that no reviewer has judged."""
+    if prev.suspicion is None:
+        return None
+    return _refuse(
+        RefusalCode.SUSPICION,
+        f"a break is suspected during slice {prev.suspicion.slice_}: a reviewer judges it first",
+    )
+
+
+def _check_judged(
+    prev: PlanState, event: SuspicionDismissed | PlanChangeProposed
+) -> Refusal | None:
+    """Match a judgment to the suspicion that is pending, when one is.
+
+    A journal written before `break-suspected` existed judges a suspicion it never recorded, so
+    a judgment with no pending suspicion stays accepted.
+    """
+    if prev.suspicion is None or prev.suspicion.slice_ == event.slice_:
+        return None
+    return _refuse(
+        RefusalCode.SUSPICION,
+        f"the break under judgment is suspected during slice {prev.suspicion.slice_}",
+    )
+
+
+def _check_slice(prev: PlanState, event: SliceDone | BreakSuspected) -> Refusal | None:
+    unjudged = _check_unjudged(prev)
+    if unjudged is not None:
+        return unjudged
     if event.slice_ not in prev.declared:
         return _refuse(RefusalCode.SLICE, f"slice {event.slice_} is not in the declared list")
     if event.slice_ in prev.done:
@@ -142,6 +173,9 @@ def _check_slice(prev: PlanState, event: SliceDone) -> Refusal | None:
 
 
 def _check_amended(prev: PlanState, event: PlanAmended) -> Refusal | None:
+    unjudged = _check_unjudged(prev)
+    if unjudged is not None:
+        return unjudged
     if prev.state is State.FIXING and frozenset(event.slices) != prev.declared:
         return _refuse(RefusalCode.SLICE_LIST, "a fix cannot change the list of slices")
     return None
@@ -180,10 +214,12 @@ def journal_guards(prev: PlanState | None, event: Event) -> Refusal | None:  # n
             return _check_drafted(prev, event)
         case PlanApproved():
             return _check_approved(prev, event)
-        case SliceDone():
+        case SliceDone() | BreakSuspected():
             return _check_slice(prev, event)
         case PlanAmended():
             return _check_amended(prev, event)
+        case SuspicionDismissed() | PlanChangeProposed():
+            return _check_judged(prev, event)
         case ReviewDone():
             return _check_review(event)
         case Conform():
@@ -193,8 +229,6 @@ def journal_guards(prev: PlanState | None, event: Event) -> Refusal | None:  # n
             | InterviewClosed()
             | CheckDone()
             | AmendmentReceived()
-            | SuspicionDismissed()
-            | PlanChangeProposed()
             | GatesRun()
             | FixDone()
             | PlanChangeAccepted()

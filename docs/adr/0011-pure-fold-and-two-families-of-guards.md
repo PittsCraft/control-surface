@@ -11,13 +11,13 @@ The state of a plan is derived from its journal alone, never stored, and replayi
 
 The core is three modules of the standard library, none of which opens a file:
 
-- `events.py` holds the closed list of 19 events as frozen dataclasses. `v` and `at` belong to the journal line and are added and stripped by the codec, so the core never sees a date. An attribute `x_` stands for the journal key `x` (`pass`, `slice`).
+- `events.py` holds the closed list of 20 events (the twentieth, `break-suspected`, by ADR 0033) as frozen dataclasses. `v` and `at` belong to the journal line and are added and stripped by the codec, so the core never sees a date. An attribute `x_` stands for the journal key `x` (`pass`, `slice`).
 - `machine.py` holds the ten states, the transition table as data (event, departure, arrival; the departure `None` is the journal that does not exist yet) and `apply`, the pure step from one state to the next. An arrival that depends on the journal is a named `Rule`, resolved with `match` and `assert_never`.
 - `guards.py` holds the guards, `admit(state, event, context)` and `fold(events)`. `admit` checks the table first, then the guards, and returns `Accepted(state)` or `Refusal(code, reason)`.
 
 Guards fall in two families:
 
-- Journal-only guards need the state and the event: the cross-check covers the drafted hashes, the approved overview is the drafted one, a slice is declared and not done, a fix keeps the list of slices, a break comes with a proposal, conformity follows a clean review of the approved overview. They run at replay and at record.
+- Journal-only guards need the state and the event: the cross-check covers the drafted hashes, the approved overview is the drafted one, a slice is declared and not done, a fix keeps the list of slices, a break comes with a proposal, a suspected break is judged before its slice goes on, conformity follows a clean review of the approved overview. They run at replay and at record.
 - Record-time guards need a `RecordContext` of plain values the caller read beforehand: the ceiling, whether a gate command is declared, the current overview hash. They run at record only. They cover the frozen overview (`slice-done`, `plan-amended`, `fix-done`, `conform`), the ceiling of autonomous passes, and the gate guards of `review-done` and `fix-done`, which are lifted when no gate command is declared.
 
 `fold` takes nothing but the events, returns `None` for an empty journal and raises `InvalidJournalError` (line, event, refusal) when a line is illegal, so a hand edited journal cannot replay silently. That replay reads no other file is tested by signature, by the imports of the three modules, and by running a replay with file access forbidden.

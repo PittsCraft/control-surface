@@ -14,6 +14,7 @@ from surface_status.events import (
     Abandoned,
     AmendmentReceived,
     Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -85,6 +86,7 @@ TRANSITIONS: Mapping[str, Mapping[State | None, Arrival]] = {
     "plan-approved": {State.AWAITING_APPROVAL: Rule.SLICES_REMAIN},
     "slice-done": {State.EXECUTING: Rule.SLICES_REMAIN},
     "plan-amended": {State.EXECUTING: Rule.SLICES_REMAIN, State.FIXING: State.FIXING},
+    "break-suspected": {State.EXECUTING: State.EXECUTING},
     "suspicion-dismissed": {State.EXECUTING: State.EXECUTING},
     "plan-change-proposed": {State.EXECUTING: State.PLAN_CHANGE_PROPOSED},
     "gates-run": {State.REVIEWING: Rule.GATES, State.FIXING: Rule.GATES},
@@ -127,6 +129,14 @@ class ReviewSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class Suspicion:
+    """A break an executor suspected during a slice, that no reviewer has judged yet."""
+
+    slice_: int
+    why: str
+
+
+@dataclass(frozen=True, slots=True)
 class PlanState:
     state: State
     before_blocked: State | None  # set while `blocked`, to know where `resumed` goes back to
@@ -142,6 +152,7 @@ class PlanState:
     gates: GateResult | None  # result of the last gate run, None once the work changed since
     proposal_origin: Origin | None
     pending_proposal: str | None
+    suspicion: Suspicion | None  # kept until a reviewer judges it, or the plan is drawn again
     last_event: Event
 
     @property
@@ -169,6 +180,7 @@ def _opened(event: PlanOpened) -> PlanState:
         gates=None,
         proposal_origin=None,
         pending_proposal=None,
+        suspicion=None,
         last_event=event,
     )
 
@@ -193,7 +205,14 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
                 declared=frozenset(event.slices),
             )
         case AmendmentReceived():
-            return replace(prev, planning_passes=0, last_check=None, last_review=None, gates=None)
+            return replace(
+                prev,
+                planning_passes=0,
+                last_check=None,
+                last_review=None,
+                gates=None,
+                suspicion=None,
+            )
         case PlanApproved():
             return replace(
                 prev,
@@ -206,10 +225,17 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
             return replace(prev, done=prev.done | {event.slice_}, last_review=None, gates=None)
         case PlanAmended():
             return replace(prev, declared=frozenset(event.slices))
+        case BreakSuspected():
+            return replace(prev, suspicion=Suspicion(event.slice_, event.why))
         case SuspicionDismissed():
-            return replace(prev, execution_passes=prev.execution_passes + 1)
+            return replace(prev, execution_passes=prev.execution_passes + 1, suspicion=None)
         case PlanChangeProposed():
-            return replace(prev, proposal_origin=Origin.SLICE, pending_proposal=event.proposal)
+            return replace(
+                prev,
+                proposal_origin=Origin.SLICE,
+                pending_proposal=event.proposal,
+                suspicion=None,
+            )
         case GatesRun():
             failed = event.result is not GateResult.PASS
             return replace(

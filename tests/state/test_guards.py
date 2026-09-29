@@ -22,6 +22,9 @@ from state_support import (
 )
 
 from surface_status.events import (
+    AmendmentReceived,
+    Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -30,12 +33,15 @@ from surface_status.events import (
     GatesRun,
     PlanAmended,
     PlanApproved,
+    PlanChangeProposed,
     PlanDrafted,
+    Resumed,
     ReviewDone,
     SliceDone,
+    SuspicionDismissed,
 )
-from surface_status.guards import RecordContext, RefusalCode
-from surface_status.machine import State
+from surface_status.guards import InvalidJournalError, RecordContext, RefusalCode, fold
+from surface_status.machine import Origin, State, Suspicion
 
 CHANGED = RecordContext(ceiling=3, gates_declared=True, overview_hash=OV2)
 UNREAD = RecordContext(ceiling=3, gates_declared=True, overview_hash=None)
@@ -218,3 +224,87 @@ class TestConform:
         fixed = must_accept(green, FixDone(pass_=1))
         assert fixed.state is State.REVIEWING
         assert must_refuse(fixed, self.conform).code is RefusalCode.CONFORMITY
+
+
+class TestSuspectedBreak:
+    """The executor's reason is kept in the journal until a reviewer judges it."""
+
+    suspected = BreakSuspected(slice_=2, why="the overview names no such field")
+
+    def pending(self) -> list[Event]:
+        return [*EXECUTING, SliceDone(slice_=1, gates="lint"), self.suspected]
+
+    def test_keeps_the_plan_executing_and_carries_the_reason(self) -> None:
+        state = replay(self.pending())
+        assert state.state is State.EXECUTING
+        assert state.suspicion == Suspicion(2, "the overview names no such field")
+        assert state.remaining == (2,)
+
+    def test_is_refused_on_a_slice_not_declared_or_already_done(self) -> None:
+        prev = replay([*EXECUTING, SliceDone(slice_=1, gates="lint")])
+        for slice_ in (1, 9):
+            event = BreakSuspected(slice_=slice_, why="x")
+            assert must_refuse(prev, event).code is RefusalCode.SLICE
+
+    @pytest.mark.parametrize(
+        "event",
+        [
+            SliceDone(slice_=2, gates="lint"),
+            PlanAmended(slice_=2, why="x", plan=PL2, slices=(1, 2)),
+            BreakSuspected(slice_=2, why="again"),
+        ],
+        ids=lambda event: event.name,
+    )
+    def test_nothing_carries_on_past_it_until_it_is_judged(self, event: Event) -> None:
+        prev = replay(self.pending())
+        assert must_refuse(prev, event).code is RefusalCode.SUSPICION
+        assert must_refuse(prev, event, None).code is RefusalCode.SUSPICION
+        with pytest.raises(InvalidJournalError) as error:
+            fold([*self.pending(), event])
+        assert error.value.refusal.code is RefusalCode.SUSPICION
+
+    def test_a_dismissal_judges_it_and_the_slice_goes_on(self) -> None:
+        prev = replay(self.pending())
+        other = SuspicionDismissed(slice_=1, report="reviews/suspicion-01.md")
+        assert must_refuse(prev, other).code is RefusalCode.SUSPICION
+        dismissed = must_accept(prev, SuspicionDismissed(slice_=2, report="r"))
+        assert dismissed.suspicion is None
+        assert must_accept(dismissed, SliceDone(slice_=2, gates="lint")).state is State.REVIEWING
+
+    def test_a_confirmation_judges_it_and_proposes_the_change(self) -> None:
+        prev = replay(self.pending())
+        other = PlanChangeProposed(proposal=PROPOSAL, slice_=1)
+        assert must_refuse(prev, other).code is RefusalCode.SUSPICION
+        proposed = must_accept(prev, PlanChangeProposed(proposal=PROPOSAL, slice_=2))
+        assert proposed.state is State.PLAN_CHANGE_PROPOSED
+        assert proposed.proposal_origin is Origin.SLICE
+        assert proposed.suspicion is None
+
+    def test_a_judgment_without_a_recorded_suspicion_stays_accepted(self) -> None:
+        """A journal written before the event existed judges a suspicion it never recorded."""
+        prev = replay(EXECUTING)
+        assert must_accept(prev, SuspicionDismissed(slice_=1, report="r")).state is (
+            State.EXECUTING
+        )
+        assert must_accept(prev, PlanChangeProposed(proposal=PROPOSAL, slice_=1))
+
+    def test_outlasts_a_block_and_its_resumption(self) -> None:
+        blocked = must_accept(replay(self.pending()), Blocked(why="at the ceiling"))
+        assert blocked.suspicion == Suspicion(2, "the overview names no such field")
+        resumed = must_accept(blocked, Resumed())
+        assert resumed.state is State.EXECUTING
+        assert resumed.suspicion == blocked.suspicion
+
+    def test_is_dropped_when_the_developer_takes_the_plan_back(self) -> None:
+        blocked = must_accept(replay(self.pending()), Blocked(why="at the ceiling"))
+        assert must_accept(blocked, AmendmentReceived()).suspicion is None
+
+    def test_is_no_pass_and_is_kept_even_at_the_ceiling(self) -> None:
+        prev = state_in(State.EXECUTING, execution_passes=3)
+        assert must_accept(prev, BreakSuspected(slice_=1, why="x")).execution_passes == 3
+
+    def test_at_the_ceiling_a_confirmation_passes_and_a_dismissal_does_not(self) -> None:
+        prev = state_in(State.EXECUTING, execution_passes=3, suspicion=Suspicion(1, "x"))
+        dismissal = SuspicionDismissed(slice_=1, report="r")
+        assert must_refuse(prev, dismissal).code is RefusalCode.CEILING
+        assert must_accept(prev, PlanChangeProposed(proposal=PROPOSAL, slice_=1))

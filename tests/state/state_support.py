@@ -9,6 +9,7 @@ from surface_status.events import (
     Abandoned,
     AmendmentReceived,
     Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -61,6 +62,7 @@ EXPECTED: dict[str, dict[State | None, frozenset[State]]] = {
         S.EXECUTING: frozenset({S.EXECUTING, S.REVIEWING}),
         S.FIXING: frozenset({S.FIXING}),
     },
+    "break-suspected": {S.EXECUTING: frozenset({S.EXECUTING})},
     "suspicion-dismissed": {S.EXECUTING: frozenset({S.EXECUTING})},
     "plan-change-proposed": {S.EXECUTING: frozenset({S.PLAN_CHANGE_PROPOSED})},
     "gates-run": {
@@ -118,6 +120,7 @@ def state_in(state: State, **changes: Any) -> PlanState:  # noqa: ANN401 (overri
         gates=GateResult.PASS,
         proposal_origin=Origin.SLICE if state is State.PLAN_CHANGE_PROPOSED else None,
         pending_proposal=PROPOSAL if state is State.PLAN_CHANGE_PROPOSED else None,
+        suspicion=None,
         last_event=GatesRun(run=1, result=GateResult.PASS),
     )
     return PlanState(**{**{f.name: getattr(base, f.name) for f in fields(base)}, **changes})
@@ -136,6 +139,7 @@ def valid_event(name: str) -> Event:
         "plan-approved": PlanApproved(rev=1, overview=OV1),
         "slice-done": SliceDone(slice_=1, gates="lint"),
         "plan-amended": PlanAmended(slice_=1, why="renamed", plan=PL2, slices=(1, 2)),
+        "break-suspected": BreakSuspected(slice_=1, why="the overview names no such field"),
         "suspicion-dismissed": SuspicionDismissed(slice_=1, report="reviews/suspicion-01.md"),
         "plan-change-proposed": PlanChangeProposed(proposal=PROPOSAL, slice_=1),
         "gates-run": GatesRun(run=2, result=GateResult.PASS),

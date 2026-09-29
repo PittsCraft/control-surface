@@ -106,7 +106,7 @@ A reviewer found that the overview would have to change to stay true, and wrote 
 The loop stopped at the ceiling of autonomous passes; the `blocked` line of `journal.jsonl` says why. It stopped during planning when the journal holds no `plan-approved` after its last `interview-closed`, `amendment-received` or `plan-change-accepted`; otherwise during execution.
 
 - During planning: present what does not converge, from the last reports under `checks/`, and ask the developer's instruction. Write it into `interview.md` under "Instructions after a block", then `surface-status record <plan> resumed --json`, and resume at the missing step. An instruction that amends the plan is taken as an amendment instead.
-- During execution: the developer took the hand back to revise the plan: take the amendment. If they only want the loop to go on, `/surface-execute` resumes it: say so and stop.
+- During execution: the developer took the hand back to revise the plan: take the amendment. If they only want the loop to go on, `/surface-execute` resumes it: say so and stop. When `pending_suspicion` of `surface-status show <plan> --json` is not null, name that suspected break and its reason too: an amendment drops it, a resumption hands it to a reviewer.
 
 ## Outside your hand
 

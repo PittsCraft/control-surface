@@ -35,6 +35,7 @@ CALLS: tuple[Call, ...] = (
     ("slice-done", ("--slice", "1", "--gates", "lint")),
     ("slice-done", ("--slice", "2", "--gates", "lint")),
     ("plan-amended", ("--slice", "1", "--why", "renamed")),
+    ("break-suspected", ("--slice", "2", "--why", "the overview names no such field")),
     ("suspicion-dismissed", ("--slice", "1", "--report", "reviews/suspicion-01.md")),
     ("plan-change-proposed", ("--proposal", "plan-changes/01.md", "--slice", "1")),
     ("review-done", ("--report", "reviews/pass-01.md", *_REVIEW)),
@@ -55,10 +56,10 @@ CALLS: tuple[Call, ...] = (
 ONWARD: dict[str, Call] = {
     "interview": CALLS[1],
     "awaiting-approval": CALLS[6],
-    "reviewing": CALLS[12],
-    "fixing": CALLS[15],
-    "plan-change-proposed": CALLS[17],
-    "blocked": CALLS[19],
+    "reviewing": CALLS[13],
+    "fixing": CALLS[16],
+    "plan-change-proposed": CALLS[18],
+    "blocked": CALLS[20],
 }
 FILES = (
     "checks/rev-01-01.md",
@@ -118,7 +119,10 @@ def _choose(project: Project, step: tuple[str, Call | int]) -> Call | None:  # n
     if state == "drafting":
         return CALLS[2]
     if state == "reviewing" and last == "review-done":
-        return CALLS[20]  # conform, once a review came back clean
+        return CALLS[21]  # conform, once a review came back clean
+    if state == "executing" and shown["pending_suspicion"] is not None:
+        suspected = str(shown["pending_suspicion"]["slice"])  # a reviewer judged it: no break
+        return ("suspicion-dismissed", ("--slice", suspected, "--report", FILES[2]))
     if state == "executing":
         following = shown["slices"]["remaining"][0]
         return ("slice-done", ("--slice", str(following), "--gates", "lint"))
