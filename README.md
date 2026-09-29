@@ -132,7 +132,7 @@ curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/ins
 
 Each plan keeps a journal that only a state script writes. The script refuses any illegal step, for example an approval when the overview changed since its cross-check, or any further work once the approved overview has been modified. Each slice, review and fix goes to a fresh agent that reads files, never a conversation. The installer owns only the chain's files under `.claude/`, and refuses to overwrite one that holds uncommitted changes unless you pass `--force`.
 
-The design decisions, each with its context and its consequences, are in [`docs/adr/`](docs/adr/). To work on the chain itself, see [CONTRIBUTING.md](CONTRIBUTING.md).
+The architecture is described in [ARCHITECTURE.md](ARCHITECTURE.md), and the decisions whose history matters in [`docs/adr/`](docs/adr/README.md). To work on the chain itself, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

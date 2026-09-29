@@ -41,7 +41,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-# The state script has no network access (ADR 0010): nothing in the package may import these.
+# The state script has no network access (ADR 0001): nothing in the package may import these.
 "socket".msg = "the state script has no network access"
 "urllib".msg = "the state script has no network access"
 "http".msg = "the state script has no network access"
@@ -49,7 +49,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "install.py" = [
-  "TID251",  # the installer downloads the archive of a version (ADR 0027)
+  "TID251",  # the installer downloads the archive of a version
 ]
 "scripts/**" = [
   "TID251",  # repository tooling, not the state script
@@ -81,5 +81,5 @@ pythonpath = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2
 addopts = "--ignore=tests/e2e -ra"
 
 [tool.coverage.run]
-# Measured and printed, never a failing threshold (ADR 0006).
+# Measured and printed, never a failing threshold.
 source = ["scripts", "skills/surface-status/scripts"]

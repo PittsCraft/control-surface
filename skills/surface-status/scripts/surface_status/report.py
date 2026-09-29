@@ -1,6 +1,6 @@
-"""What the read only commands say: the plan list, `show` and `check` (ADR 0014).
+"""What the read only commands say: the plan list, `show` and `check`.
 
-Each command builds a plain payload (JSON shaped, `"v": 1`, ADR 0014), and a renderer turns the
+Each command builds a plain payload (JSON shaped, `"v": 1`), and a renderer turns the
 same payload into text, so the two outputs cannot disagree.
 """
 

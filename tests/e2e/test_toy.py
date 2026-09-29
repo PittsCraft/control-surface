@@ -1,7 +1,7 @@
 """End to end: `/surface-execute` on the toy project, headless, from prepared states (ADR 0025).
 
 Billed and slow: run on demand only, with `scripts/gate.sh e2e`, never in CI. The sessions bypass
-permissions, so they run in the container of `tests/e2e/Dockerfile` (ADR 0030). Each scenario
+permissions, so they run in the container of `tests/e2e/Dockerfile` (ADR 0025). Each scenario
 keeps the stream of its sessions under `logs/` next to the toy project, in pytest's temporary
 folder (`--basetemp` chooses it). The interactive scenarios, `/surface-plan` and the refusal of a
 plan change, are run by hand: see `tests/e2e/README.md`.

@@ -59,7 +59,7 @@ class GatesBlockError(PlanFolderError):
 
 
 def content_hash(data: bytes) -> str:
-    """Hash the bytes with CRLF read as LF, so a Windows checkout hashes alike (ADR 0013)."""
+    """Hash the bytes with CRLF read as LF, so a Windows checkout hashes alike."""
     return "sha256:" + sha256(data.replace(b"\r\n", b"\n")).hexdigest()
 
 

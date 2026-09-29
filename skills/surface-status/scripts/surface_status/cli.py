@@ -1,4 +1,4 @@
-"""The command line of `surface-status` (ADR 0014).
+"""The command line of `surface-status` (ARCHITECTURE.md, Command line contract).
 
 Exit codes: 0 accepted or check passed, 1 refused or check failed, 2 usage error or unreadable
 journal. With `--json`, every answer on standard output is one JSON object carrying `"v": 1`, so a

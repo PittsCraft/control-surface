@@ -24,7 +24,8 @@ The conformity check in a CI shaped checkout is `tests/ci/`: part of the gates, 
 
 - `skills/`: the skills of the chain, installed as `.claude/skills/surface-*/`. `surface-status/scripts/` holds the state script, standard library only, with no network access.
 - `install.py`: the installer and the drift check.
-- `docs/adr/`: the architecture decisions.
+- `ARCHITECTURE.md`: the architecture as it is now, with a codemap and the invariants. Read it first.
+- `docs/adr/`: the few decisions whose history matters.
 
 ## Installer
 
@@ -38,8 +39,8 @@ Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and `.
 
 ## Text rules
 
-No em dash in any file of the repository, checked by the gates. Commit messages carry no em dash and no attribution to Claude, checked by the `commit-msg` hook. See `docs/adr/0009-repository-text-rules.md`.
+No em dash in any file of the repository, checked by the gates. Commit messages carry no em dash and no attribution to Claude, checked by the `commit-msg` hook. What the hook accepts and refuses is in `scripts/check_commit_msg.py`.
 
 ## Decisions
 
-Record each architecture decision in `docs/adr/`, numbered, with its context, the decision and its consequences.
+A pull request that changes the architecture updates `ARCHITECTURE.md` in the same pull request. An ADR in `docs/adr/` is rare: only for a decision that is hard to reverse, is structural or bears on a key quality, was chosen against credible alternatives, or is one a reader is likely to "fix". It is short (context, decision, consequences) and has no amendment log: a replaced record is marked superseded, and `ARCHITECTURE.md` changes with it.

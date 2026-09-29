@@ -1,4 +1,4 @@
-# The container of the end to end tests (ADR 0030). Its sessions bypass permissions, which is safe
+# The container of the end to end tests (ADR 0025). Its sessions bypass permissions, which is safe
 # here and not on the developer's machine. `scripts/gate.sh e2e` builds and runs it; the manual
 # scenarios of tests/e2e/README.md use it too. No credential is written in the image: the token
 # comes from the environment of `docker run`.

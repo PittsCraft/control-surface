@@ -1,4 +1,4 @@
-"""The frontmatter of the four agent definitions (ADRs 0021 and 0022).
+"""The frontmatter of the four agent definitions (ADR 0031, and ARCHITECTURE.md, Invariants).
 
 Fields and their meaning follow the Claude Code documentation of subagents: `name` and
 `description` are required, `tools` narrows what the agent inherits, `model` takes an alias and
@@ -16,7 +16,7 @@ from surface_status.settings import Models
 MODEL_ALIASES = {"opus", "sonnet", "haiku", "fable"}
 # Effort per role: high for the three judgment roles, the default otherwise.
 EFFORT = {"extractor": "high", "checker": "high", "reviewer": "high", "executor": None}
-# Tools a role may hold: each is a leaf, so neither `Agent` nor its old name `Task` (ADR 0022).
+# Tools a role may hold: each is a leaf, so neither `Agent` nor its old name `Task`.
 KNOWN_TOOLS = {"Read", "Glob", "Grep", "Edit", "Write", "Bash"}
 SPAWNING_TOOLS = {"Agent", "Task"}
 
@@ -35,7 +35,7 @@ def test_frontmatter_holds_the_expected_fields_and_no_other(name: str) -> None:
     expected = {"name", "description", "tools", "model"}
     if EFFORT[ROLES[name]] is not None:
         expected.add("effort")
-    # Nothing else: no isolation, no permission mode, no background (ADR 0022).
+    # Nothing else: no isolation, no permission mode, no background.
     assert set(frontmatter) == expected
 
 

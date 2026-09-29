@@ -84,7 +84,7 @@ def _row_index(rows: list[str], needle: str) -> int:
     return next(index for index, row in enumerate(rows) if needle in row)
 
 
-# Frontmatter: who starts the commands (ADR 0023), never on which model (ADR 0031).
+# Frontmatter: who starts the commands, never on which model (ADR 0031).
 
 
 @pytest.mark.parametrize("name", ["surface-execute", "surface-status"])

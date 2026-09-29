@@ -1,6 +1,6 @@
 """`.claude/surface.json`: the per-project settings, with their defaults.
 
-The file is optional, and so is every key: the chain runs without it (ADR 0034). An unknown key is
+The file is optional, and so is every key: the chain runs without it (ADR 0019). An unknown key is
 refused with a message that names the closest known one, since a misspelled setting silently
 ignored would be a setting lost. A key the chain no longer reads is refused with a message that
 names what replaced it. The file belongs to the host project: this module reads it and never

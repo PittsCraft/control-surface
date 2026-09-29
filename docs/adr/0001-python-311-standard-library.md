@@ -1,16 +1,18 @@
-# 0001. Runtime floor Python 3.11, standard library only
+# 0001. Runtime floor Python 3.11, standard library only, no network
 
 Status: accepted
 Date: 2026-09-29
 
 ## Context
 
-The state script and the installer run inside host projects that the chain knows nothing about. They cannot ask a host to install dependencies, and hosts run whatever Python their machine or CI image provides.
+The state script and the installer run inside host projects the chain knows nothing about. They cannot ask a host to install dependencies, and hosts run whatever Python their machine or CI image provides. The chain also promises that the state script reaches no network, and a promise in a README does not hold that.
 
 ## Decision
 
-The script and the installer require Python 3.11 and import nothing but the standard library. 3.11 brings `StrEnum`, `typing.assert_never`, `Self` and `datetime.UTC`, and it runs on every current CI image. The launcher of the script refuses an older interpreter (the macOS system Python 3.9, for instance) with a clear one-line message.
+The state script and the installer need Python 3.11 and import only the standard library. 3.11 brings `StrEnum`, `assert_never`, `Self` and `datetime.UTC`, and every current CI image has it. The launcher of the script and the installer refuse an older Python in one line instead of failing on syntax.
+
+The state script has no network access, held three ways: a test fails on any import outside `sys.stdlib_module_names`; ruff's `TID251` bans `socket`, `urllib`, `http` and `ssl` everywhere but `install.py`, the tests and the repository scripts; and every test runs with sockets blocked.
 
 ## Consequences
 
-No install step for a host beyond copying files. Newer language features than 3.11 are off limits in the runtime. The floor is enforced by `requires-python`, by `.python-version`, by the ruff and type checker targets, and by running the tests on 3.11 in the gates. Development tools may depend on anything, since they never ship.
+A host installs nothing but the copied files, and needs `sh`, `git` and `python3` 3.11. Language features newer than 3.11 are off limits in the runtime; the gates run the tests on 3.11. Development tools may depend on anything, since they never ship. Adding a dependency or a network call means changing the ban list, the import test and this record, on purpose.

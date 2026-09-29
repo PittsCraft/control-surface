@@ -8,7 +8,7 @@ from git_support import Repo, isolate_git
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-# Restated independently: what each command accepts among the reachable states (ADR 0015).
+# Restated independently: what each command accepts among the reachable states.
 ACCEPTS = {
     "plan": {"interview", "drafting", "awaiting-approval"},
     "execute": {"awaiting-approval", "executing", "reviewing"},
