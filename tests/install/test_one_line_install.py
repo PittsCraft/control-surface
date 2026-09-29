@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 from install_helpers import (
-    ONE_LINE,
     ROOT,
     commit_all,
     git_init,
@@ -34,13 +33,6 @@ def archives(tmp_path: Path) -> Path:
 
 def installed_label(host: Path) -> str:
     return (host / ".claude/skills/surface-plan/SKILL.md").read_text(encoding="utf-8")
-
-
-def test_the_readme_opens_with_the_one_line_install() -> None:
-    readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    first_block = readme.split("```sh\n", 1)[1].split("```", 1)[0].strip()
-
-    assert first_block == ONE_LINE
 
 
 def test_piped_install_into_the_current_directory_for_main(tmp_path: Path, archives: Path) -> None:

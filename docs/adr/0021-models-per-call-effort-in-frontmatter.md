@@ -1,6 +1,6 @@
 # 0021. Models passed on each call, effort in the frontmatter
 
-Status: accepted, amended by ADR 0031
+Status: accepted, amended by ADRs 0031 and 0032
 Date: 2026-09-29
 
 ## Context

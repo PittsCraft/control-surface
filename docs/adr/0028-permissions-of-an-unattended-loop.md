@@ -1,6 +1,6 @@
 # 0028. The permissions of an unattended loop live in the developer's settings
 
-Status: accepted, amended by ADR 0030
+Status: accepted, amended by ADRs 0030 and 0032
 Date: 2026-09-29
 
 ## Context

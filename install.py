@@ -55,9 +55,9 @@ REF_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/+-]*")
 ALLOWED_URL_SCHEMES = ("https", "file")
 EXIT_DRIFT = 1
 EXIT_USAGE = 2
-# The installer never writes the host's Claude Code settings: it points at the rules instead.
+# The installer never writes the host's Claude Code settings: it points at the README instead.
 PERMISSIONS_HINT = (
-    "Before your first /surface-execute, allow what the loop runs:"
+    "Before your first /surface-execute, read how the loop runs unattended:"
     " https://github.com/PittsCraft/control-surface#permissions"
 )
 

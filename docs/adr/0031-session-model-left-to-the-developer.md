@@ -1,6 +1,6 @@
 # 0031. The session's model and effort are the developer's; the chain pins only the agents' models
 
-Status: accepted
+Status: accepted, amended by ADR 0032
 Date: 2026-09-29
 
 ## Context

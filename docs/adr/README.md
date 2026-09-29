@@ -35,3 +35,4 @@ Each decision has its context, the decision itself and its consequences.
 | 0029 | [The conformity check, proved in a checkout shaped like a CI's](0029-conformity-check-proved-in-a-ci-shaped-checkout.md) |
 | 0030 | [Exploration is left to the permission mode; end to end runs bypass it in a container](0030-exploration-left-to-the-permission-mode.md) |
 | 0031 | [The session's model and effort are the developer's; the chain pins only the agents' models](0031-session-model-left-to-the-developer.md) |
+| 0032 | [Permissions left to the mode, no tests on the README](0032-permissions-left-to-the-mode-no-tests-on-the-readme.md) |
