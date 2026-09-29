@@ -1,0 +1,32 @@
+{
+  "v": 1,
+  "plan": "2026-09-29-feature",
+  "state": null,
+  "hand": "agents",
+  "next_step": "surface-plan: open the plan (plan-opened)",
+  "slices": {
+    "declared": [],
+    "done": [],
+    "remaining": []
+  },
+  "passes": {
+    "planning": 0,
+    "execution": 0,
+    "ceiling": 3
+  },
+  "pending_proposal": null,
+  "last_event": null,
+  "settings": {
+    "plans_dir": "docs/plans",
+    "max_autonomous_passes": 3,
+    "gate_command": null,
+    "gate_timeout_minutes": 30,
+    "models": {
+      "extractor": "opus",
+      "checker": "opus",
+      "executor": "sonnet",
+      "reviewer": "opus"
+    },
+    "mark_pr_ready": false
+  }
+}

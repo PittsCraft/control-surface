@@ -1,0 +1,12 @@
+{
+  "state": "blocked",
+  "remaining": [],
+  "done": [
+    1,
+    2
+  ],
+  "planning_passes": 0,
+  "execution_passes": 3,
+  "before_blocked": "reviewing",
+  "proposal_origin": null
+}

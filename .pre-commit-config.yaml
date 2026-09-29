@@ -1,0 +1,47 @@
+# Local hooks mirroring scripts/gate.sh, plus the commit message rules.
+# Install once per clone: uv run pre-commit install
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format --check .
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check .
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: pyright
+        name: pyright
+        entry: uv run pyright
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: repo-text
+        name: repository text rules
+        entry: uv run pytest tests/prompts/test_repo_text.py -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: commit-msg-rules
+        name: commit message rules
+        entry: python3 scripts/check_commit_msg.py
+        language: system
+        stages: [commit-msg]

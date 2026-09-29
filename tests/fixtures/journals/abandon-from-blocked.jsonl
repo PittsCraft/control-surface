@@ -1,0 +1,4 @@
+{"v": 1, "at": "2026-09-29T09:00:00Z", "event": "plan-opened", "slug": "feature"}
+{"v": 1, "at": "2026-09-29T09:01:00Z", "event": "interview-closed"}
+{"v": 1, "at": "2026-09-29T09:02:00Z", "event": "blocked", "why": "ceiling"}
+{"v": 1, "at": "2026-09-29T09:03:00Z", "event": "abandoned", "why": "no longer needed"}

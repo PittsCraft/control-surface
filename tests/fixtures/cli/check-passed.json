@@ -1,0 +1,19 @@
+{
+  "v": 1,
+  "ok": true,
+  "require": "conform",
+  "plans": [
+    {
+      "name": "2026-09-01-done",
+      "state": "conform",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "name": "2026-09-02-dropped",
+      "state": "abandoned",
+      "ok": true,
+      "problems": []
+    }
+  ]
+}

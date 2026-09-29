@@ -1,0 +1,10 @@
+{
+  "state": "abandoned",
+  "remaining": [],
+  "done": [],
+  "planning_passes": 0,
+  "execution_passes": 0,
+  "before_blocked": null,
+  "proposal_origin": null,
+  "before_last": "blocked"
+}

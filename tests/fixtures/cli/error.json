@@ -1,0 +1,5 @@
+{
+  "v": 1,
+  "ok": false,
+  "error": "gates-run is recorded by `gate`, which runs the gates and keeps their exit code: an exit code is a fact, a hand written result is not"
+}
