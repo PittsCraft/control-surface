@@ -35,7 +35,8 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 ### Permissions
 
-Before your first `/surface-execute`, allow what the loop runs. The agents work unattended: a command that waits for an approval stops the agent that asked, and the loop with it. Add these rules once per project, to `.claude/settings.json` to share them with your team or to `.claude/settings.local.json` to keep them to yourself, merged into `permissions.allow` if the file already has one:
+> [!WARNING]
+> The loop stops at every command your permission rules or mode do not allow, until you approve it. Run it in auto mode (`claude --permission-mode auto`), or allow at least what the commands require, in `.claude/settings.json` or `.claude/settings.local.json`:
 
 ```json
 {
@@ -58,9 +59,7 @@ Before your first `/surface-execute`, allow what the loop runs. The agents work 
 }
 ```
 
-The last rule is an example: name your gate command, the `gate_command` of `.claude/surface.json`, and the narrower checks an agent runs on a slice if they differ. Accept file edits too, for the session (`Shift+Tab` until "accept edits on") or from the start (`claude --permission-mode acceptEdits`). Read-only commands such as `ls`, `grep` or `git log` need no rule.
-
-The commands grant some of these tools themselves, in their `allowed-tools`, but that grant holds only for the turn you launch them in and clears at the next message. The agents run under your session's rules, and when an agent hands back asynchronously, the loop goes on in a later turn, without the grant. No command checks your rules at launch: they come from several settings files and from the command line, and a session cannot read which ones are in force.
+The last rule is an example: name your gate command, the `gate_command` of `.claude/surface.json`.
 
 ### 3. Let the agents work
 

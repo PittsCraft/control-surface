@@ -9,7 +9,8 @@ script, it builds a project and prints its path, or runs one headless session in
     python3 tests/e2e/toy/toy.py build <state> <dest>
     python3 tests/e2e/toy/toy.py run <project> <log> <prompt> [--resume <session id>]
 
-A session is launched the way ADR 0025 describes, by the end to end tests and by hand alike.
+A session is launched the way ADRs 0025 and 0030 describe, by the end to end tests and by hand
+alike: it bypasses permissions, so it runs only in the container of `tests/e2e/Dockerfile`.
 """
 
 import argparse
@@ -39,29 +40,22 @@ GIT_ENV = {
 }
 
 
-def readme_rules() -> tuple[str, ...]:
-    """Return the rules the Permissions section of the README tells a developer to allow."""
-    text = (CLONE / "README.md").read_text(encoding="utf-8")
-    section = text.split("\n### Permissions\n", 1)[1]
-    block = section.split("```json\n", 1)[1].split("```", 1)[0]
-    rules: list[str] = json.loads(block)["permissions"]["allow"]
-    return tuple(rules)
+# Set by the image of `tests/e2e/Dockerfile`: a session bypasses permissions only where it is set.
+CONTAINER = "SURFACE_E2E_CONTAINER"
 
 
-# What a headless session may do without a prompt, as a developer who followed the README would
-# allow it: edit files (the permission mode), the rules of its Permissions section with the toy's
-# gate command, the branch commands of /surface-plan, which a developer at hand would approve, and
-# the usual reading commands of the shell. Anything else is denied, since nobody is there to
-# answer. Given on the command line: a project's own settings grant nothing in a folder Claude
-# Code was never told to trust.
-SHELL = ("cd", "ls", "cat", "head", "tail", "grep", "find", "wc", "diff", "mkdir", "echo")
-ALLOWED_TOOLS = (
-    *readme_rules(),
-    "Bash(python3 -m unittest *)",
-    "Bash(git switch *)",
-    "Bash(git branch *)",
-    *(f"Bash({name} *)" for name in SHELL),
-)
+class OutsideContainerError(RuntimeError):
+    """A session was asked for outside the container, where bypassing permissions is not safe."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "a session bypasses permissions, which is not safe on this machine: run it in the"
+            " container of tests/e2e/Dockerfile, as tests/e2e/README.md says"
+        )
+
+
+def in_container() -> bool:
+    return os.environ.get(CONTAINER) == "1"
 
 
 class State(StrEnum):
@@ -757,8 +751,12 @@ def claude_command(prompt: str, *, resume: str | None = None) -> list[str]:
     """Return the headless session of a scenario: a stream of JSON events, project settings only.
 
     User settings are left out, since their hooks, permissions and model would change the run, and
-    so are MCP servers, which the chain does not use.
+    so are MCP servers, which the chain does not use. Permissions are bypassed: nobody is there to
+    answer, and what an agent runs to explore is not the chain's to list (ADR 0030). Refused
+    outside the container, where a command could reach beyond the toy folder.
     """
+    if not in_container():
+        raise OutsideContainerError
     command = [
         "claude",
         "--print",
@@ -770,9 +768,7 @@ def claude_command(prompt: str, *, resume: str | None = None) -> list[str]:
         "project,local",
         "--strict-mcp-config",
         "--permission-mode",
-        "acceptEdits",
-        "--allowedTools",
-        *ALLOWED_TOOLS,
+        "bypassPermissions",
     ]
     if resume is not None:
         command += ["--resume", resume]
@@ -834,6 +830,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     runner.add_argument("prompt", help="what the developer types, like /surface-execute")
     runner.add_argument("--resume", help="the id of the session to continue")
     args = parser.parse_args(argv)
+    if args.command == "run" and not in_container():
+        parser.error(str(OutsideContainerError()))
     if args.command == "build":
         dest: Path = args.dest.resolve()
         if dest.exists() and any(dest.iterdir()):

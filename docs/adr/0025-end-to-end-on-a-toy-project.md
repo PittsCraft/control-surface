@@ -1,6 +1,6 @@
 # 0025. End to end tests on a toy project, headless, on demand
 
-Status: accepted
+Status: accepted, amended by ADR 0030
 Date: 2026-09-29
 
 ## Context

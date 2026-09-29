@@ -1,9 +1,10 @@
 """End to end: `/surface-execute` on the toy project, headless, from prepared states (ADR 0025).
 
-Billed and slow: run on demand only, with `scripts/gate.sh e2e`, never in CI. Each scenario keeps
-the stream of its sessions under `logs/` next to the toy project, in pytest's temporary folder
-(`--basetemp` chooses it). The interactive scenarios, `/surface-plan` and the refusal of a plan
-change, are run by hand: see `tests/e2e/README.md`.
+Billed and slow: run on demand only, with `scripts/gate.sh e2e`, never in CI. The sessions bypass
+permissions, so they run in the container of `tests/e2e/Dockerfile` (ADR 0030). Each scenario
+keeps the stream of its sessions under `logs/` next to the toy project, in pytest's temporary
+folder (`--basetemp` chooses it). The interactive scenarios, `/surface-plan` and the refusal of a
+plan change, are run by hand: see `tests/e2e/README.md`.
 """
 
 import json
@@ -57,6 +58,19 @@ def test_a_prepared_state_is_the_one_named(
     project = toy.build(prepared, tmp_path)
     assert state(project) == expected
     assert not dirty(project)
+
+
+def test_a_session_bypasses_permissions_in_the_container_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(toy.CONTAINER, "1")
+    command = toy.claude_command("/surface-execute")
+    assert command[command.index("--permission-mode") + 1] == "bypassPermissions"
+    assert command[command.index("--setting-sources") + 1] == "project,local"
+    assert "--strict-mcp-config" in command
+    monkeypatch.delenv(toy.CONTAINER)
+    with pytest.raises(toy.OutsideContainerError):
+        toy.claude_command("/surface-execute")
 
 
 def test_the_nominal_path_reaches_conform(tmp_path: Path) -> None:
