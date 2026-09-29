@@ -30,7 +30,10 @@ from surface_status.settings import Models
 
 SKILL = "surface-plan"
 TEMPLATES = SKILLS / SKILL / "templates"
+# Injected at load by its absolute path; called from the root of the repository by its relative
+# path, the one a rule of the project settings can name.
 SCRIPT = "${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status"
+RELATIVE = ".claude/skills/surface-status/scripts/surface-status"
 
 # Every frontmatter field of a skill the documentation lists; Claude Code ignores any other
 # without a word, so a misspelled field would silently do nothing.
@@ -135,7 +138,7 @@ def test_the_command_warns_when_a_later_turn_leaves_the_target() -> None:
 
 
 def test_allowed_tools_grant_the_state_script_and_nothing_wider() -> None:
-    assert sorted(_allowed_patterns()) == sorted([f"{SCRIPT} *", "true"])
+    assert sorted(_allowed_patterns()) == sorted([f"{SCRIPT} *", f"{RELATIVE} *", "true"])
 
 
 # The state, read from the script at load.
@@ -157,7 +160,7 @@ def test_injected_calls_parse_like_the_calls_in_prose() -> None:
 
 def test_every_script_call_of_the_skill_is_permitted() -> None:
     for call in script_calls(_body()):
-        assert _permitted(call.replace("surface-status", SCRIPT, 1)), call
+        assert _permitted(call.replace("surface-status", RELATIVE, 1)), call
 
 
 def test_the_skill_calls_every_event_of_its_part() -> None:

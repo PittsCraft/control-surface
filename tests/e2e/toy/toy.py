@@ -38,16 +38,28 @@ GIT_ENV = {
     "GIT_COMMITTER_EMAIL": "developer@example.com",
 }
 
-# What a headless session may do without a prompt, as a developer would allow it: edit files
-# (the permission mode), run git, the state script, the gates and the usual reading and writing
-# commands of the shell. Anything else is denied, since nobody is there to answer. Given on the
-# command line: a project's own settings grant nothing in a folder Claude Code was never told to
-# trust.
+
+def readme_rules() -> tuple[str, ...]:
+    """Return the rules the Permissions section of the README tells a developer to allow."""
+    text = (CLONE / "README.md").read_text(encoding="utf-8")
+    section = text.split("\n### Permissions\n", 1)[1]
+    block = section.split("```json\n", 1)[1].split("```", 1)[0]
+    rules: list[str] = json.loads(block)["permissions"]["allow"]
+    return tuple(rules)
+
+
+# What a headless session may do without a prompt, as a developer who followed the README would
+# allow it: edit files (the permission mode), the rules of its Permissions section with the toy's
+# gate command, the branch commands of /surface-plan, which a developer at hand would approve, and
+# the usual reading commands of the shell. Anything else is denied, since nobody is there to
+# answer. Given on the command line: a project's own settings grant nothing in a folder Claude
+# Code was never told to trust.
 SHELL = ("cd", "ls", "cat", "head", "tail", "grep", "find", "wc", "diff", "mkdir", "echo")
 ALLOWED_TOOLS = (
-    "Bash(git *)",
+    *readme_rules(),
     "Bash(python3 -m unittest *)",
-    f"Bash({STATE_SCRIPT} *)",
+    "Bash(git switch *)",
+    "Bash(git branch *)",
     *(f"Bash({name} *)" for name in SHELL),
 )
 
@@ -741,13 +753,12 @@ def build(state: State, dest: Path) -> Path:
 # Running a headless session.
 
 
-def claude_command(project: Path, prompt: str, *, resume: str | None = None) -> list[str]:
+def claude_command(prompt: str, *, resume: str | None = None) -> list[str]:
     """Return the headless session of a scenario: a stream of JSON events, project settings only.
 
     User settings are left out, since their hooks, permissions and model would change the run, and
     so are MCP servers, which the chain does not use.
     """
-    allowed = (*ALLOWED_TOOLS, f"Bash({project.resolve() / STATE_SCRIPT} *)")
     command = [
         "claude",
         "--print",
@@ -761,7 +772,7 @@ def claude_command(project: Path, prompt: str, *, resume: str | None = None) -> 
         "--permission-mode",
         "acceptEdits",
         "--allowedTools",
-        *allowed,
+        *ALLOWED_TOOLS,
     ]
     if resume is not None:
         command += ["--resume", resume]
@@ -773,7 +784,7 @@ def start_claude(
 ) -> subprocess.Popen[str]:
     """Start a session in its own process group, so that a scenario can kill all of it."""
     return subprocess.Popen(
-        claude_command(project, prompt, resume=resume),
+        claude_command(prompt, resume=resume),
         cwd=project,
         stdin=subprocess.DEVNULL,  # an open standard input would be read as more prompt
         stdout=log,

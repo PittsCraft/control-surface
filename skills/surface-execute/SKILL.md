@@ -4,7 +4,7 @@ description: Approves a drafted plan, then hands its slices, reviews and fixes t
 argument-hint: "[plan]"
 disable-model-invocation: true
 model: sonnet
-allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *) Bash(gh pr ready *)
+allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *) Bash(gh pr ready *)
 ---
 
 # surface-execute
@@ -14,11 +14,12 @@ You dispatch the execution of a plan. Launched on a plan awaiting approval, you 
 ## Ground rules
 
 - The state lives in files: the plan folder and its `journal.jsonl`. Before every step, read it again: `surface-status show <plan> --json`, and the journal when a row below needs a fact from it. Never decide a step from memory of this conversation, nor from an agent's word when a file says it: an agent's return points at files, and the files decide.
-- The state script is `${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. Only the script writes the journal. Exit code 0 is accepted, 1 refused with its reason, 2 a usage error. A refusal is never worked around: stop and report it.
+- The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. Only the script writes the journal. Exit code 0 is accepted, 1 refused with its reason, 2 a usage error. A refusal is never worked around: stop and report it.
+- Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval. Plain commands only, which the developer's permission rules can read: no variable or function standing for a command, no expansion such as `$?` or `$(...)`, no here-document; the exit code comes back with the result, never echo it.
 - A fresh agent for every slice, every review, every fix and every suspected break: one Agent call with `subagent_type` set to the role, `surface-executor` or `surface-reviewer`, and `model` set to that role's model under `settings.models` of `show --json`. Its prompt gives the plan folder, file paths and the facts its mandate lists below, never a summary of this conversation. Never resume an agent that already returned.
-- One agent at a time. Wait for its result before the next step, even when it arrives in a later turn, and start nothing meanwhile.
+- One agent at a time. Ask for the foreground, `run_in_background` false, when the Agent tool offers it: the loop then stays in the turn the developer launched, on the model and with the grants of this command. Wait for the result before the next step, even when it arrives in a later turn, and start nothing meanwhile.
 - You never edit a file. You commit through git, by pathspec, following the repository's commit conventions. A journal line goes in the same commit as the files it describes: the reports it cites, `plan.md` for a `plan-amended`. You push only when the loop stops.
-- Your target model is Sonnet. If a later turn of this loop runs on another model, carry on, and say so in one line when the loop stops.
+- Your target model is Sonnet, for the turn the developer launched only. If a later turn of this loop runs on another model, carry on, and say so in one line when the loop stops, adding that a session started with `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` keeps the whole loop in its first turn.
 
 ## Finding the plan
 
@@ -37,10 +38,11 @@ At launch, before the first row, run `git status` and read the journal:
 
 ## The loop
 
-Read the state, apply the first row that holds, read the state again, and so on until a row stops. The first two rows record an act of the developer: they apply only once, at launch.
+Read the state, apply the first row that holds, read the state again, and so on until a row stops. The two rows marked "at launch" record an act of the developer: they apply only once, at launch.
 
 | State found | What you do |
 |---|---|
+| `alarms` of `show --json` not empty | Stop, and name each alarm. `overview-changed`: see "When the loop stops". |
 | `awaiting-approval`, at launch | Say in one line the plan and the revision you approve, the `rev` of the last `plan-drafted`. Then `surface-status record <plan> plan-approved` and commit the journal. |
 | `blocked` during execution, at launch | `surface-status record <plan> resumed`, and commit the journal. |
 | `plan-change-proposed` | Stop. Name the proposal, `pending_proposal` of `show --json`, and invite the developer to run `/surface-plan`, which presents it. |
@@ -116,7 +118,7 @@ The loop does not converge within its autonomous passes: the developer takes the
 
 ## When the loop stops
 
-The loop stops on a row that says so, on a refusal of the script, on an agent's return the steps above do not expect, and on no progress. A refusal `overview-changed` means `overview.md` was modified after its approval: nothing goes on until the developer restores the approved content or abandons the plan with `/surface-status`.
+The loop stops on a row that says so, on a refusal of the script, on an agent's return the steps above do not expect, and on no progress. An alarm or a refusal `overview-changed` means `overview.md` was modified after its approval: nothing goes on until the developer restores the approved content or abandons the plan with `/surface-status`.
 
 At every stop, once a plan was found:
 

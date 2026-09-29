@@ -6,7 +6,7 @@ Approve a short overview of your feature, then let agents build it and review th
 curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/install.py | python3 -
 ```
 
-Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and creates two settings files that stay yours. Add `--ref <tag or commit>` to pin a version.
+Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and creates two settings files that stay yours. It never writes your Claude Code settings: [Permissions](#permissions) says what to allow. Add `--ref <tag or commit>` to pin a version.
 
 ## Your path, from need to merge
 
@@ -29,6 +29,35 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 - To change something, run `/surface-plan` again and say what. It records your amendment and produces the next revision of the plan and of the overview.
 - To approve, run `/surface-execute`. Launching it counts as approval: it names the plan and the revision it approves, then freezes the overview.
 
+### Permissions
+
+Before your first `/surface-execute`, allow what the loop runs. The agents work unattended: a command that waits for an approval stops the agent that asked, and the loop with it. Add these rules once per project, to `.claude/settings.json` to share them with your team or to `.claude/settings.local.json` to keep them to yourself, merged into `permissions.allow` if the file already has one:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(.claude/skills/surface-status/scripts/surface-status *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(git mv *)",
+      "Bash(git restore *)",
+      "Bash(git revert *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh pr ready *)",
+      "Bash(npm test *)"
+    ]
+  }
+}
+```
+
+The last rule is an example: name your gate command, the `gate_command` of `.claude/surface.json`, and the narrower checks an agent runs on a slice if they differ. Accept file edits too, for the session (`Shift+Tab` until "accept edits on") or from the start (`claude --permission-mode acceptEdits`). Read-only commands such as `ls`, `grep` or `git log` need no rule.
+
+The commands grant some of these tools themselves, in their `allowed-tools`, but that grant holds only for the turn you launch them in and clears at the next message. The agents run under your session's rules, and when an agent hands back asynchronously, the loop goes on in a later turn, without the grant. No command checks your rules at launch: they come from several settings files and from the command line, and a session cannot read which ones are in force.
+
 ### 3. Let the agents work
 
 `/surface-execute` hands each slice of the plan to a fresh agent. Then it runs your gates, if you declared them, has a fresh agent review everything the branch changes against the overview, and has defects fixed, pass after pass. When the code departs from the plan but the overview stays true, the plan is amended and the work goes on.
@@ -36,6 +65,8 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 The reviewer raises only what concerns correctness or the requirements, never a style preference. Your own commits on the branch are reviewed too, and may be fixed.
 
 While the agents work, you do not amend the plan: you wait for the loop to stop, or you abandon the plan.
+
+The command runs on Sonnet, and with its own grants, only in the turn you launch it in. An agent often hands back asynchronously, and the loop then goes on in a later turn, on your session's model: it says so when it stops. To keep the whole loop in its first turn, start the session with `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 claude`, which runs every agent in the foreground and turns off the other background tasks of that session.
 
 ### 4. When you get the hand back
 

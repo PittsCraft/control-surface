@@ -55,6 +55,11 @@ REF_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/+-]*")
 ALLOWED_URL_SCHEMES = ("https", "file")
 EXIT_DRIFT = 1
 EXIT_USAGE = 2
+# The installer never writes the host's Claude Code settings: it points at the rules instead.
+PERMISSIONS_HINT = (
+    "Before your first /surface-execute, allow what the loop runs:"
+    " https://github.com/PittsCraft/control-surface#permissions"
+)
 
 
 class InstallError(Exception):
@@ -490,6 +495,7 @@ def run(source: Path, host: Path, *, check_only: bool, force: bool = False) -> i
     for line in lines:
         say(line)
     say(f"control-surface installed in {host.resolve()}" if lines else "already up to date")
+    say(PERMISSIONS_HINT)
     return 0
 
 

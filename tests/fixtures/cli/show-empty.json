@@ -16,6 +16,7 @@
   },
   "pending_proposal": null,
   "last_event": null,
+  "alarms": [],
   "settings": {
     "plans_dir": "docs/plans",
     "max_autonomous_passes": 3,

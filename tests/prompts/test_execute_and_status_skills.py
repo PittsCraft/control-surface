@@ -34,7 +34,8 @@ SKILL_FIELDS = {
     "metadata",
     "license",
 }
-SCRIPT = "${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status"
+# Called from the root of the repository, the path a rule of the project settings can name.
+SCRIPT = ".claude/skills/surface-status/scripts/surface-status"
 _FIELD = re.compile(r"(?P<key>[a-z][a-z_-]*): (?P<value>\S.*)")
 
 
@@ -147,7 +148,9 @@ def test_execute_reads_the_rows_of_its_loop_in_order() -> None:
     rows = _loop_rows()
     positions = [rows.index(row) for row in EXECUTION_LOOP]
     assert positions == sorted(positions)
-    assert [row for row in rows if "at launch" in row] == rows[:2]
+    # An alarm stops the loop before anything is recorded, the approval included.
+    assert "`alarms`" in rows[0]
+    assert [row for row in rows if "at launch" in row] == rows[1:3]
     assert "they apply only once, at launch" in section(_execute(), "The loop")
 
 
@@ -297,3 +300,13 @@ def test_status_records_nothing_but_an_abandonment() -> None:
     assert "record" not in calls
     assert "gate" not in calls
     assert {"show", "check", "abandon", "pr-body"} <= set(calls)
+
+
+# The turn the developer launched: its model and grants end with it (ADR 0021).
+
+
+def test_the_loop_asks_for_the_foreground_and_names_the_way_to_keep_its_turn() -> None:
+    rules = section(_execute(), "Ground rules")
+    assert "Ask for the foreground, `run_in_background` false" in rules
+    assert "for the turn the developer launched only" in rules
+    assert "`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`" in rules

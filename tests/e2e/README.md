@@ -21,7 +21,7 @@ Every scenario is billed and takes minutes: run them on demand, before a release
 | `developer-break` | both slices done, then a commit of the developer that adds an `isbn` column the overview leaves out |
 | `ceiling` | both slices done with a defect the tests do not see (lines sorted by title only), `max_autonomous_passes: 1` |
 
-`toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and may edit files and run `git`, the state script, the gates and the usual reading and writing commands of the shell (`cat`, `ls`, `grep`, `mkdir` and the like): anything else is denied, since nobody is there to answer a prompt.
+`toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and may edit files and run what the Permissions section of the README allows, the toy's gate command, the branch commands of `/surface-plan` and the usual reading commands of the shell (`cat`, `ls`, `grep`, `mkdir` and the like): anything else is denied, since nobody is there to answer a prompt. A denial in a log is therefore a finding on the chain or on that section.
 
 ## The automated scenarios
 

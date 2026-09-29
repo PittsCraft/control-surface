@@ -53,7 +53,8 @@ def test_install_on_fresh_git_init(tmp_path: Path) -> None:
         ".claude/agents/surface-executor.md",
         ".claude/surface.json",
         ".claude/surface.md",
-    }
+    }  # never the Claude Code settings: the last line points at the rules to add instead
+    assert result.stdout.splitlines()[-1].endswith("control-surface#permissions")
     launcher = host / ".claude/skills/surface-status/scripts/surface-status"
     assert launcher.stat().st_mode & 0o111
     assert not (host / ".claude/skills/surface-plan/SKILL.md").stat().st_mode & 0o111
@@ -83,6 +84,7 @@ def test_reinstall_is_idempotent(tmp_path: Path) -> None:
 
     assert again.returncode == 0
     assert "already up to date" in again.stdout
+    assert "control-surface#permissions" in again.stdout
     assert tree(host) == before
     assert run_clone(source, "--check", str(host)).returncode == 0
 

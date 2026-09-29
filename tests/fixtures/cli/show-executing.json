@@ -23,6 +23,7 @@
   },
   "pending_proposal": null,
   "last_event": "slice-done",
+  "alarms": [],
   "settings": {
     "plans_dir": "docs/plans",
     "max_autonomous_passes": 3,
