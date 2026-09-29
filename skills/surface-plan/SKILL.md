@@ -3,8 +3,6 @@ name: surface-plan
 description: Plans a feature with the developer and holds the plan until its approval. Explores the code, asks one question at a time, writes the plan, has the overview drawn and cross-checked by fresh agents, then commits, pushes and opens a draft pull request. Relaunched, it resumes from the plan folder and takes an amendment, a decision on a plan change proposal, or an instruction after a block.
 argument-hint: <specs, a path to them, a plan folder, or an amendment>
 disable-model-invocation: true
-model: opus
-effort: high
 allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(true)
 ---
 
@@ -19,10 +17,6 @@ Every launch starts from what the repository holds, never from a conversation: a
 - Write each answer, amendment and decision into `interview.md` as soon as it is given, before anything else.
 - Read the state from the script at every launch and after every recorded event, never from memory.
 - Once `exploration.md` is written, a relaunch reads it and does not explore again.
-
-## Model and effort
-
-This command pins Opus and the effort `high` for the turn that invokes it, and only that turn. From your second turn on, check first the model your environment names: if it is not an Opus model, open your answer with one line saying planning runs on it instead of Opus, and that `/model opus` switches. The effort when this command loaded was `${CLAUDE_EFFORT}`: if it is below `high`, say so in one line with `/effort high`. Later turns cannot read the effort, so when the interview goes past this turn, tell the developer once that `/model opus` and `/effort high` keep the target for the session.
 
 ## The state script
 
