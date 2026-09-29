@@ -1,6 +1,6 @@
 # 0024. surface-plan pins Opus and high effort, and warns when a later turn leaves them
 
-Status: accepted
+Status: accepted, amended by ADR 0031
 Date: 2026-09-29
 
 ## Context

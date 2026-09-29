@@ -16,7 +16,7 @@ Claude Code, git, Python 3.11 or newer, and `curl` for the one-line install. The
 
 ### 1. Plan: `/surface-plan`
 
-In a Claude Code session of your project, run `/surface-plan` with a short description of what you need.
+In a Claude Code session of your project, run `/surface-plan` with a short description of what you need. It runs on your session's model and effort: Opus with the effort `high` is recommended (`/model opus`, `/effort high`).
 
 - From the main branch, it creates a branch that follows your repository's conventions. From any other branch, it opens the plan there, so one branch can carry several plans.
 - It explores the code the feature touches, then asks you its questions one at a time. Each comes with its options and the one it would pick. Your answers are written down as you give them, and it never invents a business rule to fill a gap.
@@ -69,7 +69,7 @@ The reviewer raises only what concerns correctness or the requirements, never a 
 
 While the agents work, you do not amend the plan: you wait for the loop to stop, or you abandon the plan.
 
-The command runs on Sonnet, and with its own grants, only in the turn you launch it in. An agent often hands back asynchronously, and the loop then goes on in a later turn, on your session's model: it says so when it stops. To keep the whole loop in its first turn, start the session with `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 claude`, which runs every agent in the foreground and turns off the other background tasks of that session.
+`/surface-execute` dispatches soundly on any model. The agents run on the models of `.claude/surface.json`, whatever your session's.
 
 ### 4. When you get the hand back
 

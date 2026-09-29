@@ -66,10 +66,3 @@ def test_the_section_warns_that_missing_permissions_stop_the_loop() -> None:
 
 def test_the_install_line_points_at_the_section() -> None:
     assert "[Permissions](#permissions)" in _readme()
-
-
-def test_the_readme_says_a_later_turn_leaves_the_model_of_the_command() -> None:
-    path = _path_section()
-    assert "only in the turn you launch it in" in path
-    assert "on your session's model" in path
-    assert "`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 claude`" in path

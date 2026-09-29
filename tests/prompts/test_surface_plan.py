@@ -1,4 +1,4 @@
-"""The `surface-plan` command and its templates (ADRs 0023, 0024 and 0026).
+"""The `surface-plan` command and its templates (ADRs 0023, 0026 and 0031).
 
 Prompt behavior is judged end to end. These tests hold what can be read: the frontmatter against
 the fields the Claude Code documentation of skills defines, the state injected at load, the
@@ -103,7 +103,7 @@ def _permitted(command: str) -> bool:
     return any(fnmatchcase(command, pattern) for pattern in _allowed_patterns())
 
 
-# Frontmatter (ADRs 0023 and 0024).
+# Frontmatter (ADRs 0023 and 0031).
 
 
 def test_frontmatter_holds_only_documented_fields() -> None:
@@ -122,19 +122,13 @@ def test_only_the_developer_starts_the_command() -> None:
     assert frontmatter["disable-model-invocation"] == "true"
 
 
-def test_the_command_pins_opus_and_high_effort() -> None:
-    frontmatter, _ = _skill()
-    assert frontmatter["model"] == "opus"
-    assert frontmatter["effort"] == "high"
-
-
-def test_the_command_warns_when_a_later_turn_leaves_the_target() -> None:
-    warning = section(_body(), "Model and effort")
-    assert "for the turn that invokes it, and only that turn" in warning
-    assert "From your second turn on" in warning
-    assert "`${CLAUDE_EFFORT}`" in warning
-    assert "`/model opus`" in warning
-    assert "`/effort high`" in warning
+def test_the_session_keeps_the_model_and_effort_the_developer_chose() -> None:
+    frontmatter, body = _skill()
+    assert "model" not in frontmatter
+    assert "effort" not in frontmatter
+    assert "${CLAUDE_EFFORT}" not in body
+    assert "/model" not in body
+    assert "/effort" not in body
 
 
 def test_allowed_tools_grant_the_state_script_and_nothing_wider() -> None:

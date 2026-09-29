@@ -77,7 +77,7 @@ def _row_index(rows: list[str], needle: str) -> int:
     return next(index for index, row in enumerate(rows) if needle in row)
 
 
-# Frontmatter: who starts the commands, and on which model (ADR 0023).
+# Frontmatter: who starts the commands (ADR 0023), never on which model (ADR 0031).
 
 
 @pytest.mark.parametrize("name", ["surface-execute", "surface-status"])
@@ -94,12 +94,11 @@ def test_only_the_developer_starts_the_command(name: str) -> None:
     assert fields["disable-model-invocation"] == "true"
 
 
-def test_execute_pins_sonnet_and_status_pins_no_model() -> None:
-    execute, _ = read_skill("surface-execute")
-    status, _ = read_skill("surface-status")
-    assert execute["model"] == "sonnet"
-    assert "model" not in status
-    assert "effort" not in status
+@pytest.mark.parametrize("name", ["surface-execute", "surface-status"])
+def test_the_session_keeps_the_model_and_effort_the_developer_chose(name: str) -> None:
+    fields, _ = read_skill(name)
+    assert "model" not in fields
+    assert "effort" not in fields
 
 
 @pytest.mark.parametrize("name", ["surface-execute", "surface-status"])
@@ -302,11 +301,16 @@ def test_status_records_nothing_but_an_abandonment() -> None:
     assert {"show", "check", "abandon", "pr-body"} <= set(calls)
 
 
-# The turn the developer launched: its model and grants end with it (ADR 0021).
+# The turn the developer launched: the loop asks for the foreground and claims no model (ADR 0031).
 
 
-def test_the_loop_asks_for_the_foreground_and_names_the_way_to_keep_its_turn() -> None:
+def test_the_loop_asks_for_the_foreground() -> None:
     rules = section(_execute(), "Ground rules")
     assert "Ask for the foreground, `run_in_background` false" in rules
-    assert "for the turn the developer launched only" in rules
-    assert "`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`" in rules
+
+
+def test_the_loop_neither_pins_nor_checks_the_session_model() -> None:
+    body = _execute()
+    assert "Sonnet" not in body
+    assert "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS" not in body
+    assert "/model" not in body
