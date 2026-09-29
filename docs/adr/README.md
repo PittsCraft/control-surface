@@ -37,3 +37,4 @@ Each decision has its context, the decision itself and its consequences.
 | 0031 | [The session's model and effort are the developer's; the chain pins only the agents' models](0031-session-model-left-to-the-developer.md) |
 | 0032 | [Permissions left to the mode, no tests on the README](0032-permissions-left-to-the-mode-no-tests-on-the-readme.md) |
 | 0033 | [A suspected break is kept in the journal until a reviewer judges it](0033-a-suspected-break-kept-in-the-journal.md) |
+| 0034 | [Gates named by the plan, no settings file at install](0034-gates-named-by-the-plan-no-settings-file.md) |

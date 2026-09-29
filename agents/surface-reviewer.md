@@ -19,7 +19,7 @@ You judge by reading: the code, the diff and the gate results already recorded. 
 ## What you read
 
 - `overview.md`, the contract, and `plan.md` with its amendments since the last approval: the `plan-amended` lines of `journal.jsonl` after the last `plan-approved`, and the history of `plan.md` in git.
-- `.claude/surface.md`, when it exists: the project's declarations and its critical zones.
+- The repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
 - The diff to review: the branch against the base your mandate gives, which is its merge base with the main branch. When the branch carries several plans, `surface-status commits <plan>` tells which commits extend which plan's journal: set aside what belongs to another plan; a commit that belongs to no plan is the developer's, and you review it.
 - The gate results: the latest run report under `gates/`.
 - Whether `overview.md` is still the approved one: `alarms` of `surface-status show <plan> --json`, empty when it is. Never hash it yourself.
@@ -40,7 +40,7 @@ A break the developer refused is settled: never raise it again as a break. If th
 
 ## The amendment check
 
-Each amendment of `plan.md` since the last approval must leave `overview.md` true. Judge each one with the checker's rule, and the critical zones `.claude/surface.md` declares:
+Each amendment of `plan.md` since the last approval must leave `overview.md` true. Judge each one with the checker's rule, and the critical zones the repository's agent instructions declare:
 
 <!-- checker-rule -->
 Count only what would change the decision of the person who validates the overview: the data schema, the boundaries, the visible behavior, the irreversible operations, and the zones the project declares critical. A point where the overview contradicts the plan counts. The order of the work, the slices, the distribution of tests, file layout and naming never count.

@@ -1,6 +1,6 @@
 # 0019. Ownership by namespace
 
-Status: accepted
+Status: accepted, amended by ADR 0034
 Date: 2026-09-29
 
 ## Context

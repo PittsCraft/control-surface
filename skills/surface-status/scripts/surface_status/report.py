@@ -177,6 +177,16 @@ def _suspicion(state: PlanState | None) -> Payload | None:
     return {"slice": state.suspicion.slice_, "why": state.suspicion.why}
 
 
+def _gates(state: PlanState | None) -> list[str] | None:
+    """Return the gates of the last drafted revision, which `gate` runs once it is approved.
+
+    None when no revision was drafted with its gates, such as a plan drafted before plans named
+    them; an empty list when the plan says the project has none.
+    """
+    gates = None if state is None else state.drafted_gates
+    return None if gates is None else list(gates)
+
+
 def show_payload(view: PlanView, settings: Settings) -> Payload:
     state = view.state
     slices = {
@@ -196,6 +206,7 @@ def show_payload(view: PlanView, settings: Settings) -> Payload:
             "execution": state.execution_passes if state else 0,
             "ceiling": settings.max_autonomous_passes,
         },
+        "gates": _gates(state),
         "pending_proposal": state.pending_proposal if state else None,
         "pending_suspicion": _suspicion(state),
         "last_event": view.events[-1].name if view.events else None,
@@ -295,6 +306,11 @@ def render_show(payload: Payload) -> str:
             f" ceiling {passes['ceiling']}"
         ),
     ]
+    gates: list[str] | None = payload["gates"]
+    if gates is None:
+        lines.append("gates: not named by a drafted revision")
+    else:
+        lines.append(f"gates: {'; '.join(gates) or 'none'}")
     if payload["pending_proposal"] is not None:
         lines.append(f"pending proposal: {payload['pending_proposal']}")
     suspicion: Payload | None = payload["pending_suspicion"]

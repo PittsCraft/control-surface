@@ -12,7 +12,7 @@ You look for omissions: what the plan does and the overview does not show. What 
 
 ## What you read
 
-In the plan folder your mandate gives: `specs.md`, `exploration.md`, `interview.md`, `plan.md`, `overview.md`, and the previous report under `checks/` when there is one. And `.claude/surface.md` at the root of the repository, when it exists: the project's declarations and its critical zones.
+In the plan folder your mandate gives: `specs.md`, `exploration.md`, `interview.md`, `plan.md`, `overview.md`, and the previous report under `checks/` when there is one. And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
 
 ## What counts as an omission
 

@@ -1,4 +1,4 @@
-"""Paths, numbering, hashing and slice markers of the plan folder."""
+"""Paths, numbering, hashing, slice markers and the gates block of the plan folder."""
 
 import re
 import tempfile
@@ -11,10 +11,12 @@ from journal_support import EVENTS, new_folder, write
 
 from surface_status.events import EVENT_TYPES, GateResult, GatesRun, PlanApproved, ReviewDone
 from surface_status.plan_folder import (
+    GatesBlockError,
     PlanFolderError,
     SliceMarkerError,
     cited_files,
     content_hash,
+    parse_gates,
     parse_slice_markers,
 )
 
@@ -112,6 +114,50 @@ def test_the_folder_reads_the_slices_of_its_plan(tmp_path: Path) -> None:
     folder.plan.unlink()
     with pytest.raises(PlanFolderError, match=r"plan\.md cannot be read"):
         folder.declared_slices()
+
+
+# The gates block
+
+
+@given(
+    st.lists(
+        st.text(alphabet=st.characters(exclude_characters="\r\n`"), min_size=1, max_size=20).filter(
+            lambda line: bool(line.strip())
+        ),
+        max_size=5,
+    ),
+    st.sampled_from(["\n", "\r\n"]),
+)
+def test_the_gates_are_the_lines_of_the_block_in_order(commands: list[str], newline: str) -> None:
+    lines = ["## Portes", "Les commandes :", "```gates", *commands, "```", "", "fin"]
+    expected = tuple(command.strip() for command in commands)
+    assert parse_gates(newline.join(lines)) == expected
+
+
+def test_blank_lines_are_skipped_and_commands_stripped() -> None:
+    text = "```gates\n\n  make test  \n\t\nmake lint && make types\n```\n"
+    assert parse_gates(text) == ("make test", "make lint && make types")
+
+
+def test_an_empty_block_names_no_gate_and_a_missing_one_names_nothing() -> None:
+    assert parse_gates("prose\n```gates\n```\n") == ()
+    assert parse_gates("prose\n```sh\nmake test\n```\n") is None
+    assert parse_gates("  ```gates\nmake\n  ```\n") is None  # the fence starts at column 0
+
+
+def test_a_second_block_or_an_unclosed_one_is_an_error() -> None:
+    with pytest.raises(GatesBlockError, match="line 4: a second gates block"):
+        parse_gates("```gates\na\n```\n```gates\nb\n```\n")
+    with pytest.raises(GatesBlockError, match="line 2: the gates block is not closed"):
+        parse_gates("prose\n```gates\nmake test\n")
+
+
+def test_the_folder_reads_the_gates_of_its_plan(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path, gates=("make test", "make lint"))
+    assert folder.declared_gates() == ("make test", "make lint")
+    folder.plan.unlink()
+    with pytest.raises(PlanFolderError, match=r"plan\.md cannot be read"):
+        folder.declared_gates()
 
 
 # Numbering

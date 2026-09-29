@@ -18,9 +18,9 @@ comes from; `{ref}` in it stands for the version.
 
 Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and
 `.claude/agents/surface-*.md`. It removes owned files the source no longer has and never touches
-anything else, in particular `.claude/surface.json` and `.claude/surface.md`, which it creates
-only when they are missing. Unless `--force` is given, it also refuses to overwrite or remove an
-owned file that has uncommitted changes or is not tracked by git.
+anything else. It creates no settings file: the chain runs without one, and `.claude/surface.json`
+is the developer's to write if they want to tune something. Unless `--force` is given, it also
+refuses to overwrite or remove an owned file that has uncommitted changes or is not tracked by git.
 
 Standard library only. Written to stay parseable by older interpreters so that the version
 message below can be shown instead of a syntax error.
@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import json
 import os
 import re
 import shutil
@@ -48,7 +49,10 @@ DEFAULT_ARCHIVE_URL = "https://github.com/PittsCraft/control-surface/archive/{re
 MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
 DOWNLOAD_TIMEOUT_SECONDS = 60
 NAMESPACE = "surface-"
-SETTINGS = ("surface.json", "surface.md")
+# A file every version of the source holds: a directory without it is not a source.
+SOURCE_MARKER = "skills/surface-status/scripts/surface-status"
+# What earlier versions created or read, which a host may still hold (ADR 0034).
+REMOVED_SETTINGS = ("gate_command", "gate_timeout_minutes", "mark_pr_ready")
 JUNK_NAMES = frozenset({"__pycache__", ".DS_Store"})
 JUNK_SUFFIXES = (".pyc", ".pyo")
 REF_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/+-]*")
@@ -83,10 +87,9 @@ def has_junk_part(relative: Path) -> bool:
 
 
 def check_source(source: Path) -> None:
-    for name in SETTINGS:
-        if not (source / "templates" / name).is_file():
-            message = f"{source} is not a control-surface source (templates/{name} is missing)"
-            raise InstallError(message)
+    if not (source / SOURCE_MARKER).is_file():
+        message = f"{source} is not a control-surface source ({SOURCE_MARKER} is missing)"
+        raise InstallError(message)
 
 
 def expected_files(source: Path) -> dict[str, Path]:
@@ -314,18 +317,28 @@ def write_file(source_file: Path, dest: Path) -> None:
     dest.chmod(mode | 0o111 if is_executable(source_file) else mode & ~0o111)
 
 
-def create_missing_settings(source: Path, host: Path) -> list[str]:
-    """Copy each settings template when the host has nothing at that path, never otherwise."""
-    created: list[str] = []
-    for name in SETTINGS:
-        dest = host / ".claude" / name
-        if dest.exists() or dest.is_symlink():
-            continue
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        with dest.open("xb") as handle:
-            handle.write((source / "templates" / name).read_bytes())
-        created.append(f".claude/{name}")
-    return created
+def migration_notes(host: Path) -> list[str]:
+    """Name what an earlier version left in the host that the chain no longer reads.
+
+    Nothing is changed: the files are the developer's.
+    """
+    notes: list[str] = []
+    if (host / ".claude" / "surface.md").is_file():
+        notes.append(
+            "note : .claude/surface.md is no longer read; move what it declares to AGENTS.md or"
+            " CLAUDE.md"
+        )
+    try:
+        settings = json.loads((host / ".claude" / "surface.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return notes
+    removed = [key for key in REMOVED_SETTINGS if isinstance(settings, dict) and key in settings]
+    if removed:
+        notes.append(
+            f"note : .claude/surface.json sets {', '.join(removed)}, which the chain now refuses;"
+            " remove them (the gates are named by each plan)"
+        )
+    return notes
 
 
 def refuse_unsaved_work(host: Path, touched: set[str]) -> None:
@@ -374,7 +387,6 @@ def install(source: Path, host: Path, *, force: bool = False) -> list[str]:
         remove_path(host / relative)
         lines.append(f"removed : {relative}")
     prune(host, expected)
-    lines.extend(f"created : {relative}" for relative in create_missing_settings(source, host))
     return lines
 
 
@@ -495,6 +507,8 @@ def run(source: Path, host: Path, *, check_only: bool, force: bool = False) -> i
     for line in lines:
         say(line)
     say(f"control-surface installed in {host.resolve()}" if lines else "already up to date")
+    for note in migration_notes(host.resolve()):
+        say(note)
     say(PERMISSIONS_HINT)
     return 0
 
@@ -541,7 +555,7 @@ def find_clone_root(script: object) -> Path | None:
         if not path.is_file():
             return None
         root = path.resolve().parent
-        return root if (root / "skills").is_dir() and (root / "templates").is_dir() else None
+        return root if (root / SOURCE_MARKER).is_file() else None
     except OSError:
         return None
 

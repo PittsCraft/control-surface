@@ -78,7 +78,6 @@ def test_reviewer_runs_the_amendment_check_with_the_checker_rule() -> None:
     _, checker = read_agent("surface-checker")
     check = section(reviewer, "The amendment check")
     assert "since the last approval must leave `overview.md` true" in check
-    assert "`.claude/surface.md`" in check
     assert marked_block(check, "checker-rule") == marked_block(checker, "checker-rule")
 
 

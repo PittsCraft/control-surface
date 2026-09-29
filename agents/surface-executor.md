@@ -22,7 +22,7 @@ The state script is `.claude/skills/surface-status/scripts/surface-status`, run 
 ## What you read
 
 - `overview.md`, the contract; `plan.md`, your instructions: a slice is the section after its `<!-- slice:N -->` marker; `exploration.md`, the conventions, the precedent to copy and the gates.
-- `.claude/surface.md`, when it exists: the project's declarations and its critical zones.
+- The repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
 - `surface-status show <plan> --json`: the state, the remaining slices, the settings.
 - What your mandate cites.
 
@@ -34,7 +34,7 @@ If `git status` shows uncommitted changes, they belong to the interrupted step, 
 
 1. Do what the slice says, following the conventions of the repository.
 2. Run the gates the slice touches.
-3. If you deviate from the plan, amend `plan.md` where it describes the slice, then `surface-status record <plan> plan-amended --slice <n> --why "<reason>"`. A new slice takes a new number: a number is never reused.
+3. If you deviate from the plan, amend `plan.md` where it describes the slice, never its gates block, which only a new revision changes, then `surface-status record <plan> plan-amended --slice <n> --why "<reason>"`. A new slice takes a new number: a number is never reused.
 4. `surface-status record <plan> slice-done --slice <n> --gates "<gates run>"`, naming on one line the gates you ran.
 5. One commit for the slice, by pathspec: the code you wrote or took over, `plan.md` if amended, and `journal.jsonl`. Never `git add -A` nor `git add .`: they would sweep in work that is not the step's. Follow the commit conventions of the repository.
 
@@ -47,7 +47,7 @@ If the slice would need the overview to change for it to stay true, stop: that i
 3. `surface-status gate <plan>`, once, at the end: it runs the full gates and records their result.
 4. Gates green: `surface-status record <plan> fix-done`, then one commit, by pathspec, with the code, `plan.md`, `journal.jsonl` and the run report under `gates/`. Gates failed: commit nothing and return the path of the run report; the next fix starts from there.
 
-If `gate` says the project declares no gate command, run the gates `exploration.md` names yourself, then record `fix-done`. If you suspect a break while fixing, finish what you can and say so in your return: the next review qualifies it.
+If `gate` answers that the approved plan names no gate command, run the gates `exploration.md` names, if any, yourself, then record `fix-done`. If you suspect a break while fixing, finish what you can and say so in your return: the next review qualifies it.
 
 ## What you return
 

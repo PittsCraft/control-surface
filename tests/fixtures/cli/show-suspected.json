@@ -20,6 +20,7 @@
     "execution": 0,
     "ceiling": 3
   },
+  "gates": [],
   "pending_proposal": null,
   "pending_suspicion": {
     "slice": 1,
@@ -30,14 +31,11 @@
   "settings": {
     "plans_dir": "docs/plans",
     "max_autonomous_passes": 3,
-    "gate_command": null,
-    "gate_timeout_minutes": 30,
     "models": {
       "extractor": "opus",
       "checker": "opus",
       "executor": "sonnet",
       "reviewer": "opus"
-    },
-    "mark_pr_ready": false
+    }
   }
 }

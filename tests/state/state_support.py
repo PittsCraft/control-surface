@@ -98,6 +98,7 @@ EXPECTED: dict[str, dict[State | None, frozenset[State]]] = {
     },
 }
 
+GATES = ("true",)
 CONTEXT = RecordContext(ceiling=3, gates_declared=True, overview_hash=OV1)
 
 PROPOSAL = "plan-changes/01.md"
@@ -114,7 +115,9 @@ def state_in(state: State, **changes: Any) -> PlanState:  # noqa: ANN401 (overri
         execution_passes=0,
         drafted_overview=OV1,
         drafted_plan=PL1,
+        drafted_gates=GATES,
         approved_overview=OV1,
+        approved_gates=GATES,
         last_check=CheckSummary(rev=1, omissions=0, overview=OV1, plan=PL1),
         last_review=ReviewSummary(pass_=1, defects=0, deviations=0, breaks=0),
         gates=GateResult.PASS,

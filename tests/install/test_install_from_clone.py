@@ -51,9 +51,7 @@ def test_install_on_fresh_git_init(tmp_path: Path) -> None:
         ".claude/skills/surface-status/scripts/surface_status/cli.py",
         ".claude/agents/surface-checker.md",
         ".claude/agents/surface-executor.md",
-        ".claude/surface.json",
-        ".claude/surface.md",
-    }  # never the Claude Code settings: the last line points at the rules to add instead
+    }  # no settings file, and never the Claude Code settings: the last line points at the rules
     assert result.stdout.splitlines()[-1].endswith("control-surface#permissions")
     launcher = host / ".claude/skills/surface-status/scripts/surface-status"
     assert launcher.stat().st_mode & 0o111
@@ -211,18 +209,18 @@ def test_a_skill_removed_from_the_source_is_removed_with_its_bytecode(tmp_path: 
     source = clone(tmp_path)
     host = tmp_path / "host"
     run_clone(source, str(host))
-    cache = host / ".claude/skills/surface-status/scripts/surface_status/__pycache__"
+    cache = host / ".claude/skills/surface-plan/templates/__pycache__"
     cache.mkdir()
-    (cache / "cli.cpython-311.pyc").write_text("compiled by a run", encoding="utf-8")
+    (cache / "helper.cpython-311.pyc").write_text("compiled by a run", encoding="utf-8")
     assert run_clone(source, "--check", str(host)).returncode == 0  # bytecode is not drift
-    for path in sorted((source / "skills/surface-status").rglob("*"), reverse=True):
+    for path in sorted((source / "skills/surface-plan").rglob("*"), reverse=True):
         path.unlink() if path.is_file() else path.rmdir()
-    (source / "skills/surface-status").rmdir()
+    (source / "skills/surface-plan").rmdir()
 
     result = run_clone(source, str(host))
 
     assert result.returncode == 0
-    assert not (host / ".claude/skills/surface-status").exists()
+    assert not (host / ".claude/skills/surface-plan").exists()
 
 
 def test_files_outside_the_namespace_are_never_touched(tmp_path: Path) -> None:
@@ -264,16 +262,46 @@ def test_non_namespace_sources_are_not_installed(tmp_path: Path) -> None:
     assert not (host / "README.md").exists()
 
 
-def test_host_settings_are_created_when_missing(tmp_path: Path) -> None:
+def test_no_settings_file_is_created(tmp_path: Path) -> None:
     source = clone(tmp_path)
     host = tmp_path / "host"
 
     run_clone(source, str(host))
 
-    assert json.loads((host / ".claude/surface.json").read_text(encoding="utf-8")) == {
-        "gate_command": None
-    }
-    assert (host / ".claude/surface.md").read_text(encoding="utf-8").startswith("# ")
+    assert not (host / ".claude/surface.json").exists()
+    assert not (host / ".claude/surface.md").exists()
+
+
+def test_what_an_earlier_version_left_is_named_and_kept(tmp_path: Path) -> None:
+    source = clone(tmp_path)
+    host = tmp_path / "host"
+    (host / ".claude").mkdir(parents=True)
+    settings = '{"gate_command": "make check", "mark_pr_ready": true, "plans_dir": "plans"}\n'
+    (host / ".claude/surface.json").write_text(settings, encoding="utf-8")
+    (host / ".claude/surface.md").write_text("# Critical zones\n", encoding="utf-8")
+
+    result = run_clone(source, str(host))
+
+    assert result.returncode == 0, result.stderr
+    notes = [line for line in result.stdout.splitlines() if line.startswith("note : ")]
+    assert len(notes) == 2
+    assert notes[0].startswith("note : .claude/surface.md is no longer read; move what it")
+    assert notes[0].endswith("to AGENTS.md or CLAUDE.md")
+    assert notes[1].startswith("note : .claude/surface.json sets gate_command, mark_pr_ready,")
+    assert notes[1].endswith("remove them (the gates are named by each plan)")
+    assert (host / ".claude/surface.json").read_text(encoding="utf-8") == settings
+    assert (host / ".claude/surface.md").read_text(encoding="utf-8") == "# Critical zones\n"
+
+
+def test_settings_the_chain_still_reads_raise_no_note(tmp_path: Path) -> None:
+    source = clone(tmp_path)
+    host = tmp_path / "host"
+    (host / ".claude").mkdir(parents=True)
+    (host / ".claude/surface.json").write_text('{"plans_dir": "plans"}', encoding="utf-8")
+
+    result = run_clone(source, str(host))
+
+    assert "note : " not in result.stdout
 
 
 def test_a_host_of_a_single_file_or_a_missing_host_to_check_is_refused(tmp_path: Path) -> None:
@@ -314,18 +342,19 @@ def test_old_python_gets_a_clear_message(
     assert "needs Python 3.11" in capsys.readouterr().err
 
 
-def test_repository_templates_install(tmp_path: Path) -> None:
+def test_the_repository_installs_and_its_script_runs_without_settings(tmp_path: Path) -> None:
     host = tmp_path / "host"
 
     result = run_clone(ROOT, str(host))
 
     assert result.returncode == 0, result.stderr
-    assert json.loads((host / ".claude/surface.json").read_text(encoding="utf-8")) == {
-        "gate_command": None
-    }
-    text = (host / ".claude/surface.md").read_text(encoding="utf-8")
-    assert "## Critical zones" in text
-    assert "## Conventions" in text
+    assert not (host / ".claude/surface.json").exists()
+    script = host / ".claude/skills/surface-status/scripts/surface-status"
+    listed = subprocess.run(
+        [str(script), "--json"], cwd=host, capture_output=True, text=True, check=False
+    )
+    assert listed.returncode == 0, listed.stderr
+    assert json.loads(listed.stdout) == {"v": 1, "plans": []}
 
 
 def committed_install(tmp_path: Path) -> tuple[Path, Path]:

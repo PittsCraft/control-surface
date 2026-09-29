@@ -22,7 +22,7 @@ In the plan folder your mandate gives:
 - `plan.md`, the instructions, slice by slice;
 - the last cross-check report under `checks/`, when your mandate names one: the overview must now show what it reports as missing.
 
-And `.claude/surface.md` at the root of the repository, when it exists: the project's declarations and its critical zones.
+And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
 
 ## What you write
 

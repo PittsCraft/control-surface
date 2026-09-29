@@ -34,8 +34,6 @@ def load_installer() -> ModuleType:
 def make_source(root: Path, label: str = "main") -> Path:
     """Build a fake source tree: the shape of the repository, with dummy files."""
     files = {
-        "templates/surface.json": '{\n  "gate_command": null\n}\n',
-        "templates/surface.md": "# Project declarations\n",
         "skills/surface-plan/SKILL.md": f"plan skill {label}\n",
         "skills/surface-plan/templates/plan.md": "plan template\n",
         "skills/surface-status/SKILL.md": f"status skill {label}\n",

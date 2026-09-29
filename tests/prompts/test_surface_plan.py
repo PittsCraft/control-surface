@@ -25,7 +25,7 @@ from prompt_support import (
 from test_host_neutrality import denied_terms
 
 from surface_status.machine import NON_TERMINAL
-from surface_status.plan_folder import parse_slice_markers
+from surface_status.plan_folder import parse_gates, parse_slice_markers
 from surface_status.settings import Models
 
 SKILL = "surface-plan"
@@ -421,8 +421,10 @@ def test_the_plan_template_has_the_sections_of_the_specs_and_readable_markers() 
         "4. Tests",
         "5. Definition of Done",
         "6. Risks and assumptions",
+        "7. Gates",
     ]
     assert parse_slice_markers(template) == (1,)
+    assert parse_gates(template) == ("<command>",)
 
 
 def test_the_interview_template_holds_every_heading_the_skill_writes_under() -> None:

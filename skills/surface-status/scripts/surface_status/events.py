@@ -47,6 +47,9 @@ class PlanDrafted:
     overview: str
     plan: str
     slices: tuple[int, ...]
+    # The commands of the `gates` block of `plan.md`, which the gate runner runs once this
+    # revision is approved. None only in a journal written before plans named their gates.
+    gates: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)

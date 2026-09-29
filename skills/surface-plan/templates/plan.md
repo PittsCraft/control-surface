@@ -30,8 +30,16 @@ Per slice: unit tests; a property test for every invariant the specs state, with
 
 ## 5. Definition of Done
 
-The gates of `exploration.md`, green locally in the order CI runs them; regenerated artifacts committed with the change that forces them; the repository's conventions for branches, commits and pull requests; what is specific to this feature.
+The gates of section 7, green locally in the order CI runs them; regenerated artifacts committed with the change that forces them; the repository's conventions for branches, commits and pull requests; what is specific to this feature.
 
 ## 6. Risks and assumptions
 
 What could sink the plan and how it is checked early. Every assumption taken instead of a question, with the reason it did not need the developer.
+
+## 7. Gates
+
+The commands that check the whole project, which the state script runs after the slices and at every fix, in order, stopping at the first that fails. Where they were found. One command per line in the block below, which starts at the first column and keeps its `gates` tag in any language. The block is empty when the project has none, and a sentence says so.
+
+```gates
+<command>
+```

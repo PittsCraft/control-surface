@@ -1,4 +1,4 @@
-"""The host owns its settings: they are never overwritten, whatever they hold."""
+"""The host owns its settings: they are never created, overwritten or removed."""
 
 import tempfile
 from pathlib import Path
@@ -33,7 +33,7 @@ def test_install_leaves_settings_byte_for_byte_unchanged(
 
 
 @given(contents)
-def test_a_settings_file_is_created_only_when_missing(md_bytes: bytes) -> None:
+def test_a_missing_settings_file_stays_missing(md_bytes: bytes) -> None:
     with tempfile.TemporaryDirectory() as directory:
         base = Path(directory)
         source = make_source(base / "source")
@@ -44,4 +44,4 @@ def test_a_settings_file_is_created_only_when_missing(md_bytes: bytes) -> None:
         assert installer.main([str(host)], source) == 0
 
         assert (host / ".claude/surface.md").read_bytes() == md_bytes
-        assert (host / ".claude/surface.json").read_text(encoding="utf-8").strip().startswith("{")
+        assert not (host / ".claude/surface.json").exists()

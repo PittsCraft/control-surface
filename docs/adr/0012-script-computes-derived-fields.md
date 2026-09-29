@@ -1,6 +1,6 @@
 # 0012. The script computes every derived field; the journal has one canonical form
 
-Status: accepted
+Status: accepted, amended by ADR 0034
 Date: 2026-09-29
 
 ## Context

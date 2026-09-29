@@ -106,6 +106,10 @@ def _convert(field_: _Field, value: object) -> object:
         if len(set(items)) != len(items):
             raise _wrong(listed, key, "a list without duplicates")
         return items
+    if annotation == tuple[str, ...] | None:
+        if not isinstance(value, list):
+            raise _wrong(value, key, "a list")
+        return tuple(_text(key, item) for item in cast("list[object]", value))
     message = f"{key}: no codec for {annotation!r}"  # a new event field needs a rule here
     raise NotImplementedError(message)
 
