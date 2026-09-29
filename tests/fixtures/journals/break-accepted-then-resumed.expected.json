@@ -1,0 +1,15 @@
+{
+  "state": "executing",
+  "remaining": [
+    4
+  ],
+  "done": [
+    1,
+    2,
+    3
+  ],
+  "planning_passes": 0,
+  "execution_passes": 0,
+  "before_blocked": null,
+  "proposal_origin": null
+}

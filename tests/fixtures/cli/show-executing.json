@@ -1,0 +1,39 @@
+{
+  "v": 1,
+  "plan": "2026-09-29-feature",
+  "state": "executing",
+  "hand": "agents",
+  "next_step": "surface-execute: launch slice 2",
+  "slices": {
+    "declared": [
+      1,
+      2
+    ],
+    "done": [
+      1
+    ],
+    "remaining": [
+      2
+    ]
+  },
+  "passes": {
+    "planning": 0,
+    "execution": 0,
+    "ceiling": 3
+  },
+  "pending_proposal": null,
+  "last_event": "slice-done",
+  "settings": {
+    "plans_dir": "docs/plans",
+    "max_autonomous_passes": 3,
+    "gate_command": null,
+    "gate_timeout_minutes": 30,
+    "models": {
+      "extractor": "opus",
+      "checker": "opus",
+      "executor": "sonnet",
+      "reviewer": "opus"
+    },
+    "mark_pr_ready": false
+  }
+}

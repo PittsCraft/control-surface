@@ -1,0 +1,40 @@
+{
+  "v": 1,
+  "ok": false,
+  "require": "conform",
+  "plans": [
+    {
+      "name": "2026-09-01-running",
+      "state": "executing",
+      "ok": false,
+      "problems": [
+        {
+          "code": "in-progress",
+          "message": "in progress (executing): the plan is neither conform nor abandoned"
+        }
+      ]
+    },
+    {
+      "name": "2026-09-02-dropped",
+      "state": "abandoned",
+      "ok": false,
+      "problems": [
+        {
+          "code": "abandoned-after-approval",
+          "message": "abandoned after its approval: the branch may carry code written under this plan that was never declared conform. The alarm stays even if that code was removed, since the script cannot see code. Remove it or merge knowingly: the check is an alarm, not a lock"
+        }
+      ]
+    },
+    {
+      "name": "2026-09-03-edited",
+      "state": "conform",
+      "ok": false,
+      "problems": [
+        {
+          "code": "overview-changed",
+          "message": "overview.md differs from the one of the last plan-approved"
+        }
+      ]
+    }
+  ]
+}

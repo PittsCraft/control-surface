@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "ok": false,
+  "plan": "2026-09-29-feature",
+  "event": "slice-done",
+  "refused": {
+    "code": "slice",
+    "reason": "slice 9 is not in the declared list"
+  }
+}

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Launcher of the state script: refuses a Python below 3.11 with one line, then runs the CLI.
+# Skills, agents and CI call this file, so the call stays a single path with nothing to install.
+if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' >/dev/null 2>&1; then
+  echo "surface-status: Python 3.11 or newer is required, and python3 on the PATH is not (or is missing)" >&2
+  exit 2
+fi
+case $0 in
+  */*) here=${0%/*} ;;
+  *) here=. ;;
+esac
+here=$(cd "$here" && pwd)
+PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}" exec python3 -B -m surface_status.cli "$@"

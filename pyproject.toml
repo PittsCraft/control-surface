@@ -1,0 +1,85 @@
+[project]
+name = "control-surface"
+version = "0.0.0"
+description = "A chain of Claude Code skills that plans, executes and reviews a feature against an approved overview."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+# The runtime (the state script and the installer) uses the standard library only.
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "hypothesis>=6.100",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+  "pyright>=1.1.380",
+  "pytest>=8.2",
+  "pytest-cov>=5.0",
+  "ruff>=0.6",
+]
+
+[tool.uv]
+# Dev tooling only: there is nothing to build or install.
+package = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["scripts", "skills/surface-status/scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D1",      # missing docstrings: names and types carry the contract, prose only where it adds
+  "D203",    # conflicts with D211
+  "D213",    # conflicts with D212
+  "COM812",  # conflicts with the formatter
+  "ISC001",  # conflicts with the formatter
+  "CPY001",  # no per-file copyright notice: LICENSE covers the repository
+  "INP001",  # scripts and tests are plain directories, not packages
+]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# The state script has no network access (ADR 0010): nothing in the package may import these.
+"socket".msg = "the state script has no network access"
+"urllib".msg = "the state script has no network access"
+"http".msg = "the state script has no network access"
+"ssl".msg = "the state script has no network access"
+
+[tool.ruff.lint.per-file-ignores]
+"install.py" = [
+  "TID251",  # the installer downloads the archive of a version (ADR 0027)
+]
+"scripts/**" = [
+  "TID251",  # repository tooling, not the state script
+]
+"tests/**" = [
+  "TID251",  # tests block the sockets, so they name them
+  "S101",    # pytest asserts
+  "PLR2004", # magic values are the expected values in tests
+  "S603",    # tests run the repository's own scripts
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["install.py", "scripts", "skills/surface-status/scripts", "tests"]
+mypy_path = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+include = ["install.py", "scripts", "skills/surface-status/scripts", "tests"]
+extraPaths = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy"]
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy"]
+addopts = "--ignore=tests/e2e -ra"
+
+[tool.coverage.run]
+# Measured and printed, never a failing threshold (ADR 0006).
+source = ["scripts", "skills/surface-status/scripts"]
