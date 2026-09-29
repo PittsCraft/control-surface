@@ -1,4 +1,4 @@
-"""Installation by copy, the drift check and the namespace boundary (ADRs 0019 and 0020)."""
+"""Installation by copy, the drift check and the namespace boundary (ADR 0019)."""
 
 import json
 import os

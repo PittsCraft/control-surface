@@ -1,4 +1,7 @@
-"""The documented JSON shape of `resolve`, `commits` and `pr-body` (ADR 0015 and 0016)."""
+"""The documented JSON shape of `resolve`, `commits` and `pr-body`.
+
+The contract is in ARCHITECTURE.md, Command line contract.
+"""
 
 from pathlib import Path
 

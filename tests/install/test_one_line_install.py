@@ -1,4 +1,4 @@
-"""ADR 0027: the installer fed through standard input, from a directory that is no clone."""
+"""One-line install: the installer fed through standard input, from a directory that is no clone."""
 
 import sys
 from pathlib import Path

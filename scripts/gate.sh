@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Every gate, one command. CI runs this very script.
 #   scripts/gate.sh        static checks, then tests on 3.11 and on the newest Python
-#   scripts/gate.sh e2e    the end to end tests: billed, on demand only, never in CI (ADR 0025),
-#                          in a container that bypasses permissions (ADR 0030); the arguments
+#   scripts/gate.sh e2e    the end to end tests: billed, on demand only, never in CI, and
+#                          in a container that bypasses permissions (ADR 0025); the arguments
 #                          after `e2e` go to pytest, like `-k nominal`
 # E2E_OUT chooses the host folder of the end to end logs, `.e2e` by default.
 # GATE_NEWEST_PYTHON overrides the interpreter of the second test run.
@@ -18,7 +18,7 @@ if [ "${1:-}" = "e2e" ]; then
     exit 1
   fi
   if ! command -v docker >/dev/null 2>&1; then
-    echo "gate: the end to end tests run in a container and need docker (ADR 0030)" >&2
+    echo "gate: the end to end tests run in a container and need docker (ADR 0025)" >&2
     exit 1
   fi
   if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then

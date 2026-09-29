@@ -1,4 +1,4 @@
-"""The `surface-plan` command and its templates (ADRs 0023, 0026 and 0031).
+"""The `surface-plan` command and its templates (ADR 0031).
 
 Prompt behavior is judged end to end. These tests hold what can be read: the frontmatter against
 the fields the Claude Code documentation of skills defines, the state injected at load, the
@@ -103,7 +103,7 @@ def _permitted(command: str) -> bool:
     return any(fnmatchcase(command, pattern) for pattern in _allowed_patterns())
 
 
-# Frontmatter (ADRs 0023 and 0031).
+# Frontmatter (ADR 0031).
 
 
 def test_frontmatter_holds_only_documented_fields() -> None:
@@ -310,7 +310,7 @@ def test_a_block_is_taken_back_by_planning_or_by_amendment() -> None:
 def test_a_new_branch_only_from_the_main_branch() -> None:
     steps = section(_body(), "First launch, with specs")
     branch = next(line for line in steps.splitlines() if line.startswith("2. Branch."))
-    # The order ADR 0015 gives the script, so the command and the script agree on "main".
+    # The order ADR 0016 gives the script, so the command and the script agree on "main".
     assert "`origin/HEAD`, else `main`, else `master`" in branch
     assert "Launched from the main branch, create a branch" in branch
     assert "From any other branch, stay" in branch
@@ -392,7 +392,7 @@ def test_the_command_writes_only_in_the_plan_folder() -> None:
     assert "never `journal.jsonl` (the state script alone writes it)" in opening
 
 
-# Templates (ADR 0026).
+# Templates.
 
 
 @pytest.mark.parametrize("name", ["plan.md", "overview.md", "interview.md", "exploration.md"])

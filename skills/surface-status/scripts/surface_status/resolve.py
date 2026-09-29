@@ -1,4 +1,4 @@
-"""Finding the plan without guessing (ADR 0015 and 0016).
+"""Finding the plan without guessing (ADR 0016).
 
 The plans of a branch are the plan folders it adds against its merge base with the main branch:
 nothing is stored, git computes it. A folder already on main, terminal or not, is never the
@@ -22,7 +22,7 @@ PLAN_COMMAND = "plan"
 EXECUTE_COMMAND = "execute"
 COMMANDS = (PLAN_COMMAND, EXECUTE_COMMAND)
 
-# States each command accepts: what each command does depending on the state (ADR 0015).
+# States each command accepts: what each command does depending on the state.
 _PLAN_STATES = frozenset(
     {
         State.INTERVIEW,

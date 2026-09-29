@@ -9,7 +9,7 @@ script, it builds a project and prints its path, or runs one headless session in
     python3 tests/e2e/toy/toy.py build <state> <dest>
     python3 tests/e2e/toy/toy.py run <project> <log> <prompt> [--resume <session id>]
 
-A session is launched the way ADRs 0025 and 0030 describe, by the end to end tests and by hand
+A session is launched the way ADR 0025 describes, by the end to end tests and by hand
 alike: it bypasses permissions, so it runs only in the container of `tests/e2e/Dockerfile`.
 """
 
@@ -755,7 +755,7 @@ def claude_command(prompt: str, *, resume: str | None = None) -> list[str]:
 
     User settings are left out, since their hooks, permissions and model would change the run, and
     so are MCP servers, which the chain does not use. Permissions are bypassed: nobody is there to
-    answer, and what an agent runs to explore is not the chain's to list (ADR 0030). Refused
+    answer, and what an agent runs to explore is not the chain's to list (ADR 0032). Refused
     outside the container, where a command could reach beyond the toy folder.
     """
     if not in_container():

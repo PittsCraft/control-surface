@@ -1,4 +1,4 @@
-"""The git facts the script needs (ADR 0015 and 0016).
+"""The git facts the script needs (ADR 0016).
 
 Everything here reads: the script never writes to a repository. Commands run in the project root
 (`git -C`), so every path given or returned is relative to it, whether the project is the top of
@@ -76,7 +76,7 @@ def main_ref(root: Path) -> str:
     """Name the main branch: `origin/HEAD`, else local `main`, `master`, else their `origin/` twins.
 
     A CI checkout of a pull request is detached and often shallow: it has no local branch and may
-    have no `origin/HEAD`, but it does hold the remote branch (ADR 0015).
+    have no `origin/HEAD`, but it does hold the remote branch (ADR 0016).
     """
     head = _try(root, "symbolic-ref", "-q", "--short", "refs/remotes/origin/HEAD")
     if head is not None and _resolves(root, head):

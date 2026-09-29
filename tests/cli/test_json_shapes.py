@@ -1,4 +1,7 @@
-"""The JSON output has the documented shape (ADR 0014): golden files, every one with `"v": 1`."""
+"""The JSON output has the documented shape: golden files, every one with `"v": 1`.
+
+The contract is in ARCHITECTURE.md, Command line contract.
+"""
 
 from pathlib import Path
 

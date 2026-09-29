@@ -1,6 +1,6 @@
 # End to end tests
 
-The chain run for real, headless, on a toy project: does a session driven by the prompts do what the README promises? The strategy is in `docs/adr/0025-end-to-end-on-a-toy-project.md`, and `docs/adr/0030-exploration-left-to-the-permission-mode.md` says why the sessions bypass permissions, in a container.
+The chain run for real, headless, on a toy project: does a session driven by the prompts do what the README promises? The strategy, and why the sessions bypass permissions in a container, is in `docs/adr/0025-end-to-end-on-a-toy-project.md`.
 
 Every scenario is billed and takes minutes: run them on demand, before a release or after a change of the prompts, never in CI.
 

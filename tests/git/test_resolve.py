@@ -1,4 +1,4 @@
-"""`resolve` and the plans of a branch: several plans per branch, plans kept on main (ADR 0015)."""
+"""`resolve` and the plans of a branch: several plans per branch, plans kept on main (ADR 0016)."""
 
 from pathlib import Path
 

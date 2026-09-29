@@ -20,7 +20,7 @@ from surface_status.plan_folder import (
     parse_slice_markers,
 )
 
-# Hashes (ADR 0013)
+# Hashes: CRLF read as LF (ARCHITECTURE.md, Journal and state)
 
 
 def test_the_same_text_hashes_alike_with_lf_or_crlf_endings() -> None:

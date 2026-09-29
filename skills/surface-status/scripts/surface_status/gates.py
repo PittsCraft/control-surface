@@ -4,7 +4,7 @@ The gates are the commands of the `gates` block of the approved revision of the 
 `plan-drafted` recorded them (ADR 0034): an edit of `plan.md` after the approval does not change
 what runs. `gate` runs them in order, each through `/bin/sh -c` at the project root, in its own
 process group, and stops at the first that fails. The whole run has a fixed timeout; the group of
-the command running when it expires is killed (ADR 0017). It writes one report,
+the command running when it expires is killed. It writes one report,
 `gates/run-NN.txt`, then records `gates-run` through the same path as every other event, so the
 guards decide whether the result is accepted. A run that would be refused is never started: the
 transition and the ceiling are checked first, since a gate can take a quarter of an hour.

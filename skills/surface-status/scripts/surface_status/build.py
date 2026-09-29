@@ -40,7 +40,7 @@ from surface_status.plan_folder import OVERVIEW, PLAN, PlanFolder, PlanFolderErr
 _DATE_PREFIX = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}-")
 
 # Recorded by the gate runner, which runs the gates and keeps their exit code: a caller that could
-# record a result would be declaring a success it has not verified (ADR 0017).
+# record a result would be declaring a success it has not verified (ADR 0034).
 GATE_EVENT = "gates-run"
 
 

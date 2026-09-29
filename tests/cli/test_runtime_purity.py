@@ -1,4 +1,4 @@
-"""The script has neither dependency nor network access (ADR 0001, ADR 0010).
+"""The script has neither dependency nor network access (ADR 0001).
 
 Checked statically here (every import of the package is the standard library or the package
 itself, and ruff bans the network modules), and at run time by the socket block of `conftest.py`,
