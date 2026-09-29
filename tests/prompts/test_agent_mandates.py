@@ -145,10 +145,11 @@ def test_executor_runs_plain_commands_the_permission_rules_can_read() -> None:
 
 
 # Commands run from the root of the repository: a `cd` moves the shell the dispatcher and its
-# agents share, and a `cd` followed by git stops for an approval nobody gives.
+# agents share, and a `cd` followed by git stops for an approval nobody gives, as does `git -C`,
+# which the reviewer reached for in the trial.
 
 _CODE = re.compile(r"```.*?```|`[^`\n]+`", re.DOTALL)
-_CD = re.compile(r"(?:^|[\s;&|(!])cd ")
+_CD = re.compile(r"(?:^|[\s;&|(!])cd |\bgit -C ")
 
 
 def _prompt_id(path: Path) -> str:
@@ -162,9 +163,14 @@ def test_no_command_of_a_prompt_changes_directory(path: Path) -> None:
 
 
 def test_the_cd_check_sees_a_cd_in_code() -> None:
-    for text in ("`cd docs/plans/x && git log`", "```sh\ngit status; cd app\n```"):
+    for text in (
+        "`cd docs/plans/x && git log`",
+        "```sh\ngit status; cd app\n```",
+        "`git -C /some/repo log`",
+    ):
         assert [span for span in _CODE.findall(text) if _CD.search(span.strip("`"))]
-    assert not [span for span in _CODE.findall("never `cd`") if _CD.search(span.strip("`"))]
+    for text in ("never `cd`", "nor `git -C`"):
+        assert not [span for span in _CODE.findall(text) if _CD.search(span.strip("`"))]
 
 
 @pytest.mark.parametrize("path", prompt_files(), ids=_prompt_id)
@@ -174,6 +180,8 @@ def test_every_prompt_that_runs_commands_stays_at_the_root(path: Path) -> None:
     if runs_bash:
         assert "from the root of the repository, with paths from there" in body
         assert "`cd`" in body
+        assert "`git -C`" in body
+        assert "command run by another such as `find -exec`" in body
 
 
 def test_executor_commits_each_slice_with_its_journal_line_and_amendment() -> None:
@@ -216,6 +224,22 @@ def test_prompts_call_the_script_only_as_its_parser_accepts(name: str, call: str
         build_parser().parse_args(call_arguments(call))
     except UsageError as error:
         pytest.fail(f"`{call}` does not parse: {error}")
+
+
+def test_every_prompt_that_refreshes_the_pr_says_pr_body_takes_no_argument() -> None:
+    """The dispatcher passed the plan to `pr-body` like to every other call (trial).
+
+    The pipe then hands `gh pr edit --body-file -` an empty description.
+    """
+    callers = {name for name, call in _all_calls() if call_arguments(call)[0] == "pr-body"}
+    assert callers == {"surface-execute", "surface-plan", "surface-status"}
+    for path in prompt_files():
+        if _prompt_id(path) in callers:
+            text = path.read_text(encoding="utf-8")
+            assert "(it takes no argument, since it describes every plan of the branch)" in text
+    for name, call in _all_calls():
+        if call_arguments(call)[0] == "pr-body":
+            assert list(call_arguments(call)) == ["pr-body"], f"{name}: {call}"
 
 
 def test_the_calls_are_found() -> None:
