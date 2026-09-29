@@ -1,7 +1,8 @@
-"""The permissions an unattended loop needs, in the developer's path of the README (ADR 0028).
+"""The permissions an unattended loop needs, in the README's developer path (ADRs 0028, 0030).
 
 The block must parse as settings, grant what the commands grant themselves for one turn only, and
-name the state script by the path the prompts call it with.
+name the state script by the path the prompts call it with. What an agent runs to explore is left
+to the permission mode: the section warns that the loop stops at each command not allowed.
 """
 
 import json
@@ -56,12 +57,11 @@ def test_the_block_names_the_gate_command_as_an_example() -> None:
     assert "The last rule is an example: name your gate command" in _permissions()
 
 
-def test_the_readme_says_why_the_rules_belong_in_the_settings() -> None:
-    why = _permissions()
-    assert "`allowed-tools`" in why
-    assert "only for the turn you launch them in" in why
-    assert "later turn" in why
-    assert "No command checks your rules at launch" in why
+def test_the_section_warns_that_missing_permissions_stop_the_loop() -> None:
+    section = _permissions()
+    assert "> [!WARNING]" in section
+    assert "The loop stops at every command your permission rules or mode do not allow" in section
+    assert "auto mode (`claude --permission-mode auto`)" in section
 
 
 def test_the_install_line_points_at_the_section() -> None:

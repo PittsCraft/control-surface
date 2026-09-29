@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Every gate, one command. CI runs this very script.
 #   scripts/gate.sh        static checks, then tests on 3.11 and on the newest Python
-#   scripts/gate.sh e2e    the end to end tests: billed, on demand only, never in CI (ADR 0025);
-#                          the arguments after `e2e` go to pytest, like `-k nominal`
+#   scripts/gate.sh e2e    the end to end tests: billed, on demand only, never in CI (ADR 0025),
+#                          in a container that bypasses permissions (ADR 0030); the arguments
+#                          after `e2e` go to pytest, like `-k nominal`
+# E2E_OUT chooses the host folder of the end to end logs, `.e2e` by default.
 # GATE_NEWEST_PYTHON overrides the interpreter of the second test run.
 # GATE_ONLY_PYTHON=3.11|newest runs the static checks and that one test run only (CI, one job each).
 set -euo pipefail
@@ -15,13 +17,27 @@ if [ "${1:-}" = "e2e" ]; then
     echo "gate: no end to end tests yet (tests/e2e does not exist)" >&2
     exit 1
   fi
-  if ! command -v claude >/dev/null 2>&1; then
-    echo "gate: the end to end tests need the claude CLI on the PATH, logged in" >&2
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "gate: the end to end tests run in a container and need docker (ADR 0030)" >&2
     exit 1
   fi
+  if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+    echo "gate: neither CLAUDE_CODE_OAUTH_TOKEN (from claude setup-token) nor ANTHROPIC_API_KEY" \
+      "is set: only the tests that start no session can pass" >&2
+  fi
   shift
-  step "e2e (billed: every scenario runs real sessions)"
-  uv run pytest -o addopts= -ra tests/e2e "$@"
+  out="${E2E_OUT:-.e2e}"
+  mkdir -p "$out"
+  out="$(cd "$out" && pwd)"
+  step "e2e image"
+  docker build --quiet --build-arg UID="$(id -u)" --tag control-surface-e2e \
+    --file tests/e2e/Dockerfile tests/e2e
+  step "e2e (billed: every scenario runs real sessions, in the container; logs in $out/basetemp)"
+  docker run --rm --init \
+    --env CLAUDE_CODE_OAUTH_TOKEN --env ANTHROPIC_API_KEY \
+    --volume "$PWD:/clone:ro" --volume "$out:/out" \
+    control-surface-e2e \
+    pytest -o addopts= -ra -p no:cacheprovider --basetemp /out/basetemp tests/e2e "$@"
   exit 0
 fi
 

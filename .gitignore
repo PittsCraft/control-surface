@@ -7,3 +7,4 @@ __pycache__/
 .hypothesis/
 .coverage
 .DS_Store
+.e2e/
