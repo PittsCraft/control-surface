@@ -6,7 +6,7 @@ Approve a short overview of your feature, then let agents build it and review th
 curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/install.py | python3 -
 ```
 
-Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and creates two settings files that stay yours. It never writes your Claude Code settings: [Permissions](#permissions) says what to allow. Add `--ref <tag or commit>` to pin a version.
+Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and creates two settings files that stay yours. It never writes your Claude Code settings: [Permissions](#permissions) says how the loop runs unattended. Add `--ref <tag or commit>` to pin a version.
 
 ## Prerequisites
 
@@ -36,30 +36,7 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 ### Permissions
 
 > [!WARNING]
-> The loop stops at every command your permission rules or mode do not allow, until you approve it. Run it in auto mode (`claude --permission-mode auto`), or allow at least what the commands require, in `.claude/settings.json` or `.claude/settings.local.json`:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(.claude/skills/surface-status/scripts/surface-status *)",
-      "Bash(git add *)",
-      "Bash(git commit *)",
-      "Bash(git push *)",
-      "Bash(git rm *)",
-      "Bash(git mv *)",
-      "Bash(git restore *)",
-      "Bash(git revert *)",
-      "Bash(gh pr view *)",
-      "Bash(gh pr edit *)",
-      "Bash(gh pr ready *)",
-      "Bash(npm test *)"
-    ]
-  }
-}
-```
-
-The last rule is an example: name your gate command, the `gate_command` of `.claude/surface.json`.
+> The loop stops at every command your permission rules or mode do not allow, until you approve it. Run it in auto mode (`claude --permission-mode auto`).
 
 ### 3. Let the agents work
 

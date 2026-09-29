@@ -11,10 +11,6 @@ from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALL_PY = ROOT / "install.py"
-ONE_LINE = (
-    "curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/install.py"
-    " | python3 -"
-)
 GIT_ENV = {
     **os.environ,
     "GIT_CONFIG_GLOBAL": os.devnull,

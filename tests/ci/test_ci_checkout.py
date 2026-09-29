@@ -140,10 +140,3 @@ def test_a_depth_one_checkout_is_refused_and_says_why(
 
     assert done.returncode == 2
     assert "fetch-depth: 0" in done.stderr
-
-
-def test_the_readme_snippet_prescribes_the_depth_the_check_needs() -> None:
-    readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    snippet = readme.split("```yaml\n", 1)[1].split("```", 1)[0]
-    assert "fetch-depth: 0" in snippet
-    assert f"{SCRIPT} check --require conform" in snippet

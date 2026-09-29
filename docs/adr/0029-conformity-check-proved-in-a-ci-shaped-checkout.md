@@ -1,6 +1,6 @@
 # 0029. The conformity check, proved in a checkout shaped like a CI's
 
-Status: accepted
+Status: accepted, amended by ADR 0032
 Date: 2026-09-29
 
 ## Context

@@ -1,6 +1,6 @@
 # 0030. Exploration is left to the permission mode; end to end runs bypass it in a container
 
-Status: accepted
+Status: accepted, amended by ADR 0032
 Date: 2026-09-29
 
 ## Context
