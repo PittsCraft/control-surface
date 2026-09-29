@@ -100,6 +100,11 @@ def next_step(state: PlanState | None) -> str:  # noqa: C901, PLR0911 (one arm p
                 "surface-execute approves and executes"
             )
         case State.EXECUTING:
+            if state.suspicion is not None:
+                return (
+                    "surface-execute: a reviewer judges the break suspected during slice"
+                    f" {state.suspicion.slice_}"
+                )
             following = state.remaining[0] if state.remaining else None
             return f"surface-execute: launch slice {following}"
         case State.REVIEWING:
@@ -165,6 +170,13 @@ def overview_alarms(view: PlanView) -> list[Payload]:
     return []
 
 
+def _suspicion(state: PlanState | None) -> Payload | None:
+    """Give the break suspected during a slice that no reviewer judged yet, with its reason."""
+    if state is None or state.suspicion is None:
+        return None
+    return {"slice": state.suspicion.slice_, "why": state.suspicion.why}
+
+
 def show_payload(view: PlanView, settings: Settings) -> Payload:
     state = view.state
     slices = {
@@ -185,6 +197,7 @@ def show_payload(view: PlanView, settings: Settings) -> Payload:
             "ceiling": settings.max_autonomous_passes,
         },
         "pending_proposal": state.pending_proposal if state else None,
+        "pending_suspicion": _suspicion(state),
         "last_event": view.events[-1].name if view.events else None,
         "alarms": overview_alarms(view),
         "settings": settings.to_dict(),
@@ -284,6 +297,9 @@ def render_show(payload: Payload) -> str:
     ]
     if payload["pending_proposal"] is not None:
         lines.append(f"pending proposal: {payload['pending_proposal']}")
+    suspicion: Payload | None = payload["pending_suspicion"]
+    if suspicion is not None:
+        lines.append(f"suspected break: slice {suspicion['slice']}: {suspicion['why']}")
     alarms: list[Payload] = payload["alarms"]
     lines.extend(f"ALARM {alarm['code']}: {alarm['message']}" for alarm in alarms)
     lines.append("settings:")

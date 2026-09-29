@@ -15,6 +15,7 @@
     "ceiling": 3
   },
   "pending_proposal": null,
+  "pending_suspicion": null,
   "last_event": null,
   "alarms": [],
   "settings": {

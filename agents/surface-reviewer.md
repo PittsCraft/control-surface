@@ -58,7 +58,7 @@ Write in the language of `specs.md`. NN is the next number not yet taken in the 
 
 ## What you write on a suspected break
 
-One question: must the overview be modified for what the executor suspects? Read the uncommitted work too (`git status`, `git diff`). In doubt, confirm.
+One question: must the overview be modified for what the executor suspects? Its reason is the one your mandate gives, the `why` of the last `break-suspected` line of the journal. Read the uncommitted work too (`git status`, `git diff`). In doubt, confirm.
 
 - Confirmed: `plan-changes/NN.md`, the proposal, stating that slice N is unfinished.
 - Dismissed: `reviews/suspicion-NN.md`, a note for the next executor: why it is no break, and how to carry on.

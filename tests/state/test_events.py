@@ -17,6 +17,7 @@ SPECS_EVENTS = (
     "plan-approved",
     "slice-done",
     "plan-amended",
+    "break-suspected",
     "suspicion-dismissed",
     "plan-change-proposed",
     "gates-run",
@@ -31,9 +32,9 @@ SPECS_EVENTS = (
 )
 
 
-def test_the_list_is_the_nineteen_events_of_the_specs() -> None:
+def test_the_list_is_the_nineteen_events_of_the_specs_and_the_suspected_break() -> None:
     assert EVENT_NAMES == SPECS_EVENTS
-    assert len(set(EVENT_NAMES)) == 19
+    assert len(set(EVENT_NAMES)) == 20
 
 
 def test_the_union_and_the_list_hold_the_same_types() -> None:
@@ -54,6 +55,7 @@ def test_the_own_fields_follow_the_specs() -> None:
     assert own["check-done"] == ["rev", "report", "omissions", "overview", "plan"]
     assert own["plan-drafted"] == ["rev", "overview", "plan", "slices"]
     assert own["plan-amended"] == ["slice_", "why", "plan", "slices"]
+    assert own["break-suspected"] == ["slice_", "why"]
     assert own["review-done"] == [
         "pass_",
         "report",

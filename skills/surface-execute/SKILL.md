@@ -30,8 +30,8 @@ The developer's argument, empty when none: $ARGUMENTS
 
 At launch, before the first row, run `git status` and read the journal:
 
-- Journal lines not committed yet: `slice-done` or `fix-done` means the executor stopped between its record and its commit; make that commit, its work with the journal. A `plan-amended` with neither after it belongs to the step still under way: leave it, with the work, to the next executor. Any other line: commit the journal with the files its lines describe.
-- A report under `reviews/` or `plan-changes/`, or a `conformity.md`, that no journal line cites is the return of a reviewer interrupted before its record: record it as "A review" or "A slice" says, instead of launching a new reviewer.
+- Journal lines not committed yet: `slice-done` or `fix-done` means the executor stopped between its record and its commit; make that commit, its work with the journal. A `plan-amended` with neither after it belongs to the step still under way: leave it, with the work, to the next executor. A `break-suspected` that nothing judged after it waits for its reviewer: leave it, with the work, and the loop launches the reviewer on it. A `plan-change-proposed` after a `break-suspected`: make the commit "A suspected break" describes, the unfinished work of the slice with it. Any other line: commit the journal with the files its lines describe.
+- A report under `reviews/` or `plan-changes/`, or a `conformity.md`, that no journal line cites is the return of a reviewer interrupted before its record: record it as "A review" or "A suspected break" says, instead of launching a new reviewer.
 - Any other uncommitted work belongs to the interrupted step: the fresh agent of that step is told about it, rereads it, then continues or undoes it.
 
 ## The loop
@@ -47,6 +47,7 @@ Read the state, apply the first row that holds, read the state again, and so on 
 | `conform`, `abandoned` | Stop: the plan is over. |
 | `interview`, `drafting`, `blocked` during planning, or no event yet | Stop: this plan belongs to `/surface-plan`. |
 | Ceiling reached, and work left to the agents | See "At the ceiling". |
+| `executing`, a break suspected | See "A suspected break". |
 | `executing` | See "A slice". |
 | `reviewing`, the last event a clean review, nothing changed since | See "Conformity". |
 | `reviewing`, no green gate run since the last change | See "Gates". |
@@ -56,10 +57,11 @@ Read the state, apply the first row that holds, read the state again, and so on 
 How to read the rows:
 
 - `blocked` during execution: the last `plan-approved` of the journal comes after every `amendment-received` and `plan-change-accepted`. Otherwise it is `blocked` during planning.
+- A break suspected: `pending_suspicion` of `show --json` is not null. The executor recorded it, with its reason, before it returned, and no reviewer has judged it yet.
 - Ceiling reached: `passes.execution` of `show --json` is at least `passes.ceiling`. Work is left to the agents in `executing`, in `fixing`, and in `reviewing` unless the conformity row holds: recording `conform` is the one step the ceiling lets through.
 - A clean review: a `review-done` with no defect, no deviation and no break. Nothing changed since: no commit after the one that carries it, and no change in the working tree outside the plan folder.
 - No green gate run since the last change: the journal holds no `gates-run` with the result `pass` after its last `plan-approved`, `slice-done` and `review-done`. When `settings.gate_command` is null, the project declares no gates, and they count as green.
-- No progress: when an agent returns, the journal has not moved, and it reports neither a suspected break nor a refusal, stop and report. Never launch the same step twice in a row without progress.
+- No progress: when an agent returns, the journal has not moved, and it reports no refusal, stop and report. Never launch the same step twice in a row without progress.
 
 ## A slice
 
@@ -72,9 +74,15 @@ Launch a fresh `surface-executor`. Its mandate: the plan folder, and the slice t
 Its return:
 
 - `slice N done`: back to the loop.
-- `suspected break`, with its reason. Only a reviewer qualifies a break: launch a fresh `surface-reviewer` on that single question. Its mandate: the plan folder, the base commit (`base` of `surface-status commits <plan> --json`), and the mode, a break suspected during slice N, with the executor's reason. It reads the uncommitted work too.
-  - `confirmed`, with the proposal: `surface-status record <plan> plan-change-proposed --proposal <path> --slice <n>`. Then one commit: the proposal, the unfinished work of the slice and the journal, so that nothing is left outside the repository. The proposal says the slice is unfinished.
-  - `dismissed`, with the note: `surface-status record <plan> suspicion-dismissed --slice <n> --report <path>`. Commit the note and the journal, not the work: the next executor resumes the slice from it, with the note.
+- `suspected break`: the executor recorded `break-suspected` with its reason and left its work uncommitted. Back to the loop, which finds it in `pending_suspicion`.
+- Anything else, a refusal included: stop and report it.
+
+## A suspected break
+
+The executor's reason is in the journal, not in this conversation: a relaunch finds it just as this turn does. Only a reviewer qualifies a break: launch a fresh `surface-reviewer` on that single question. Its mandate: the plan folder, the base commit (`base` of `surface-status commits <plan> --json`), and the mode, a break suspected during slice N, with the executor's reason: `slice` and `why` of `pending_suspicion`. It reads the uncommitted work too.
+
+- `confirmed`, with the proposal: `surface-status record <plan> plan-change-proposed --proposal <path> --slice <n>`. Then one commit: the proposal, the unfinished work of the slice and the journal, so that nothing is left outside the repository. The proposal says the slice is unfinished.
+- `dismissed`, with the note: `surface-status record <plan> suspicion-dismissed --slice <n> --report <path>`. Commit the note and the journal, not the work: the next executor resumes the slice from it, with the note.
 - Anything else, a refusal included: stop and report it.
 
 ## Gates
@@ -112,7 +120,7 @@ The last review found nothing and nothing changed since: the reviewer wrote `con
 The loop does not converge within its autonomous passes: the developer takes the hand back. Launch no fix.
 
 1. `surface-status record <plan> blocked --why "<reason>"`, the reason naming on one line what does not converge. Commit the journal.
-2. Stop, and say in the terminal: blocked, the developer takes the hand back; a summary of what does not converge, from the reports of the passes (review counts with their paths, failed gate runs, dismissed suspicions); and the two ways on: relaunch `/surface-execute` to resume where the loop stopped with a fresh count, or amend the plan with `/surface-plan`.
+2. Stop, and say in the terminal: blocked, the developer takes the hand back; a summary of what does not converge, from the reports of the passes (review counts with their paths, failed gate runs, dismissed suspicions), and a suspected break still waiting for its reviewer, with its reason; and the two ways on: relaunch `/surface-execute` to resume where the loop stopped with a fresh count, or amend the plan with `/surface-plan`.
 
 ## When the loop stops
 

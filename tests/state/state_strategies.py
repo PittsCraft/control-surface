@@ -12,6 +12,7 @@ from surface_status.events import (
     Abandoned,
     AmendmentReceived,
     Blocked,
+    BreakSuspected,
     CheckDone,
     Conform,
     Event,
@@ -63,7 +64,7 @@ def _onward(prev: PlanState | None) -> str | None:  # noqa: C901, PLR0911 (one a
         case State.AWAITING_APPROVAL:
             return "plan-approved"
         case State.EXECUTING:
-            return "slice-done"
+            return "slice-done" if prev.suspicion is None else "suspicion-dismissed"
         case State.REVIEWING:
             if prev.gates is not GateResult.PASS:
                 return "gates-run"
@@ -97,6 +98,7 @@ def events(draw: DrawFn, prev: PlanState | None) -> Event:  # noqa: C901, PLR091
     )
     name = name or draw(st.sampled_from(EVENT_NAMES))
     check = None if prev is None else prev.last_check
+    suspected = None if prev is None or prev.suspicion is None else prev.suspicion.slice_
     word = st.sampled_from(WORDS)
     match name:
         case "plan-opened":
@@ -139,10 +141,16 @@ def events(draw: DrawFn, prev: PlanState | None) -> Event:  # noqa: C901, PLR091
                 plan=draw(st.sampled_from(PLANS)),
                 slices=_slices(draw, prev),
             )
+        case "break-suspected":
+            remaining = () if prev is None else prev.remaining
+            good = draw(st.sampled_from(remaining)) if remaining else 1
+            return BreakSuspected(slice_=_mostly(draw, good, st.integers(1, 4)), why=draw(word))
         case "suspicion-dismissed":
-            return SuspicionDismissed(slice_=draw(st.integers(1, 4)), report=draw(word))
+            slice_ = _mostly(draw, suspected or 1, st.integers(1, 4))
+            return SuspicionDismissed(slice_=slice_, report=draw(word))
         case "plan-change-proposed":
-            return PlanChangeProposed(proposal=draw(word), slice_=draw(st.integers(1, 4)))
+            slice_ = _mostly(draw, suspected or 1, st.integers(1, 4))
+            return PlanChangeProposed(proposal=draw(word), slice_=slice_)
         case "gates-run":
             results = [GateResult.PASS, GateResult.PASS, GateResult.FAIL, GateResult.TIMEOUT]
             return GatesRun(run=draw(st.integers(1, 9)), result=draw(st.sampled_from(results)))

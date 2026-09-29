@@ -16,6 +16,11 @@ REQUIRED = {
     # Breaks, suspicions and blocks, then an abandonment from every state in progress.
     "break-accepted-then-resumed",
     "suspicion-dismissed-then-confirmed",
+    # a suspected break, kept in the journal until a reviewer judges it
+    "suspected-break-awaiting-judgment",
+    "suspected-break-dismissed-then-finished",
+    "suspected-break-confirmed",
+    "suspected-break-kept-across-a-block",
     "blocks-and-resumes",
     "block-in-execution-then-amendment-and-approval",
     *{
@@ -58,6 +63,9 @@ def test_a_golden_journal_replays_to_its_expected_state(path: Path) -> None:
     assert before_blocked == expected["before_blocked"]
     origin = None if state.proposal_origin is None else state.proposal_origin.value
     assert origin == expected["proposal_origin"]
+    suspicion = state.suspicion
+    shown = None if suspicion is None else {"slice": suspicion.slice_, "why": suspicion.why}
+    assert shown == expected.get("suspicion")
     if "before_last" in expected:
         before = fold(journal[:-1])
         assert before is not None

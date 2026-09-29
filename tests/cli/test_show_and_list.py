@@ -240,3 +240,42 @@ def test_the_text_of_show_holds_what_the_json_holds(project: Project) -> None:
     assert "passes: planning 0, execution 0, ceiling 3" in text
     assert "gate_command: none" in text
     assert "mark_pr_ready: false" in text
+
+
+REASON = "the export needs a column the overview does not show"
+
+
+def test_a_suspected_break_waits_in_the_journal_for_a_later_session(project: Project) -> None:
+    """The executor records its reason; a session launched after it reads it from `show`."""
+    folder = project.reach("executing")
+    suspected = project.record(PLAN, "break-suspected", "--slice", "1", "--why", REASON)
+    assert suspected.code == 0
+    assert suspected.json()["state"] == "executing"
+    shown = project.run("show", PLAN).json()
+    assert shown["pending_suspicion"] == {"slice": 1, "why": REASON}
+    assert shown["next_step"] == (
+        "surface-execute: a reviewer judges the break suspected during slice 1"
+    )
+    assert f"suspected break: slice 1: {REASON}" in project.run("show", PLAN, as_json=False).out
+    before = project.journal()
+    refused = project.record(PLAN, "slice-done", "--slice", "1", "--gates", "lint")
+    assert refused.code == 1
+    assert refused.json()["refused"]["code"] == "suspicion"
+    assert project.journal() == before
+    note = folder / "reviews" / "suspicion-01.md"
+    note.parent.mkdir(exist_ok=True)
+    note.write_text("no break\n", encoding="utf-8")
+    args = ("--slice", "1", "--report", "reviews/suspicion-01.md")
+    assert project.record(PLAN, "suspicion-dismissed", *args).code == 0
+    assert project.run("show", PLAN).json()["pending_suspicion"] is None
+    assert project.record(PLAN, "slice-done", "--slice", "1", "--gates", "lint").code == 0
+
+
+def test_a_confirmed_suspicion_is_no_longer_pending(project: Project) -> None:
+    project.reach("executing")
+    assert project.record(PLAN, "break-suspected", "--slice", "1", "--why", REASON).code == 0
+    _propose(project)
+    shown = project.run("show", PLAN).json()
+    assert shown["state"] == "plan-change-proposed"
+    assert shown["pending_suspicion"] is None
+    assert shown["pending_proposal"] == "plan-changes/01.md"

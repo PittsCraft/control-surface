@@ -6,7 +6,9 @@ leaves to `/surface-plan`, the sensitive zones the loop must honor, and the call
 script the two skills spell (their parsing is tested over every prompt).
 """
 
+import json
 import re
+from pathlib import Path
 
 import pytest
 from chain_contract import EXECUTE, EXECUTION_LOOP, SEEN_BY
@@ -125,6 +127,8 @@ def test_the_skill_calls_are_found() -> None:
         assert ("surface-execute", "record", event) in called
     for event in ("plan-change-proposed", "suspicion-dismissed"):
         assert ("surface-execute", "record", event) in called
+    # The executor keeps the reason of a suspected break in the journal, not in its return.
+    assert ("surface-executor", "record", "break-suspected") in called
     subcommands = {(name, call_arguments(call)[0]) for name, call in prompt_calls()}
     assert {("surface-execute", word) for word in ("resolve", "show", "gate", "commits")} <= (
         subcommands
@@ -181,7 +185,8 @@ def test_a_fresh_agent_for_every_slice_review_and_fix() -> None:
         ("A fix", "surface-executor"),
     ):
         assert f"Launch a fresh `{role}`" in section(body, heading)
-    assert "launch a fresh `surface-reviewer` on that single question" in section(body, "A slice")
+    suspected = section(body, "A suspected break")
+    assert "launch a fresh `surface-reviewer` on that single question" in suspected
     # The planning roles belong to `/surface-plan`.
     assert "surface-extractor" not in body
     assert "surface-checker" not in body
@@ -212,6 +217,16 @@ def test_the_ceiling_blocks_and_hands_back_to_the_developer() -> None:
     # Checked before any row that launches an agent; conformity is the one step it lets through.
     assert _row_index(rows, "Ceiling reached") < _row_index(rows, "`executing`")
     assert "recording `conform` is the one step the ceiling lets through" in body
+
+
+def test_the_reason_of_a_suspected_break_is_read_from_a_field_show_gives() -> None:
+    """A relaunch finds the executor's reason in `show --json`, under the names the loop reads."""
+    golden = Path(__file__).resolve().parents[1] / "fixtures" / "cli" / "show-suspected.json"
+    shown = json.loads(golden.read_text(encoding="utf-8"))
+    assert set(shown["pending_suspicion"]) == {"slice", "why"}
+    body = _execute()
+    assert "`pending_suspicion` of `show --json`" in section(body, "The loop")
+    assert "`slice` and `why` of `pending_suspicion`" in section(body, "A suspected break")
 
 
 def test_a_break_hands_back_through_surface_plan() -> None:
@@ -247,7 +262,7 @@ def test_your_manual_commits_are_reviewed() -> None:
 
 
 def test_unfinished_code_may_be_committed() -> None:
-    slice_steps = section(_execute(), "A slice")
+    slice_steps = section(_execute(), "A suspected break")
     confirmed = next(line for line in slice_steps.splitlines() if "`confirmed`" in line)
     assert "plan-change-proposed" in confirmed
     assert "the unfinished work of the slice" in confirmed

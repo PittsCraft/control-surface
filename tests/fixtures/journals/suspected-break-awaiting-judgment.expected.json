@@ -1,0 +1,17 @@
+{
+  "state": "executing",
+  "remaining": [
+    2
+  ],
+  "done": [
+    1
+  ],
+  "planning_passes": 0,
+  "execution_passes": 0,
+  "before_blocked": null,
+  "proposal_origin": null,
+  "suspicion": {
+    "slice": 2,
+    "why": "the export needs a column the overview does not show"
+  }
+}

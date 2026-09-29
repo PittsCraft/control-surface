@@ -3,16 +3,15 @@
   "plan": "2026-09-29-feature",
   "state": "executing",
   "hand": "agents",
-  "next_step": "surface-execute: launch slice 2",
+  "next_step": "surface-execute: a reviewer judges the break suspected during slice 1",
   "slices": {
     "declared": [
       1,
       2
     ],
-    "done": [
-      1
-    ],
+    "done": [],
     "remaining": [
+      1,
       2
     ]
   },
@@ -22,8 +21,11 @@
     "ceiling": 3
   },
   "pending_proposal": null,
-  "pending_suspicion": null,
-  "last_event": "slice-done",
+  "pending_suspicion": {
+    "slice": 1,
+    "why": "the overview names no id"
+  },
+  "last_event": "break-suspected",
   "alarms": [],
   "settings": {
     "plans_dir": "docs/plans",

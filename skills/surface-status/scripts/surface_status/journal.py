@@ -126,7 +126,7 @@ def _decode(text: str) -> JournalLine:
         raise _wrong(at, "at", "a real date") from None
     name = raw.get("event")
     if not isinstance(name, str) or name not in _KINDS:
-        raise _wrong(name, "event", "one of the 19 events")
+        raise _wrong(name, "event", f"one of the {len(_KINDS)} events")
     kind = _KINDS[name]
     specs = _SPECS[kind]
     unknown = sorted(set(raw) - {"v", "at", "event"} - {spec.key for spec in specs})
