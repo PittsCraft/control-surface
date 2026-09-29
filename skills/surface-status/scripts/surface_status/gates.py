@@ -1,11 +1,13 @@
 """The gate runner: the project's own gates run by the script, so a green result is a fact.
 
-`gate` runs the declared command through `/bin/sh -c` at the project root, in its own process
-group, and kills the whole group when the timeout is over (ADR 0017). It writes
-`gates/run-NN.txt` (command, exit code, duration, the end of the output), then records `gates-run`
-through the same path as every other event, so the guards decide whether the result is accepted.
-A run that would be refused is never started: the transition and the ceiling are checked first,
-since a gate can take a quarter of an hour.
+The gates are the commands of the `gates` block of the approved revision of the plan, as its
+`plan-drafted` recorded them (ADR 0034): an edit of `plan.md` after the approval does not change
+what runs. `gate` runs them in order, each through `/bin/sh -c` at the project root, in its own
+process group, and stops at the first that fails. The whole run has a fixed timeout; the group of
+the command running when it expires is killed (ADR 0017). It writes one report,
+`gates/run-NN.txt`, then records `gates-run` through the same path as every other event, so the
+guards decide whether the result is accepted. A run that would be refused is never started: the
+transition and the ceiling are checked first, since a gate can take a quarter of an hour.
 """
 
 import contextlib
@@ -19,12 +21,13 @@ from datetime import datetime
 from pathlib import Path
 
 from surface_status.events import GateResult, GatesRun
-from surface_status.guards import Accepted, RecordContext, Refusal, admit
+from surface_status.guards import Accepted, Refusal, admit
 from surface_status.plan_folder import PlanFolder, gate_run_name
-from surface_status.record import load_state, record
+from surface_status.record import load_state, record, record_context
 from surface_status.settings import Settings
 
 SECONDS_PER_MINUTE = 60
+TIMEOUT_MINUTES = 30  # for the whole run, every command included
 TAIL_LINES = 200
 _SHELL = "/bin/sh"
 
@@ -40,8 +43,16 @@ class Execution:
 
 
 @dataclass(frozen=True, slots=True)
+class Step:
+    """One command of the run, and how it ended."""
+
+    command: str
+    execution: Execution
+
+
+@dataclass(frozen=True, slots=True)
 class NotDeclared:
-    """The project declares no gate command: nothing runs and the gate guards are lifted."""
+    """The approved plan names no gate command: nothing runs and the gate guards are lifted."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,8 +68,18 @@ class Ran:
 
     run: int
     report: str  # `gates/run-NN.txt`, relative to the plan folder
-    execution: Execution
+    steps: tuple[Step, ...]  # the commands that ran, in order: the last one failed, or all passed
+    seconds: float
     recorded: Accepted | Refusal
+
+    @property
+    def result(self) -> GateResult:
+        return self.steps[-1].execution.result
+
+    @property
+    def exit_code(self) -> int | None:
+        """The exit code of the last command that ran, None when it was killed at the timeout."""
+        return self.steps[-1].execution.exit_code
 
 
 Outcome = NotDeclared | NotStarted | Ran
@@ -104,26 +125,58 @@ def execute(command: str, cwd: Path, timeout_seconds: float) -> Execution:
         return Execution(result, code, seconds, _tail(output))
 
 
+def run_all(commands: tuple[str, ...], cwd: Path, timeout_seconds: float) -> tuple[Step, ...]:
+    """Run the commands in order until one fails, all of them within `timeout_seconds`."""
+    deadline = time.monotonic() + timeout_seconds
+    steps: list[Step] = []
+    for command in commands:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            execution = Execution(GateResult.TIMEOUT, None, 0.0, "")
+        else:
+            execution = execute(command, cwd, left)
+        steps.append(Step(command, execution))
+        if execution.result is not GateResult.PASS:
+            break
+    return tuple(steps)
+
+
 def _exit_text(execution: Execution, timeout_seconds: float) -> str:
     code = execution.exit_code
     if code is None:
-        return f"none (killed after the timeout of {timeout_seconds:g} seconds)"
+        return f"none (killed: the run reached its timeout of {timeout_seconds:g} seconds)"
     if code < 0:
         return f"{code} (killed by signal {-code})"
     return str(code)
 
 
-def render_report(command: str, execution: Execution, timeout_seconds: float) -> str:
-    """Write the text of `gates/run-NN.txt`."""
+def render_report(
+    commands: tuple[str, ...], steps: tuple[Step, ...], seconds: float, timeout_seconds: float
+) -> str:
+    """Write the text of `gates/run-NN.txt`: the run, then each command in order."""
+    result = steps[-1].execution.result
     lines = [
-        f"command: {command}",
-        f"result: {execution.result.value}",
-        f"exit code: {_exit_text(execution, timeout_seconds)}",
-        f"duration: {execution.seconds:.1f} seconds",
-        f"output (last {TAIL_LINES} lines at most):",
-        "",
-        execution.tail,
+        f"result: {result.value}",
+        f"duration: {seconds:.1f} seconds",
+        f"timeout: {timeout_seconds:g} seconds for the whole run",
+        f"commands: {len(commands)}, in order, stopping at the first that fails",
     ]
+    for number, command in enumerate(commands, start=1):
+        lines.extend(("", f"command {number}: {command}"))
+        if number > len(steps):
+            lines.append("not run: an earlier command failed")
+            continue
+        execution = steps[number - 1].execution
+        lines.extend(
+            (
+                f"result: {execution.result.value}",
+                f"exit code: {_exit_text(execution, timeout_seconds)}",
+                f"duration: {execution.seconds:.1f} seconds",
+                f"output (last {TAIL_LINES} lines at most):",
+                "",
+                execution.tail,
+            )
+        )
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
@@ -141,29 +194,27 @@ def run_gate(
     now: datetime,
     timeout_seconds: float | None = None,
 ) -> Outcome:
-    """Run the gates of a plan and record the result; `timeout_seconds` defaults to the setting."""
-    command = settings.gate_command
-    if command is None:
-        return NotDeclared()
-    limit = (
-        settings.gate_timeout_minutes * SECONDS_PER_MINUTE
-        if timeout_seconds is None
-        else timeout_seconds
-    )
-    number = folder.next_gate_run()
+    """Run the gates of the approved plan and record the result; the timeout defaults to 30 min."""
     state = load_state(folder)
+    commands = None if state is None else state.approved_gates
+    if not commands:
+        return NotDeclared()
+    limit = TIMEOUT_MINUTES * SECONDS_PER_MINUTE if timeout_seconds is None else timeout_seconds
+    number = folder.next_gate_run()
     # A failed run is the one that counts as a pass, so it is the one asked about: it is refused
     # from a state that takes no gate run and at the ceiling, where a green one would be too.
-    context = RecordContext(
-        ceiling=settings.max_autonomous_passes,
-        gates_declared=True,
-        overview_hash=folder.overview_hash(),
+    asked = admit(
+        state,
+        GatesRun(run=number, result=GateResult.FAIL),
+        record_context(folder, state, settings),
     )
-    asked = admit(state, GatesRun(run=number, result=GateResult.FAIL), context)
     if isinstance(asked, Refusal):
         return NotStarted(asked)
-    execution = execute(command, root, limit)
+    started = time.monotonic()
+    steps = run_all(commands, root, limit)
+    seconds = time.monotonic() - started
     name = gate_run_name(number)
-    _write_new(folder.path(name), render_report(command, execution, limit))
-    recorded = record(folder, GatesRun(run=number, result=execution.result), settings, now)
-    return Ran(number, name, execution, recorded)
+    _write_new(folder.path(name), render_report(commands, steps, seconds, limit))
+    result = steps[-1].execution.result
+    recorded = record(folder, GatesRun(run=number, result=result), settings, now)
+    return Ran(number, name, steps, seconds, recorded)

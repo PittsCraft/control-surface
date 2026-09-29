@@ -3,7 +3,7 @@ name: surface-execute
 description: Approves a drafted plan, then hands its slices, reviews and fixes to fresh agents and runs the full gates, until the plan is conform or the loop hands back to the developer. Takes the plan folder as an optional argument.
 argument-hint: "[plan]"
 disable-model-invocation: true
-allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *) Bash(gh pr ready *)
+allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *)
 ---
 
 # surface-execute
@@ -41,7 +41,7 @@ Read the state, apply the first row that holds, read the state again, and so on 
 | State found | What you do |
 |---|---|
 | `alarms` of `show --json` not empty | Stop, and name each alarm. `overview-changed`: see "When the loop stops". |
-| `awaiting-approval`, at launch | Say in one line the plan and the revision you approve, the `rev` of the last `plan-drafted`. Then `surface-status record <plan> plan-approved` and commit the journal. |
+| `awaiting-approval`, at launch | Say in one line the plan and the revision you approve, the `rev` of the last `plan-drafted`, and the gates it names, `gates` of `show --json`. Then `surface-status record <plan> plan-approved` and commit the journal. |
 | `blocked` during execution, at launch | `surface-status record <plan> resumed`, and commit the journal. |
 | `plan-change-proposed` | Stop. Name the proposal, `pending_proposal` of `show --json`, and invite the developer to run `/surface-plan`, which presents it. |
 | `conform`, `abandoned` | Stop: the plan is over. |
@@ -60,7 +60,7 @@ How to read the rows:
 - A break suspected: `pending_suspicion` of `show --json` is not null. The executor recorded it, with its reason, before it returned, and no reviewer has judged it yet.
 - Ceiling reached: `passes.execution` of `show --json` is at least `passes.ceiling`. Work is left to the agents in `executing`, in `fixing`, and in `reviewing` unless the conformity row holds: recording `conform` is the one step the ceiling lets through.
 - A clean review: a `review-done` with no defect, no deviation and no break. Nothing changed since: no commit after the one that carries it, and no change in the working tree outside the plan folder.
-- No green gate run since the last change: the journal holds no `gates-run` with the result `pass` after its last `plan-approved`, `slice-done` and `review-done`. When `settings.gate_command` is null, the project declares no gates, and they count as green.
+- No green gate run since the last change: the journal holds no `gates-run` with the result `pass` after its last `plan-approved`, `slice-done` and `review-done`. When `gates` of `show --json` is empty or null, the approved plan names no gates, and they count as green.
 - No progress: when an agent returns, the journal has not moved, and it reports no refusal, stop and report. Never launch the same step twice in a row without progress.
 
 ## A slice
@@ -87,12 +87,12 @@ The executor's reason is in the journal, not in this conversation: a relaunch fi
 
 ## Gates
 
-`surface-status gate <plan>` runs the project's full gates, writes their report under `gates/` and records `gates-run`. The run may last up to `settings.gate_timeout_minutes`: give the call the longest timeout the tool allows. If the tool moves the run to the background, check its output file at intervals until the run ends: never end the turn waiting for a notification.
+`surface-status gate <plan>` runs the project's full gates, the commands the approved plan names, in order, writes their report under `gates/` and records `gates-run`. The run may last up to 30 minutes: give the call the longest timeout the tool allows. If the tool moves the run to the background, check its output file at intervals until the run ends: never end the turn waiting for a notification.
 
 - Exit 0, gates green: commit the run report and the journal.
 - Exit 1 with a run report, gates failed or timed out: the state moves to `fixing` and the run counts as a pass. Commit the report and the journal.
 - Exit 1 with a refusal, the ceiling for one: stop and report it.
-- Exit 0 saying the project declares no gate command: nothing is recorded, go on.
+- Exit 0 with `ran` false, the approved plan names no gate command: nothing is recorded, go on.
 
 ## A review
 
@@ -131,4 +131,4 @@ At every stop, once a plan was found:
 1. Say in the terminal why the loop stopped and who has the hand, with the paths worth reading.
 2. Push the branch to its upstream, which `/surface-plan` set at the first draft. Without an upstream, push nothing and say so.
 3. Refresh the pull request's description: the output of `surface-status pr-body` (it takes no argument, since it describes every plan of the branch), given to `gh pr edit --body-file -` on its standard input. Without a pull request or without `gh`, say so. Nothing else is written on the pull request.
-4. On `conform`, and only when `settings.mark_pr_ready` is true: `gh pr ready`. Otherwise the developer marks it ready, since that triggers the CI.
+4. Never mark the pull request ready: on `conform`, the developer does, after reading `conformity.md`, since that triggers the CI.

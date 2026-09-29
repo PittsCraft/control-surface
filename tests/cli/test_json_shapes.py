@@ -25,7 +25,7 @@ def test_golden_list_with_an_unreadable_journal(project: Project) -> None:
 
 
 def test_golden_show_executing(project: Project) -> None:
-    project.reach("executing")
+    project.reach("executing", gates=("make test", "make lint"))
     project.record(PLAN, "slice-done", "--slice", "1", "--gates", "lint")
     assert_golden("show-executing.json", project.run("show", PLAN).out)
 

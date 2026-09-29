@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 from chain_contract import EXECUTE, EXECUTION_LOOP, SEEN_BY
+from cli_support import PLAN, Project
 from prompt_support import SKILLS, call_arguments, prompt_calls, prompt_files, section
 
 # Frontmatter fields of a skill, from the reference table of the documentation of skills.
@@ -54,6 +55,10 @@ def read_skill(name: str) -> tuple[dict[str, str], str]:
         assert match["key"] not in fields, f"duplicated key {match['key']!r}"
         fields[match["key"]] = match["value"].strip()
     return fields, body
+
+
+# A field a prompt reads in the answer of `show`: "`passes.execution` of `show --json`".
+_SHOW_FIELD = re.compile(r"`([a-z_.]+)` of `(?:surface-status )?show(?: <plan>)?(?: --json)?`")
 
 
 def _execute() -> str:
@@ -279,14 +284,6 @@ def test_full_gates_run_at_every_pass() -> None:
     assert "never end the turn waiting for a notification" in section(body, "Gates")
 
 
-def test_you_mark_the_pr_ready() -> None:
-    body = _execute()
-    ready = [line for line in body.splitlines() if "gh pr ready" in line]
-    assert len(ready) == 1
-    assert "only when `settings.mark_pr_ready` is true" in ready[0]
-    assert "Otherwise the developer marks it ready" in ready[0]
-
-
 def test_every_stop_pushes_and_refreshes_the_pr_description() -> None:
     stopping = section(_execute(), "When the loop stops")
     assert "Push the branch to its upstream" in stopping
@@ -307,6 +304,23 @@ def test_status_abandons_only_after_confirmation() -> None:
     assert "the alarm stays even if that code is removed" in abandoning
     assert "`surface-status pr-body`" in abandoning
     assert "Commit the journal alone" in abandoning
+
+
+def test_every_field_of_show_a_prompt_reads_is_in_its_answer(tmp_path: Path) -> None:
+    cited = {
+        match.group(1)
+        for path in prompt_files()
+        for match in _SHOW_FIELD.finditer(path.read_text(encoding="utf-8"))
+    }
+    assert "gates" in cited
+    project = Project(tmp_path)
+    project.reach("executing")
+    answer = project.run("show", PLAN).json()
+    for field in sorted(cited):
+        value = answer
+        for key in field.split("."):
+            assert key in value, field
+            value = value[key]
 
 
 def test_status_records_nothing_but_an_abandonment() -> None:

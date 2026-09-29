@@ -4,10 +4,11 @@ Two families of guards (ADR 0011):
 
 - Journal-only guards need the state and the event, nothing else. They are checked when a journal
   is replayed and when an event is recorded, so a hand edited journal cannot slip through replay.
-- Record-time guards need a fact that lives outside the journal: the ceiling and the gate command
-  from the settings, the current hash of `overview.md`. `RecordContext` carries them in as plain
-  values, so this module still reads no file. Replay has no context and skips them, since a
-  setting that changed since the event was recorded must not make the old journal invalid.
+- Record-time guards need a fact that lives outside the journal or is worked out before the
+  record: the ceiling from the settings, whether the approved plan names gates, the current hash
+  of `overview.md`. `RecordContext` carries them in as plain values, so this module still reads
+  no file. Replay has no context and skips them, since a setting that changed since the event was
+  recorded must not make the old journal invalid.
 """
 
 from collections.abc import Iterable
@@ -57,6 +58,7 @@ class RefusalCode(StrEnum):
     HASH_STALE = "hash-stale"
     SLICES_STALE = "slices-stale"
     SUSPICION = "suspicion"  # a suspected break waits for a reviewer's judgment
+    GATE_LIST = "gate-list"  # the gates block of `plan.md` is missing, malformed, or changed
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,7 +77,7 @@ class RecordContext:
     """What the caller read outside the journal before recording."""
 
     ceiling: int  # `max_autonomous_passes`
-    gates_declared: bool  # the project declares a gate command
+    gates_declared: bool  # the approved revision of the plan names at least one gate command
     overview_hash: str | None  # current hash of `overview.md`, None when the file is missing
 
 
@@ -91,6 +93,8 @@ class DiskFacts:
     plan_hash: str | None
     slices: tuple[int, ...] | None  # markers of `plan.md`, read only for events that carry slices
     slices_problem: str | None = None  # why the markers could not be read, if they could not
+    gates: tuple[str, ...] | None = None  # the gates block of `plan.md`, for the same events
+    gates_problem: str | None = None  # why the gates block could not be read, if it could not
 
 
 class InvalidJournalError(Exception):
@@ -278,7 +282,7 @@ def _check_overview_frozen(prev: PlanState, event: Event, context: RecordContext
 
 def _check_gates(prev: PlanState, event: Event, context: RecordContext) -> Refusal | None:
     if not context.gates_declared:
-        return None  # no gate command, so nothing cites a gate run
+        return None  # the approved plan names no gate, so nothing cites a gate run
     if isinstance(event, ReviewDone) and prev.gates is not GateResult.PASS:
         return _refuse(
             RefusalCode.GATES, "no green gate run since the last slice or the last review"
@@ -307,11 +311,39 @@ def _stale(what: str, recorded: str, current: str | None) -> Refusal | None:
     return _refuse(RefusalCode.HASH_STALE, f"the {what} hash is not the current one of the file")
 
 
-def disk_guards(event: Event, facts: DiskFacts) -> Refusal | None:
+def _check_gate_list(
+    event: Event, facts: DiskFacts, approved: tuple[str, ...] | None
+) -> Refusal | None:
+    """Refuse a draft without its gates, and an amendment that changes the approved ones."""
+    if not isinstance(event, PlanDrafted | PlanAmended):
+        return None
+    if facts.gates_problem is not None:
+        return _refuse(RefusalCode.GATE_LIST, facts.gates_problem)
+    if isinstance(event, PlanDrafted):
+        if facts.gates is None:
+            return _refuse(
+                RefusalCode.GATE_LIST,
+                "plan.md has no gates block: name the commands that check the project,"
+                " or leave the block empty when it has none",
+            )
+        if event.gates != facts.gates:
+            return _refuse(RefusalCode.GATE_LIST, "the gates are not those of plan.md")
+    elif approved is not None and facts.gates != approved:
+        return _refuse(
+            RefusalCode.GATE_LIST,
+            "the gates block differs from the approved one: only a new revision changes the gates",
+        )
+    return None
+
+
+def disk_guards(
+    event: Event, facts: DiskFacts, approved_gates: tuple[str, ...] | None = None
+) -> Refusal | None:
     """Apply the guards that need the plan folder: cited files exist, derived values are current.
 
-    The script computes hashes and slice lists itself (ADR 0012); this refuses an event that
-    carries a value read before the file changed.
+    The script computes hashes, slice lists and gates itself (ADR 0012); this refuses an event
+    that carries a value read before the file changed. `approved_gates` are those of the approved
+    revision, which a `plan-amended` must leave as they are.
     """
     if facts.missing_files:
         return _refuse(
@@ -330,7 +362,7 @@ def disk_guards(event: Event, facts: DiskFacts) -> Refusal | None:
             return _refuse(RefusalCode.SLICES_STALE, facts.slices_problem)
         if facts.slices is not None and event.slices != facts.slices:
             return _refuse(RefusalCode.SLICES_STALE, "the slices are not those of plan.md")
-    return None
+    return _check_gate_list(event, facts, approved_gates)
 
 
 def admit(

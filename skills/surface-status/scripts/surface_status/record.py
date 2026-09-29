@@ -51,7 +51,22 @@ def _disk_facts(folder: PlanFolder, event: Event) -> DiskFacts:
             facts = replace(facts, slices=folder.declared_slices())
         except PlanFolderError as error:
             facts = replace(facts, slices_problem=str(error))
+        try:
+            facts = replace(facts, gates=folder.declared_gates())
+        except PlanFolderError as error:
+            facts = replace(facts, gates_problem=str(error))
     return facts
+
+
+def record_context(
+    folder: PlanFolder, state: PlanState | None, settings: Settings
+) -> RecordContext:
+    """Gather what the record-time guards need, from the settings, the state and the folder."""
+    return RecordContext(
+        ceiling=settings.max_autonomous_passes,
+        gates_declared=state is not None and bool(state.approved_gates),
+        overview_hash=folder.overview_hash(),
+    )
 
 
 def record(
@@ -61,15 +76,13 @@ def record(
     if not folder.root.is_dir():
         message = f"{folder.root} is not a plan folder"
         raise PlanFolderError(message)
-    context = RecordContext(
-        ceiling=settings.max_autonomous_passes,
-        gates_declared=settings.gate_command is not None,
-        overview_hash=folder.overview_hash(),
-    )
-    result = admit(load_state(folder), event, context)
+    state = load_state(folder)
+    context = record_context(folder, state, settings)
+    result = admit(state, event, context)
     if isinstance(result, Refusal):
         return result
-    refusal = disk_guards(event, _disk_facts(folder, event))
+    approved = None if state is None else state.approved_gates
+    refusal = disk_guards(event, _disk_facts(folder, event), approved)
     if refusal is not None:
         return refusal
     append_line(folder.journal, JournalLine(timestamp(now), event))

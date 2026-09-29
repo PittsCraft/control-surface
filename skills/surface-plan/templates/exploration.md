@@ -7,7 +7,7 @@ What the exploration of the repository established, so that a relaunched session
 - Domain: the business concepts the feature touches, in the words of the repository's domain document.
 - Architecture: the style, the boundaries that must hold, and what enforces them.
 - Generated artifacts: what is derived from a source of truth and never edited by hand.
-- Gates: every check a change must pass, in the order they run, and the command that runs them all if there is one.
+- Gates: every check a change must pass, in the order they run, the command of each and where it was found, and the command that runs them all if there is one.
 - Conventions: branches, commits, pull requests, reviews.
 - Decisions: where they are recorded, and in what form.
 - CI: what triggers it (a push, a pull request opened, marked ready for review, a merge).
@@ -23,7 +23,7 @@ If the repository states none of this, say so, and the minimum the plan will hol
 
 ## Project declarations
 
-What `.claude/surface.md` declares: critical zones, conventions. "None" when the file is missing or empty.
+What the repository's agent instructions (`AGENTS.md`, `CLAUDE.md`) declare: critical zones, conventions. "None" when they declare nothing.
 
 ## Read
 

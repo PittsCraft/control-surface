@@ -8,7 +8,16 @@ import pytest
 from hypothesis import event as note
 from hypothesis import given
 from hypothesis import strategies as st
-from journal_support import NOW, make_event, new_folder, onward, settings_with, write
+from journal_support import (
+    GATES,
+    NOW,
+    make_event,
+    new_folder,
+    onward,
+    plan_text,
+    settings_with,
+    write,
+)
 
 from surface_status.events import (
     EVENT_NAMES,
@@ -62,7 +71,7 @@ def _to_awaiting(folder: PlanFolder) -> None:
     assert plan is not None
     report = write(folder, folder.next_check(1))
     _accept(folder, CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan))
-    _accept(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2)))
+    _accept(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=GATES))
 
 
 def _to_executing(folder: PlanFolder) -> None:
@@ -74,7 +83,7 @@ def _to_executing(folder: PlanFolder) -> None:
 
 def test_a_plan_walks_from_opening_to_conform_through_record(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
-    settings = settings_with(3, gates=True)
+    settings = settings_with(3)
     _to_executing(folder)
     _accept(folder, SliceDone(slice_=1, gates="lint"), settings)
     _accept(folder, SliceDone(slice_=2, gates="lint"), settings)
@@ -119,8 +128,9 @@ def test_a_refused_record_leaves_the_journal_unchanged_and_an_accepted_one_only_
     data: st.DataObject,
 ) -> None:
     with tempfile.TemporaryDirectory() as directory:
-        folder = new_folder(Path(directory))
-        settings = settings_with(ceiling, gates=gates)
+        named = GATES if gates else ()
+        folder = new_folder(Path(directory), gates=named)
+        settings = settings_with(ceiling)
         for step in range(steps):
             state = load_state(folder)
             edit = data.draw(st.integers(0, 14))
@@ -129,8 +139,7 @@ def test_a_refused_record_leaves_the_journal_unchanged_and_an_accepted_one_only_
             elif edit == 1:
                 marks = data.draw(st.lists(st.integers(1, 3), unique=True, min_size=1, max_size=3))
                 folder.plan.write_text(
-                    "".join(f"<!-- slice:{n} -->\n" for n in marks) + f"step {step}\n",
-                    encoding="utf-8",
+                    plan_text(tuple(marks), named, f"step {step}\n"), encoding="utf-8"
                 )
             name = onward(state)
             if name is None or data.draw(st.integers(0, 2)) == 0:
@@ -207,7 +216,7 @@ def test_a_cited_name_that_is_not_a_file_of_the_folder_is_refused(
 
 def test_a_gate_run_is_cited_by_its_number(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
-    settings = settings_with(3, gates=True)
+    settings = settings_with(3)
     _to_executing(folder)
     _accept(folder, SliceDone(slice_=1, gates="x"), settings)
     _accept(folder, SliceDone(slice_=2, gates="x"), settings)
@@ -306,9 +315,7 @@ def test_the_overview_edited_after_approval_blocks_the_next_record(tmp_path: Pat
 def test_a_plan_amended_carries_the_current_plan_hash_and_slices(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_executing(folder)
-    folder.plan.write_text(
-        "<!-- slice:1 -->\n<!-- slice:2 -->\n<!-- slice:3 -->\n", encoding="utf-8"
-    )
+    folder.plan.write_text(plan_text((1, 2, 3)), encoding="utf-8")
     plan = folder.plan_hash()
     assert plan is not None
     stale = PlanAmended(slice_=1, why="added a slice", plan=plan, slices=(1, 2))
@@ -316,7 +323,7 @@ def test_a_plan_amended_carries_the_current_plan_hash_and_slices(tmp_path: Path)
     _accept(folder, PlanAmended(slice_=1, why="added a slice", plan=plan, slices=(1, 2, 3)))
 
 
-def test_the_ceiling_and_the_gate_command_come_from_the_settings(tmp_path: Path) -> None:
+def test_the_ceiling_comes_from_the_settings(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
     overview, plan = folder.overview_hash(), folder.plan_hash()
@@ -325,8 +332,125 @@ def test_the_ceiling_and_the_gate_command_come_from_the_settings(tmp_path: Path)
     for _ in range(2):
         report = write(folder, folder.next_check(1))
         event = CheckDone(rev=1, report=report, omissions=1, overview=overview, plan=plan)
-        _accept(folder, event, settings_with(2, gates=False))
+        _accept(folder, event, settings_with(2))
     report = write(folder, folder.next_check(1))
     third = CheckDone(rev=1, report=report, omissions=1, overview=overview, plan=plan)
-    assert _refusal(folder, third, settings_with(2, gates=False)).code is RefusalCode.CEILING
-    _accept(folder, third, settings_with(3, gates=False))
+    assert _refusal(folder, third, settings_with(2)).code is RefusalCode.CEILING
+    _accept(folder, third, settings_with(3))
+
+
+# The gates block of the plan
+
+
+def _checked(folder: PlanFolder) -> tuple[str, str]:
+    """Record a clean cross-check of the files as they are, and return their hashes."""
+    overview, plan = folder.overview_hash(), folder.plan_hash()
+    assert overview is not None
+    assert plan is not None
+    report = write(folder, folder.next_check(1))
+    _accept(folder, CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan))
+    return overview, plan
+
+
+def test_a_plan_without_its_gates_block_cannot_be_drafted(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path)
+    _to_drafting(folder)
+    folder.plan.write_text(plan_text(gates=None), encoding="utf-8")
+    overview, plan = _checked(folder)
+    before = _bytes(folder)
+    refusal = _refusal(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2)))
+    assert refusal.code is RefusalCode.GATE_LIST
+    assert "no gates block" in refusal.reason
+    assert _bytes(folder) == before
+
+
+def test_the_gates_of_a_draft_are_the_ones_the_plan_names(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path, gates=("make test", "make lint"))
+    _to_drafting(folder)
+    overview, plan = _checked(folder)
+    stale = PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=("make test",))
+    assert _refusal(folder, stale).code is RefusalCode.GATE_LIST
+    _accept(
+        folder,
+        PlanDrafted(
+            rev=1, overview=overview, plan=plan, slices=(1, 2), gates=("make test", "make lint")
+        ),
+    )
+    state = load_state(folder)
+    assert state is not None
+    assert state.drafted_gates == ("make test", "make lint")
+    assert state.approved_gates is None
+
+
+def test_an_empty_gates_block_says_the_project_has_none(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path, gates=())
+    _to_drafting(folder)
+    overview, plan = _checked(folder)
+    _accept(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=()))
+    _accept(folder, PlanApproved(rev=1, overview=overview))
+    state = load_state(folder)
+    assert state is not None
+    assert state.approved_gates == ()
+
+
+def test_a_malformed_gates_block_cannot_be_drafted(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path)
+    _to_drafting(folder)
+    folder.plan.write_text(plan_text(tail="```gates\nmake\n```\n"), encoding="utf-8")
+    overview, plan = _checked(folder)
+    refusal = _refusal(
+        folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=None)
+    )
+    assert refusal.code is RefusalCode.GATE_LIST
+    assert "a second gates block" in refusal.reason
+
+
+def test_approval_takes_the_gates_of_the_drafted_revision(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path)
+    _to_awaiting(folder)
+    folder.plan.write_text(plan_text(gates=("edited after the draft",)), encoding="utf-8")
+    overview = folder.overview_hash()
+    assert overview is not None
+    _accept(folder, PlanApproved(rev=1, overview=overview))
+    state = load_state(folder)
+    assert state is not None
+    assert state.approved_gates == GATES
+
+
+def test_an_amendment_during_execution_keeps_the_approved_gates(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path)
+    _to_executing(folder)
+    folder.plan.write_text(plan_text(gates=("true", "false")), encoding="utf-8")
+    plan = folder.plan_hash()
+    assert plan is not None
+    before = _bytes(folder)
+    refusal = _refusal(folder, PlanAmended(slice_=1, why="more gates", plan=plan, slices=(1, 2)))
+    assert refusal.code is RefusalCode.GATE_LIST
+    assert "only a new revision changes the gates" in refusal.reason
+    assert _bytes(folder) == before
+    folder.plan.write_text(plan_text(tail="renamed a function\n"), encoding="utf-8")
+    plan = folder.plan_hash()
+    assert plan is not None
+    _accept(folder, PlanAmended(slice_=1, why="renamed", plan=plan, slices=(1, 2)))
+
+
+def test_a_plan_approved_before_plans_named_their_gates_amends_freely(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path, gates=())
+    _to_drafting(folder)
+    overview, plan = _checked(folder)
+    # A journal written before this version: its plan-drafted carries no gates.
+    at = timestamp(NOW)
+    old = f'"overview": "{overview}", "plan": "{plan}", "slices": [1, 2]'
+    with folder.journal.open("a", encoding="utf-8") as journal:
+        journal.write(f'{{"v": 1, "at": "{at}", "event": "plan-drafted", "rev": 1, {old}}}\n')
+        journal.write(
+            f'{{"v": 1, "at": "{at}", "event": "plan-approved", "rev": 1, '
+            f'"overview": "{overview}"}}\n'
+        )
+    state = load_state(folder)
+    assert state is not None
+    assert state.approved_gates is None
+    folder.plan.write_text(plan_text(gates=("make test",)), encoding="utf-8")
+    amended = folder.plan_hash()
+    assert amended is not None
+    _accept(folder, PlanAmended(slice_=1, why="named the gates", plan=amended, slices=(1, 2)))

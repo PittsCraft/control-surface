@@ -6,7 +6,7 @@ Approve a short overview of your feature, then let agents build it and review th
 curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/install.py | python3 -
 ```
 
-Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and creates two settings files that stay yours. It never writes your Claude Code settings: [Permissions](#permissions) says how the loop runs unattended. Add `--ref <tag or commit>` to pin a version.
+Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and needs no configuration. It never writes your Claude Code settings: [Permissions](#permissions) says how the loop runs unattended. Add `--ref <tag or commit>` to pin a version.
 
 ## Prerequisites
 
@@ -20,9 +20,10 @@ In a Claude Code session of your project, run `/surface-plan` with a short descr
 
 - From the main branch, it creates a branch that follows your repository's conventions. From any other branch, it opens the plan there, so one branch can carry several plans.
 - It explores the code the feature touches, then asks you its questions one at a time. Each comes with its options and the one it would pick. Your answers are written down as you give them, and it never invents a business rule to fill a gap.
+- It finds the commands that check your project, tests, lint, type checks, where your project states them, and writes them in the plan as its gates. It asks you only if it finds none.
 - It writes a detailed plan, then draws a concise overview from it and has it cross-checked, so that the overview hides nothing the plan does.
 - Before the first push, if your CI reacts to a push or to a new PR, it warns you and waits for your agreement.
-- It commits, pushes, opens a draft PR that links the overview and the plan, and tells you where to read the overview.
+- It commits, pushes, opens a draft PR that links the overview and the plan, and tells you where to read the overview and which gates the loop will run.
 
 Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
@@ -31,7 +32,7 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 `overview.md` is the only thing you have to read. It shows what will be built, in fixed sections, with diagrams where they help: the idea in one sentence, acceptance criteria, scope, data, boundaries, sequences, state machines, algorithms, and the sensitive zones, the points that touch your control, your work or your time and that you did not see go by. It does not show the order of construction: that stays in the plan.
 
 - To change something, run `/surface-plan` again and say what. It records your amendment and produces the next revision of the plan and of the overview.
-- To approve, run `/surface-execute`. Launching it counts as approval: it names the plan and the revision it approves, then freezes the overview.
+- To approve, run `/surface-execute`. Launching it counts as approval, gates included: it names the plan, the revision and the gates it approves, then freezes the overview.
 
 ### Permissions
 
@@ -40,13 +41,13 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 ### 3. Let the agents work
 
-`/surface-execute` hands each slice of the plan to a fresh agent. Then it runs your gates, if you declared them, has a fresh agent review everything the branch changes against the overview, and has defects fixed, pass after pass. When the code departs from the plan but the overview stays true, the plan is amended and the work goes on.
+`/surface-execute` hands each slice of the plan to a fresh agent. Then it runs the gates of the plan, in order, stopping at the first that fails, has a fresh agent review everything the branch changes against the overview, and has defects fixed, pass after pass. When the code departs from the plan but the overview stays true, the plan is amended and the work goes on.
 
 The reviewer raises only what concerns correctness or the requirements, never a style preference. Your own commits on the branch are reviewed too, and may be fixed.
 
 While the agents work, you do not amend the plan: you wait for the loop to stop, or you abandon the plan.
 
-`/surface-execute` dispatches soundly on any model. The agents run on the models of `.claude/surface.json`, whatever your session's.
+`/surface-execute` dispatches soundly on any model. The agents run on the models of `.claude/surface.json`, or its defaults, whatever your session's.
 
 ### 4. When you get the hand back
 
@@ -68,7 +69,7 @@ Then you mark the PR ready for review, which triggers your CI, and you merge. Th
 .claude/skills/surface-status/scripts/surface-status check --require conform
 ```
 
-It fails as long as a plan of the branch is neither conform nor abandoned before its approval, so keep it out of your gate command.
+It fails as long as a plan of the branch is neither conform nor abandoned before its approval, so keep it out of the gates your plans name.
 
 In a GitHub Actions workflow, the check needs the full history of the repository to find where your branch left the main branch. A checkout at depth 1, the default, makes it exit 2 and say so:
 
@@ -117,20 +118,7 @@ you      read conformity.md against overview.md, mark the PR ready, merge
 
 ## Settings
 
-`.claude/surface.json` holds what you can tune per project:
-
-| Setting | Default | |
-|---|---|---|
-| `plans_dir` | `docs/plans` | where plan folders go |
-| `max_autonomous_passes` | `3` | how far the agents go before handing back |
-| `gate_command` | none | the command that runs your full gates, none to do without |
-| `gate_timeout_minutes` | `30` | its timeout |
-| `models` | `opus` for the three judgment roles, `sonnet` for the executor | the model of each agent |
-| `mark_pr_ready` | `false` | let the command mark the PR ready instead of you |
-
-`.claude/surface.md` is free text read by the agents: your critical zones, your conventions, anything they should know about the project.
-
-Both files belong to your project. Installing or updating creates them when missing and never overwrites them.
+The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the judgment roles, `sonnet` for the executor).
 
 ## Update and drift check
 

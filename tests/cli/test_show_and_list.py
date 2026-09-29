@@ -5,7 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
-from cli_support import PLAN, Project
+from cli_support import PLAN, Project, plan_text
 
 from surface_status.events import PlanOpened
 from surface_status.machine import State, apply
@@ -106,7 +106,6 @@ def test_show_prints_the_effective_settings(project: Project) -> None:
     settings = project.run("show", PLAN).json()["settings"]
     assert settings["plans_dir"] == "docs/plans"
     assert settings["max_autonomous_passes"] == 3
-    assert settings["gate_command"] is None
     assert settings["models"] == {
         "extractor": "opus",
         "checker": "opus",
@@ -115,12 +114,46 @@ def test_show_prints_the_effective_settings(project: Project) -> None:
     }
     (project.root / ".claude").mkdir()
     (project.root / ".claude" / "surface.json").write_text(
-        json.dumps({"max_autonomous_passes": 5, "gate_command": "make gate"}), encoding="utf-8"
+        json.dumps({"max_autonomous_passes": 5, "models": {"executor": "opus"}}), encoding="utf-8"
     )
     changed = project.run("show", PLAN).json()
     assert changed["settings"]["max_autonomous_passes"] == 5
-    assert changed["settings"]["gate_command"] == "make gate"
+    assert changed["settings"]["models"]["executor"] == "opus"
     assert changed["passes"]["ceiling"] == 5
+
+
+def test_show_names_the_gates_of_the_drafted_revision(project: Project) -> None:
+    project.reach("drafting")
+    assert project.run("show", PLAN).json()["gates"] is None
+    assert "gates: not named by a drafted revision" in project.run("show", PLAN, as_json=False).out
+    folder = project.plans / PLAN
+    folder.joinpath("plan.md").write_text(plan_text(("make test", "make lint")), encoding="utf-8")
+    project.record(PLAN, "check-done", "--report", "checks/rev-01-01.md", "--omissions", "0")
+    assert project.record(PLAN, "plan-drafted").code == 0
+    assert project.run("show", PLAN).json()["gates"] == ["make test", "make lint"]
+    text = project.run("show", PLAN, as_json=False).out
+    assert "gates: make test; make lint" in text
+
+
+def test_a_plan_without_its_gates_block_is_not_drafted(project: Project) -> None:
+    project.reach("drafting")
+    (project.plans / PLAN / "plan.md").write_text("<!-- slice:1 -->\n", encoding="utf-8")
+    project.record(PLAN, "check-done", "--report", "checks/rev-01-01.md", "--omissions", "0")
+    refused = project.record(PLAN, "plan-drafted")
+    assert refused.code == 1
+    assert refused.json()["refused"]["code"] == "gate-list"
+
+
+def test_a_removed_setting_is_a_usage_error_that_names_its_replacement(project: Project) -> None:
+    (project.root / ".claude").mkdir()
+    (project.root / ".claude" / "surface.json").write_text(
+        '{"gate_command": "make check"}', encoding="utf-8"
+    )
+    result = project.run()
+    assert result.code == 2
+    error = result.json()["error"]
+    assert "'gate_command' is gone" in error
+    assert "the approved plan names" in error
 
 
 def test_the_plans_dir_setting_moves_the_search(project: Project) -> None:
@@ -238,8 +271,8 @@ def test_the_text_of_show_holds_what_the_json_holds(project: Project) -> None:
     assert "state: reviewing (hand: agents)" in text
     assert "slices: done 1, 2; remaining none" in text
     assert "passes: planning 0, execution 0, ceiling 3" in text
-    assert "gate_command: none" in text
-    assert "mark_pr_ready: false" in text
+    assert "gates: none" in text
+    assert "max_autonomous_passes: 3" in text
 
 
 REASON = "the export needs a column the overview does not show"

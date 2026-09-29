@@ -48,6 +48,10 @@ _counts = st.integers(0, 10**6)
 _slice = st.integers(1, 10**4)
 _hashes = st.binary(max_size=6).map(lambda data: "sha256:" + sha256(data).hexdigest())
 _slices = st.lists(_slice, unique=True, max_size=6).map(tuple)
+_commands = st.lists(st.text(min_size=1, max_size=12), max_size=3).map(tuple)
+
+# The gates block every plan of these tests names, unless a test says otherwise.
+GATES = ("true",)
 
 EVENTS: dict[type[Event], SearchStrategy[Event]] = {
     PlanOpened: st.builds(PlanOpened, slug=_texts),
@@ -56,7 +60,12 @@ EVENTS: dict[type[Event], SearchStrategy[Event]] = {
         CheckDone, rev=_counts, report=_texts, omissions=_counts, overview=_hashes, plan=_hashes
     ),
     PlanDrafted: st.builds(
-        PlanDrafted, rev=_counts, overview=_hashes, plan=_hashes, slices=_slices
+        PlanDrafted,
+        rev=_counts,
+        overview=_hashes,
+        plan=_hashes,
+        slices=_slices,
+        gates=st.none() | _commands,
     ),
     AmendmentReceived: st.builds(AmendmentReceived),
     PlanApproved: st.builds(PlanApproved, rev=_counts, overview=_hashes),
@@ -92,13 +101,25 @@ at_times = st.datetimes(min_value=_FIRST, max_value=_LAST).map(
 journal_lines = st.builds(JournalLine, at=at_times, event=all_events)
 
 
-def new_folder(parent: Path, name: str = "2026-09-29-feature") -> PlanFolder:
-    """Make a plan folder holding the developer's files: an overview and a plan of two slices."""
+def plan_text(
+    slices: tuple[int, ...] = (1, 2), gates: tuple[str, ...] | None = GATES, tail: str = ""
+) -> str:
+    """Write the text of a `plan.md`: its slice markers, then its gates block unless None."""
+    text = "".join(f"<!-- slice:{n} -->\n" for n in slices)
+    if gates is not None:
+        text += "```gates\n" + "".join(f"{command}\n" for command in gates) + "```\n"
+    return text + tail
+
+
+def new_folder(
+    parent: Path, name: str = "2026-09-29-feature", gates: tuple[str, ...] = GATES
+) -> PlanFolder:
+    """Make a plan folder holding the developer's files: an overview, a plan of two slices."""
     root = parent / name
     root.mkdir()
     folder = PlanFolder(root)
     folder.overview.write_text("# Overview\n", encoding="utf-8")
-    folder.plan.write_text("<!-- slice:1 -->\n<!-- slice:2 -->\n", encoding="utf-8")
+    folder.plan.write_text(plan_text(gates=gates), encoding="utf-8")
     return folder
 
 
@@ -137,7 +158,11 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
             )
         case "plan-drafted":
             return PlanDrafted(
-                rev=check.rev if check else 1, overview=overview, plan=plan, slices=slices
+                rev=check.rev if check else 1,
+                overview=overview,
+                plan=plan,
+                slices=slices,
+                gates=folder.declared_gates(),
             )
         case "amendment-received":
             return AmendmentReceived()
@@ -225,5 +250,5 @@ def _pending(state: PlanState | None) -> str:
     return state.pending_proposal if state and state.pending_proposal else plan_change_name(1)
 
 
-def settings_with(ceiling: int, *, gates: bool) -> Settings:
-    return Settings(max_autonomous_passes=ceiling, gate_command="true" if gates else None)
+def settings_with(ceiling: int) -> Settings:
+    return Settings(max_autonomous_passes=ceiling)

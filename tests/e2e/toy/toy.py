@@ -203,7 +203,7 @@ if __name__ == "__main__":
     unittest.main()
 """
 
-SURFACE_MD = """\
+AGENTS_MD = """\
 # shelf
 
 Critical zone: the CSV export is read by the bookshop's spreadsheet import. Its columns, their
@@ -245,13 +245,12 @@ EXPLORATION = """\
 
 ## Project declarations
 
-`.claude/surface.md`: the CSV export is a contract with the bookshop, its columns, their order
-and their names.
+`AGENTS.md`: the CSV export is a contract with the bookshop, its columns, their order and their
+names.
 
 ## Read
 
-README.md, shelf/books.py, shelf/__main__.py, tests/test_books.py, tests/test_cli.py,
-.claude/surface.md.
+README.md, AGENTS.md, shelf/books.py, shelf/__main__.py, tests/test_books.py, tests/test_cli.py.
 """
 
 INTERVIEW = """\
@@ -352,6 +351,14 @@ The gate `python3 -m unittest discover -s tests -q` green; commits `<area>: <wha
 
 - Assumption: the year is written as a whole number, as `Book` holds it.
 - Assumption: lines end with `\\n`, the spreadsheet reads it.
+
+## 7. Gates
+
+The gate the README names, the only one.
+
+```gates
+python3 -m unittest discover -s tests -q
+```
 """
 
 OVERVIEW = """\
@@ -420,7 +427,7 @@ Sort the books by author, then by title; write the header, then one row per book
 
 ## 9. Sensitive zones
 
-The columns are a contract with the bookshop (`.claude/surface.md`): their names and their order
+The columns are a contract with the bookshop (`AGENTS.md`): their names and their order
 are fixed by this overview.
 """
 
@@ -630,6 +637,7 @@ def _base(dest: Path, settings: Mapping[str, object]) -> Path:
         project,
         {
             "README.md": README,
+            "AGENTS.md": AGENTS_MD,
             "shelf/__init__.py": "",
             "shelf/books.py": BOOKS,
             "shelf/__main__.py": MAIN_BEFORE,
@@ -647,13 +655,8 @@ def _base(dest: Path, settings: Mapping[str, object]) -> Path:
         capture_output=True,
         check=True,
     )
-    write(
-        project,
-        {
-            ".claude/surface.json": json.dumps(settings, indent=2) + "\n",
-            ".claude/surface.md": SURFACE_MD,
-        },
-    )
+    if settings:
+        write(project, {".claude/surface.json": json.dumps(settings, indent=2) + "\n"})
     git(project, "add", ".claude")
     git(project, "commit", "--quiet", "-m", "chain: install the control surface")
     git(project, "remote", "add", "origin", str(remote))
@@ -715,7 +718,7 @@ def _slice_two(project: Path, plan: str, *, defect: bool) -> None:
 
 def build(state: State, dest: Path) -> Path:
     """Build the toy project under `dest` in `state` and return its path."""
-    settings: dict[str, object] = {"gate_command": GATE_COMMAND}
+    settings: dict[str, object] = {}
     if state is State.CEILING:
         settings["max_autonomous_passes"] = 1
     project = _base(dest, settings)

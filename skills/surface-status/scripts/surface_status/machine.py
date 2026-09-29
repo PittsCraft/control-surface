@@ -146,7 +146,9 @@ class PlanState:
     execution_passes: int
     drafted_overview: str | None
     drafted_plan: str | None
+    drafted_gates: tuple[str, ...] | None  # gates of the last `plan-drafted`
     approved_overview: str | None  # hash of the last `plan-approved`
+    approved_gates: tuple[str, ...] | None  # the drafted gates the last `plan-approved` took
     last_check: CheckSummary | None  # cleared when a new revision starts
     last_review: ReviewSummary | None  # cleared by any change of the work since that review
     gates: GateResult | None  # result of the last gate run, None once the work changed since
@@ -174,7 +176,9 @@ def _opened(event: PlanOpened) -> PlanState:
         execution_passes=0,
         drafted_overview=None,
         drafted_plan=None,
+        drafted_gates=None,
         approved_overview=None,
+        approved_gates=None,
         last_check=None,
         last_review=None,
         gates=None,
@@ -202,6 +206,7 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
                 prev,
                 drafted_overview=event.overview,
                 drafted_plan=event.plan,
+                drafted_gates=event.gates,
                 declared=frozenset(event.slices),
             )
         case AmendmentReceived():
@@ -217,6 +222,7 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
             return replace(
                 prev,
                 approved_overview=event.overview,
+                approved_gates=prev.drafted_gates,
                 execution_passes=0,
                 last_review=None,
                 gates=None,

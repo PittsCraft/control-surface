@@ -47,6 +47,12 @@ WAYS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
 REPORTS = ("checks/rev-01-01.md", "reviews/pass-01.md", "conformity.md")
 
 
+def plan_text(gates: tuple[str, ...]) -> str:
+    """Write a `plan.md` of two slices whose gates block names `gates`."""
+    block = "".join(f"{command}\n" for command in gates)
+    return f"<!-- slice:1 -->\n<!-- slice:2 -->\n```gates\n{block}```\n"
+
+
 @dataclass(frozen=True, slots=True)
 class Result:
     code: int
@@ -72,20 +78,23 @@ class Project:
         code = main(argv, now=lambda: FIXED_NOW, cwd=self.root, stdout=out, stderr=err)
         return Result(code, out.getvalue(), err.getvalue())
 
-    def plan(self, name: str = PLAN) -> Path:
-        """Make a plan folder holding the developer's files: an overview, a plan of two slices."""
+    def plan(self, name: str = PLAN, gates: tuple[str, ...] = ()) -> Path:
+        """Make a plan folder holding the developer's files: an overview, a plan of two slices.
+
+        The plan names `gates` in its gates block; none by default, so the gate guards are lifted.
+        """
         folder = self.plans / name
         folder.mkdir()
         (folder / "overview.md").write_text("# Overview\n", encoding="utf-8")
-        (folder / "plan.md").write_text("<!-- slice:1 -->\n<!-- slice:2 -->\n", encoding="utf-8")
+        (folder / "plan.md").write_text(plan_text(gates), encoding="utf-8")
         return folder
 
     def record(self, plan: str, event: str, *args: str) -> Result:
         return self.run("record", plan, event, *args)
 
-    def reach(self, state: str, name: str = PLAN) -> Path:
+    def reach(self, state: str, name: str = PLAN, gates: tuple[str, ...] = ()) -> Path:
         """Make a plan and drive it to a state through the command line, as an agent would."""
-        folder = self.plan(name)
+        folder = self.plan(name, gates)
         for report in REPORTS:
             target = folder / report
             target.parent.mkdir(parents=True, exist_ok=True)

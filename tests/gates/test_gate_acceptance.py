@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from cli_support import PLAN, Project
-from gates_support import SHORT_MINUTE, declare, events, reviewing, wait_gone
+from gates_support import SHORT_MINUTE, events, reviewing, wait_gone
 
 from surface_status import gates
 
@@ -68,11 +68,14 @@ def test_a_green_run_is_not_a_pass(project: Project) -> None:
     assert _execution_passes(project) == 0
 
 
-def test_a_fix_is_recorded_after_a_green_run_and_not_after_a_failed_one(project: Project) -> None:
-    reviewing(project, "false")
+def test_a_fix_is_recorded_after_a_green_run_and_not_after_a_failed_one(
+    project: Project, tmp_path: Path
+) -> None:
+    fixed = tmp_path / "fixed"
+    reviewing(project, f"test -e {fixed}")
     project.run("gate", PLAN)
     assert project.record(PLAN, "fix-done").json()["refused"]["code"] == "gates"
-    declare(project, "true")
+    fixed.touch()
     project.run("gate", PLAN)
     assert project.record(PLAN, "fix-done").code == 0
 
@@ -81,9 +84,10 @@ def test_a_timeout_leaves_no_child_process_behind(
     project: Project, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(gates, "SECONDS_PER_MINUTE", SHORT_MINUTE)
+    monkeypatch.setattr(gates, "TIMEOUT_MINUTES", 1)
     pids = tmp_path / "pids"
     command = f"sleep 60 & echo $! >> {pids}; sh -c 'sleep 60 & echo $! >> {pids}; wait' & wait"
-    reviewing(project, command, gate_timeout_minutes=1)
+    reviewing(project, command)
     result = project.run("gate", PLAN)
     assert result.json()["result"] == "timeout"
     found = [int(line) for line in pids.read_text(encoding="utf-8").split()]
@@ -126,10 +130,11 @@ def test_the_gate_refuses_to_start_at_the_ceiling(project: Project, tmp_path: Pa
 
 
 def test_a_green_command_is_not_run_at_the_ceiling_either(project: Project, tmp_path: Path) -> None:
-    marker = tmp_path / "marker"
-    reviewing(project, "false", max_autonomous_passes=1)
+    marker, green = tmp_path / "marker", tmp_path / "green"
+    reviewing(project, f"touch {marker}; test -e {green}", max_autonomous_passes=1)
     project.run("gate", PLAN)
-    declare(project, f"touch {marker}", max_autonomous_passes=1)
+    marker.unlink()
+    green.touch()
     assert project.run("gate", PLAN).code == 1
     assert not marker.exists()
 
@@ -138,8 +143,7 @@ def test_the_gate_is_refused_before_it_runs_when_the_state_takes_no_gate_run(
     project: Project, tmp_path: Path
 ) -> None:
     marker = tmp_path / "marker"
-    declare(project, f"touch {marker}")
-    project.reach("executing")
+    project.reach("executing", gates=(f"touch {marker}",))
     refused = project.run("gate", PLAN)
     assert refused.code == 1
     assert refused.json()["refused"]["code"] == "transition"
@@ -147,23 +151,23 @@ def test_the_gate_is_refused_before_it_runs_when_the_state_takes_no_gate_run(
     assert not (project.plans / PLAN / "gates").exists()
 
 
-def test_without_a_declared_command_gate_says_so_and_the_gate_guards_are_lifted(
+def test_when_the_plan_names_no_gate_gate_says_so_and_the_gate_guards_are_lifted(
     project: Project,
 ) -> None:
-    reviewing(project, None)
+    reviewing(project)
     before = project.journal()
     result = project.run("gate", PLAN)
     assert result.code == 0
     answer = result.json()
     assert answer["ran"] is False
-    assert "no gate command" in answer["reason"]
+    assert answer["reason"].startswith("the approved plan names no gate command")
     assert project.journal() == before
     assert not (project.plans / PLAN / "gates").exists()
     assert project.record(PLAN, "review-done", *REVIEW).code == 0
 
 
 def test_the_text_answer_without_a_command_says_so(project: Project) -> None:
-    reviewing(project, None)
+    reviewing(project)
     result = project.run("gate", PLAN, as_json=False)
     assert result.code == 0
-    assert result.out.startswith("the project declares no gate command")
+    assert result.out.startswith("the approved plan names no gate command")

@@ -2,8 +2,8 @@
 
 `record` on the command line takes counts, reasons, results and the paths of the reports the
 caller wrote. Everything else is derived here from the journal and the plan folder: the revision,
-the hashes, the slice list, the pass numbers, the pending proposal. A caller cannot pass a derived
-value, so it cannot record a wrong one.
+the hashes, the slice list, the gates, the pass numbers, the pending proposal. A caller cannot pass
+a derived value, so it cannot record a wrong one.
 """
 
 import re
@@ -190,8 +190,16 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
                 slices = folder.declared_slices()
             except PlanFolderError:
                 slices = ()  # the disk guards refuse it, with the reason
+            try:
+                gates = folder.declared_gates()
+            except PlanFolderError:
+                gates = None  # the disk guards refuse it, with the reason
             return PlanDrafted(
-                rev=current_revision(events), overview=overview, plan=plan, slices=slices
+                rev=current_revision(events),
+                overview=overview,
+                plan=plan,
+                slices=slices,
+                gates=gates,
             )
         case "amendment-received":
             return AmendmentReceived()

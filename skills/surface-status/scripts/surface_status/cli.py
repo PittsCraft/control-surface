@@ -119,7 +119,7 @@ def build_parser() -> argparse.ArgumentParser:
     commits = add("commits", "the commits of the branch that belong to a plan, and to none")
     _plan_argument(commits, optional=False)
     add("pr-body", "the description of the pull request, from the state")
-    gate = add("gate", "run the project's gates and record the result")
+    gate = add("gate", "run the gates of the approved plan and record the result")
     _plan_argument(gate, optional=False)
     recorder = add("record", "check the transition and its guards, then append the event")
     _plan_argument(recorder, optional=False)
@@ -322,7 +322,9 @@ def _refused(run: _Run, plan: str, event: str, refusal: Refusal) -> int:
 def _gate(run: _Run, folder: PlanFolder) -> int:
     outcome = gates.run_gate(folder, run.root, run.settings, run.now)
     if isinstance(outcome, gates.NotDeclared):
-        message = "the project declares no gate command: nothing to run, the gate guards are lifted"
+        message = (
+            "the approved plan names no gate command: nothing to run, the gate guards are lifted"
+        )
         skipped: report.Payload = {
             "v": report.JSON_VERSION,
             "ok": True,
@@ -336,8 +338,7 @@ def _gate(run: _Run, folder: PlanFolder) -> int:
         return _refused(run, folder.name, GATE_EVENT, outcome.refusal)
     if isinstance(outcome.recorded, Refusal):
         return _refused(run, folder.name, GATE_EVENT, outcome.recorded)
-    execution = outcome.execution
-    green = execution.result is GateResult.PASS
+    green = outcome.result is GateResult.PASS
     state = outcome.recorded.state.state.value
     payload: report.Payload = {
         "v": report.JSON_VERSION,
@@ -345,16 +346,25 @@ def _gate(run: _Run, folder: PlanFolder) -> int:
         "plan": folder.name,
         "ran": True,
         "run": outcome.run,
-        "result": execution.result.value,
-        "exit_code": execution.exit_code,
-        "duration_seconds": round(execution.seconds, 1),
+        "result": outcome.result.value,
+        "exit_code": outcome.exit_code,
+        "duration_seconds": round(outcome.seconds, 1),
+        "commands": [
+            {
+                "command": step.command,
+                "result": step.execution.result.value,
+                "exit_code": step.execution.exit_code,
+                "duration_seconds": round(step.execution.seconds, 1),
+            }
+            for step in outcome.steps
+        ],
         "report": outcome.report,
         "at": timestamp(run.now),
         "state": state,
     }
     text = (
-        f"gates {execution.result.value} for {folder.name} (run {outcome.run}, "
-        f"{execution.seconds:.1f} s): {outcome.report}; state {state}\n"
+        f"gates {outcome.result.value} for {folder.name} (run {outcome.run}, "
+        f"{outcome.seconds:.1f} s): {outcome.report}; state {state}\n"
     )
     if green:
         run.out.answer(payload, text)

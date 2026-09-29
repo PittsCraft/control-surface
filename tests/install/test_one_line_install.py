@@ -44,10 +44,10 @@ def test_piped_install_into_the_current_directory_for_main(tmp_path: Path, archi
     assert result.returncode == 0, result.stderr
     assert installed_label(host) == "plan skill main\n"
     assert (host / ".claude/agents/surface-checker.md").is_file()
-    assert (host / ".claude/surface.json").is_file()
+    assert not (host / ".claude/surface.json").exists()
     assert (host / ".claude/skills/surface-status/scripts/surface-status").stat().st_mode & 0o111
     assert not (host / "install.py").exists()
-    assert not (host / "README.md").exists()  # only owned files and settings land in the host
+    assert not (host / "README.md").exists()  # only owned files land in the host
 
 
 @pytest.mark.parametrize("ref", ["v1.2.0", COMMIT])
@@ -169,7 +169,7 @@ def test_an_unknown_version_is_a_clean_failure(tmp_path: Path, archives: Path) -
 
 def test_a_bad_archive_touches_nothing(tmp_path: Path, archives: Path) -> None:
     (archives / "broken.tar.gz").write_bytes(b"not an archive")
-    make_archive(tmp_path, archives / "empty.tar.gz", top="empty")  # a tree with no templates
+    make_archive(tmp_path, archives / "empty.tar.gz", top="empty")  # a tree with no state script
     host = tmp_path / "host"
     host.mkdir()
 

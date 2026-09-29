@@ -1,4 +1,4 @@
-"""Shared builders for the gate runner tests: a project that declares a gate command."""
+"""Shared builders for the gate runner tests: a plan that names its gates."""
 
 import json
 import subprocess
@@ -13,17 +13,18 @@ from surface_status.plan_folder import gate_run_name
 SHORT_MINUTE = 0.3
 
 
-def declare(project: Project, command: str | None, **settings: object) -> None:
-    """Write `.claude/surface.json` with a gate command and any other setting."""
+def configure(project: Project, **settings: object) -> None:
+    """Write `.claude/surface.json` with these settings."""
     path = project.root / ".claude" / "surface.json"
     path.parent.mkdir(exist_ok=True)
-    path.write_text(json.dumps({"gate_command": command, **settings}), encoding="utf-8")
+    path.write_text(json.dumps(settings), encoding="utf-8")
 
 
-def reviewing(project: Project, command: str | None, **settings: object) -> Path:
-    """Build a plan whose slices are done, in `reviewing`, in a project declaring the command."""
-    declare(project, command, **settings)
-    return project.reach("reviewing")
+def reviewing(project: Project, *commands: str, **settings: object) -> Path:
+    """Build a plan whose slices are done, in `reviewing`, approved with these gates."""
+    if settings:
+        configure(project, **settings)
+    return project.reach("reviewing", gates=commands)
 
 
 def events(project: Project) -> list[dict[str, object]]:

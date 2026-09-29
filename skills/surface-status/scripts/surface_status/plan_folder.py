@@ -1,8 +1,8 @@
 """The plan folder on disk: paths, numbering, content hashes, slice markers.
 
 The script computes every derived value itself (ADR 0012), and this module is where it does: the
-hash of a file, the next number of a report, the slices `plan.md` declares. Paths written into the
-journal are relative to the plan folder and use `/`, whatever the platform.
+hash of a file, the next number of a report, the slices and the gates `plan.md` declares. Paths
+written into the journal are relative to the plan folder and use `/`, whatever the platform.
 """
 
 import re
@@ -41,6 +41,8 @@ JOURNAL = "journal.jsonl"
 
 _MARKER = re.compile(r"<!--\s*slice:\s*(?P<number>\S*?)\s*-->")
 _NUMBER = re.compile(r"[1-9][0-9]*")
+_GATES_OPEN = re.compile(r"```gates[ \t]*")
+_FENCE_CLOSE = re.compile(r"```[ \t]*")
 _LINE_BREAK = re.compile(r"\r\n|\n|\r")
 
 
@@ -49,6 +51,10 @@ class PlanFolderError(ValueError):
 
 
 class SliceMarkerError(PlanFolderError):
+    pass
+
+
+class GatesBlockError(PlanFolderError):
     pass
 
 
@@ -79,6 +85,35 @@ def parse_slice_markers(text: str) -> tuple[int, ...]:
             raise SliceMarkerError(message)
         numbers.append(value)
     return tuple(numbers)
+
+
+def parse_gates(text: str) -> tuple[str, ...] | None:
+    """Read the commands of the `gates` block, one per line, in order; None when there is none.
+
+    The block is a fenced code block whose opening line is exactly ```` ```gates ````, at column 0,
+    and whose closing line is ```` ``` ````. Blank lines are skipped and each other line, stripped,
+    is one command. An empty block says the project has no gate command. A second block, or one
+    that is never closed, is an error: the plan names its gates once.
+    """
+    commands: list[str] = []
+    opened: int | None = None
+    found = False
+    for number, line in enumerate(_LINE_BREAK.split(text), start=1):
+        if opened is None:
+            if _GATES_OPEN.fullmatch(line) is None:
+                continue
+            if found:
+                message = f"line {number}: a second gates block; the plan names its gates once"
+                raise GatesBlockError(message)
+            opened, found = number, True
+        elif _FENCE_CLOSE.fullmatch(line) is not None:
+            opened = None
+        elif line.strip():
+            commands.append(line.strip())
+    if opened is not None:
+        message = f"line {opened}: the gates block is not closed by a line of three backticks"
+        raise GatesBlockError(message)
+    return tuple(commands) if found else None
 
 
 def check_name(rev: int, n: int) -> str:
@@ -195,14 +230,20 @@ class PlanFolder:
     def plan_hash(self) -> str | None:
         return self.file_hash(PLAN)
 
-    def declared_slices(self) -> tuple[int, ...]:
-        """Read the slices `plan.md` declares by its markers."""
+    def _plan_text(self) -> str:
         try:
-            text = self.plan.read_text(encoding="utf-8")
+            return self.plan.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as error:
             message = f"{PLAN} cannot be read: {error}"
             raise PlanFolderError(message) from error
-        return parse_slice_markers(text)
+
+    def declared_slices(self) -> tuple[int, ...]:
+        """Read the slices `plan.md` declares by its markers."""
+        return parse_slice_markers(self._plan_text())
+
+    def declared_gates(self) -> tuple[str, ...] | None:
+        """Read the commands the `gates` block of `plan.md` names; None when it has none."""
+        return parse_gates(self._plan_text())
 
     def _highest(self, directory: str, pattern: re.Pattern[str], group: str) -> int:
         folder = self.root / directory
