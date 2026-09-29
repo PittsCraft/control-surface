@@ -13,7 +13,7 @@ from typing import Any
 
 from cli_support import Project
 from hypothesis import event as note
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from surface_status.events import Abandoned, Conform, Event, PlanApproved
@@ -156,6 +156,13 @@ def _walk(project: Project, folder: Path, steps: list[tuple[str, Call | int]]) -
         _apply(project, folder, step)
 
 
+# Every step of a walk runs one `surface-status` subprocess, about 0.25 s an example, so the `ci`
+# budget of 500 examples cost minutes here (11 min on a CI runner) where the in-process properties
+# cost seconds. The budget is capped at the `dev` one, for these three tests only.
+_SUBPROCESS_BUDGET = settings(max_examples=50)
+
+
+@_SUBPROCESS_BUDGET
 @given(steps=_steps())
 def test_a_refused_record_leaves_the_journal_unchanged_and_an_accepted_one_appends_one_line(
     steps: list[tuple[str, Call | int]],
@@ -176,6 +183,7 @@ def _oracle(events: list[Event], overview: str | None) -> bool:
             return False
 
 
+@_SUBPROCESS_BUDGET
 @given(steps=_steps())
 def test_the_check_passes_exactly_when_the_plan_is_conform_and_untouched_or_dropped_early(
     steps: list[tuple[str, Call | int]],
@@ -192,6 +200,7 @@ def test_the_check_passes_exactly_when_the_plan_is_conform_and_untouched_or_drop
         assert result.json()["ok"] is expected
 
 
+@_SUBPROCESS_BUDGET
 @given(steps=_steps())
 def test_the_list_and_show_agree_with_the_journal_on_every_walk(
     steps: list[tuple[str, Call | int]],

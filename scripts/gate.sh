@@ -4,6 +4,7 @@
 #   scripts/gate.sh e2e    the end to end tests: billed, on demand only, never in CI (ADR 0025);
 #                          the arguments after `e2e` go to pytest, like `-k nominal`
 # GATE_NEWEST_PYTHON overrides the interpreter of the second test run.
+# GATE_ONLY_PYTHON=3.11|newest runs the static checks and that one test run only (CI, one job each).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -44,9 +45,19 @@ if command -v claude >/dev/null 2>&1; then
 else
   echo "gate: the claude CLI is not on the PATH, validation skipped (the frontmatter tests still run)"
 fi
-step "pytest, Python 3.11 (with coverage report)"
-uv run --isolated --python 3.11 pytest --cov --cov-report=term-missing
-step "pytest, newest Python (${GATE_NEWEST_PYTHON:-3.14})"
-uv run --isolated --python "${GATE_NEWEST_PYTHON:-3.14}" pytest
+only="${GATE_ONLY_PYTHON:-}"
+newest="${GATE_NEWEST_PYTHON:-3.14}"
+case "$only" in
+  "" | 3.11 | newest) ;;
+  *) echo "gate: GATE_ONLY_PYTHON must be 3.11 or newest, got '$only'" >&2; exit 1 ;;
+esac
+if [ -z "$only" ] || [ "$only" = "3.11" ]; then
+  step "pytest, Python 3.11 (with coverage report)"
+  uv run --isolated --python 3.11 pytest --cov --cov-report=term-missing
+fi
+if [ -z "$only" ] || [ "$only" = "newest" ]; then
+  step "pytest, newest Python ($newest)"
+  uv run --isolated --python "$newest" pytest
+fi
 echo
 echo "gate: all green"

@@ -15,10 +15,16 @@ concurrency:
 
 jobs:
   gates:
+    name: gates (${{ matrix.python }})
     # Draft pull requests wait for ready_for_review.
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The alarm: twice the slowest leg (3.11 with coverage, about 13 minutes on a runner).
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", newest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -28,3 +34,4 @@ jobs:
       - run: scripts/gate.sh
         env:
           HYPOTHESIS_PROFILE: ci
+          GATE_ONLY_PYTHON: ${{ matrix.python }}
