@@ -18,6 +18,8 @@ scripts/gate.sh
 
 It runs formatting, lint, strict typing, then the tests on Python 3.11 and on the newest Python. `scripts/gate.sh e2e` runs the end to end tests on a toy project: real sessions, billed, on demand only and never in CI. Their operating guide, interactive scenarios included, is `tests/e2e/README.md`.
 
+The conformity check in a CI shaped checkout is `tests/ci/`: part of the gates, and a job of its own in `ci.yml`.
+
 ## Layout
 
 - `skills/`: the skills of the chain, installed as `.claude/skills/surface-*/`. `surface-status/scripts/` holds the state script, standard library only, with no network access.

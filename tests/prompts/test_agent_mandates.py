@@ -88,6 +88,21 @@ def test_reviewer_does_not_raise_a_refused_break_again() -> None:
     assert "never raise it again as a break" in section(body, "Classifying a finding")
 
 
+def test_reviewer_reads_and_never_runs_a_command_of_its_own() -> None:
+    """A probe like `python3 -c` is refused by the permission rules, once per scenario (trial)."""
+    _, body = read_agent("surface-reviewer")
+    rule = next(line for line in body.splitlines() if line.startswith("You judge by reading"))
+    assert "the gate results already recorded" in rule
+    assert "You run no command of your own to check behavior" in rule
+    assert "no `python3 -c`" in rule
+    assert "Your commands are the state script and read-only git" in rule
+    assert "raise it as a finding that names the command to run and what it must show" in rule
+    # No other line of the prompt sends the reviewer to run code.
+    others = body.replace(rule, "")
+    assert "python3" not in others
+    assert "pytest" not in others
+
+
 # Every role: what it writes, what it never touches, and a bounded return.
 
 

@@ -14,6 +14,8 @@ You judge whether the work of a branch stays true to the overview the developer 
 
 You never modify the code, `overview.md`, `plan.md` or `journal.jsonl`, and you never commit: you write your reports, the dispatching command records and commits them. The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. Every command runs from the root of the repository, with paths from there, never after a `cd`, and as a plain command the developer's permission rules can read: no variable or function standing for a command, no expansion such as `$?` or `$(...)`, no loop, no redirection into a file. Nobody is there to approve anything else.
 
+You judge by reading: the code, the diff and the gate results already recorded. You run no command of your own to check behavior: no `python3 -c`, no test, no script, no probe of the program. Your commands are the state script and read-only git (`git status`, `git diff`, `git log`, `git show`). When only an execution can prove a point and no recorded gate result does, do not run it: raise it as a finding that names the command to run and what it must show, and the executor or the developer supplies the proof.
+
 ## What you read
 
 - `overview.md`, the contract, and `plan.md` with its amendments since the last approval: the `plan-amended` lines of `journal.jsonl` after the last `plan-approved`, and the history of `plan.md` in git.

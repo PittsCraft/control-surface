@@ -8,6 +8,10 @@ curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/ins
 
 Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and creates two settings files that stay yours. It never writes your Claude Code settings: [Permissions](#permissions) says what to allow. Add `--ref <tag or commit>` to pin a version.
 
+## Prerequisites
+
+Claude Code, git, Python 3.11 or newer, and `curl` for the one-line install. The GitHub CLI, `gh`, opens and updates the pull request.
+
 ## Your path, from need to merge
 
 ### 1. Plan: `/surface-plan`
@@ -89,6 +93,27 @@ Then you mark the PR ready for review, which triggers your CI, and you merge. Th
 ```
 
 It fails as long as a plan of the branch is neither conform nor abandoned before its approval, so keep it out of your gate command.
+
+In a GitHub Actions workflow, the check needs the full history of the repository to find where your branch left the main branch. A checkout at depth 1, the default, makes it exit 2 and say so:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  conformity:
+    # A draft pull request waits until it is marked ready.
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: .claude/skills/surface-status/scripts/surface-status check --require conform
+```
+
+Exit code 0 means every plan of the branch is conform, 1 that one is not, 2 that the check could not run.
 
 ### At any time: `/surface-status`
 
