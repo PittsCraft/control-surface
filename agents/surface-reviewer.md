@@ -12,7 +12,7 @@ You judge whether the work of a branch stays true to the overview the developer 
 
 "Conform" means: the code does what the plan says, the plan stays consistent with the overview, and the overview is the one the developer approved.
 
-You never modify the code, `overview.md`, `plan.md` or `journal.jsonl`, and you never commit: you write your reports, the dispatching command records and commits them. The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder.
+You never modify the code, `overview.md`, `plan.md` or `journal.jsonl`, and you never commit: you write your reports, the dispatching command records and commits them. The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. Every command runs from the root of the repository, with paths from there, never after a `cd`, and as a plain command the developer's permission rules can read: no variable or function standing for a command, no expansion such as `$?` or `$(...)`, no loop, no redirection into a file. Nobody is there to approve anything else.
 
 ## What you read
 
@@ -20,6 +20,7 @@ You never modify the code, `overview.md`, `plan.md` or `journal.jsonl`, and you 
 - `.claude/surface.md`, when it exists: the project's declarations and its critical zones.
 - The diff to review: the branch against the base your mandate gives, which is its merge base with the main branch. When the branch carries several plans, `surface-status commits <plan>` tells which commits extend which plan's journal: set aside what belongs to another plan; a commit that belongs to no plan is the developer's, and you review it.
 - The gate results: the latest run report under `gates/`.
+- Whether `overview.md` is still the approved one: `alarms` of `surface-status show <plan> --json`, empty when it is. Never hash it yourself.
 - Earlier refusals: the `plan-change-refused` lines of the journal, with their reason, and the proposals under `plan-changes/` they refused.
 
 ## Classifying a finding

@@ -153,6 +153,84 @@ def test_show_of_a_journal_without_events_says_the_plan_is_not_opened(project: P
     assert "plan-opened" in shown["next_step"]
 
 
+def _block(project: Project) -> None:
+    assert project.record(PLAN, "blocked", "--why", "does not converge").code == 0
+
+
+def _propose(project: Project) -> None:
+    proposal = project.plans / PLAN / "plan-changes" / "01.md"
+    proposal.parent.mkdir()
+    proposal.write_text("proposal\n", encoding="utf-8")
+    args = ("--proposal", "plan-changes/01.md", "--slice", "1")
+    assert project.record(PLAN, "plan-change-proposed", *args).code == 0
+
+
+def _defect(project: Project) -> None:
+    args = (
+        "--report",
+        "reviews/pass-01.md",
+        "--defects",
+        "1",
+        "--deviations",
+        "0",
+        "--breaks",
+        "0",
+    )
+    assert project.record(PLAN, "review-done", *args).code == 0
+
+
+# Each state an approval binds, as the way there and a last step from it.
+BOUND = {
+    "executing": ("executing", None),
+    "reviewing": ("reviewing", None),
+    "fixing": ("reviewing", _defect),
+    "conform": ("conform", None),
+    "blocked during execution": ("executing", _block),
+    "plan-change-proposed": ("executing", _propose),
+}
+
+
+@pytest.mark.parametrize("bound", list(BOUND))
+def test_show_raises_an_alarm_on_an_overview_edited_since_its_approval(
+    project: Project, bound: str
+) -> None:
+    reached, then = BOUND[bound]
+    folder = project.reach(reached)
+    if then is not None:
+        then(project)
+    assert project.run("show", PLAN).json()["alarms"] == []
+    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    alarms = project.run("show", PLAN).json()["alarms"]
+    assert [alarm["code"] for alarm in alarms] == ["overview-changed"]
+    text = project.run("show", PLAN, as_json=False).out
+    assert "ALARM overview-changed: overview.md differs" in text
+
+
+def test_show_raises_an_alarm_on_an_approved_overview_deleted(project: Project) -> None:
+    folder = project.reach("reviewing")
+    (folder / "overview.md").unlink()
+    alarms = project.run("show", PLAN).json()["alarms"]
+    assert [alarm["code"] for alarm in alarms] == ["overview-missing"]
+
+
+@pytest.mark.parametrize("unbound", ["drafting", "awaiting-approval", "blocked during planning"])
+def test_show_raises_no_alarm_while_no_approval_binds(project: Project, unbound: str) -> None:
+    folder = project.reach("drafting" if unbound == "blocked during planning" else unbound)
+    if unbound == "blocked during planning":
+        _block(project)
+    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    assert project.run("show", PLAN).json()["alarms"] == []
+    assert "ALARM" not in project.run("show", PLAN, as_json=False).out
+
+
+def test_an_amendment_releases_the_overview_from_the_last_approval(project: Project) -> None:
+    folder = project.reach("executing")
+    _block(project)
+    assert project.record(PLAN, "amendment-received").code == 0
+    (folder / "overview.md").write_text("# Overview\nrevision 2\n", encoding="utf-8")
+    assert project.run("show", PLAN).json()["alarms"] == []
+
+
 def test_the_text_of_show_holds_what_the_json_holds(project: Project) -> None:
     project.reach("reviewing")
     text = project.run("show", PLAN, as_json=False).out

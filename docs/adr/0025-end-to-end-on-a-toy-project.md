@@ -14,7 +14,7 @@ A toy project, built from scratch for each scenario by `tests/e2e/toy/toy.py`: a
 A session is `claude --print` in the toy project, with its stream of JSON events kept as the log:
 
 - user settings are left out (`--setting-sources project,local`), since their hooks, permissions and model would change the run, and MCP servers too;
-- permissions are those a developer would grant: file edits (`--permission-mode acceptEdits`), and on the command line `git`, the state script, the gates and the usual reading and writing commands of the shell (`cat`, `ls`, `grep`, `mkdir` and the like). Nothing is bypassed. A project's own settings grant nothing in a folder Claude Code was never told to trust, so the list is given on the command line.
+- permissions are those a developer who followed the README would grant: file edits (`--permission-mode acceptEdits`), and on the command line the rules of the README's Permissions section, read from it, with the toy's gate command, the branch commands of `/surface-plan` and the usual reading commands of the shell (`cat`, `ls`, `grep`, `mkdir` and the like). Nothing is bypassed. A project's own settings grant nothing in a folder Claude Code was never told to trust, so the list is given on the command line.
 
 The scenarios a single session can play are pytest tests in `tests/e2e/`: the nominal path to `conform`, a session killed in a slice then relaunched, an overview modified after its approval, the ceiling. They assert on files, the journal and the state the script derives, and on the final message only where the stop itself is the behavior. `tests/e2e` is outside the default test run, and `scripts/gate.sh e2e` runs it on demand, never in CI.
 

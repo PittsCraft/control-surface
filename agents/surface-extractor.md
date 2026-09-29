@@ -42,7 +42,7 @@ Write in the language of `specs.md`. Nine sections, in this order, each filled i
 
 One idea per section, short prose, and a mermaid diagram wherever one applies: schema, architecture, sequences, state machines, algorithms.
 
-The overview never shows the slices nor the distribution of tests: they belong to the plan, which stays alive, and in the frozen contract any re-slicing would become a break. No identifiers that cross-reference the overview and the plan.
+The overview never shows the slices nor the distribution of tests: they belong to the plan, which stays alive, and in the frozen contract any re-slicing would become a break. No identifiers that cross-reference the overview and the plan, nor the interview: no slice number, no question or amendment number such as Q3 or A1. Say what an amendment changed, not which one it was.
 
 ## What you return
 

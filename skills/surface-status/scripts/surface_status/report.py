@@ -133,6 +133,38 @@ def error_row(name: str, message: str) -> Payload:
     return {"name": name, "state": None, "hand": None, "error": message}
 
 
+def _approval_binds(state: PlanState) -> bool:
+    """Whether the last approval still holds the work to its overview.
+
+    It does from the approval to `conform`, a block during execution and a pending plan change
+    included. It does not in planning, where a new revision is drawn, nor once abandoned.
+    """
+    match state.state:
+        case State.EXECUTING | State.REVIEWING | State.FIXING | State.PLAN_CHANGE_PROPOSED:
+            return True
+        case State.CONFORM:
+            return True
+        case State.BLOCKED:
+            return state.before_blocked in {State.EXECUTING, State.REVIEWING, State.FIXING}
+        case _:
+            return False
+
+
+def overview_alarms(view: PlanView) -> list[Payload]:
+    """Say when `overview.md` is not the one the developer approved, while that approval binds."""
+    state = view.state
+    if state is None or not _approval_binds(state):
+        return []
+    current = view.folder.overview_hash()
+    if current is None:
+        message = "overview.md is missing, its content cannot be the approved one"
+        return [{"code": "overview-missing", "message": message}]
+    if current != state.approved_overview:
+        message = "overview.md differs from the one of the last plan-approved"
+        return [{"code": "overview-changed", "message": message}]
+    return []
+
+
 def show_payload(view: PlanView, settings: Settings) -> Payload:
     state = view.state
     slices = {
@@ -154,6 +186,7 @@ def show_payload(view: PlanView, settings: Settings) -> Payload:
         },
         "pending_proposal": state.pending_proposal if state else None,
         "last_event": view.events[-1].name if view.events else None,
+        "alarms": overview_alarms(view),
         "settings": settings.to_dict(),
     }
 
@@ -169,14 +202,7 @@ def _problems_for_conform(view: PlanView) -> list[Payload]:
         where = "no event yet" if state is None else state.state.value
         message = f"in progress ({where}): the plan is neither conform nor abandoned"
         return [{"code": "in-progress", "message": message}]
-    current = view.folder.overview_hash()
-    if current is None:
-        message = "overview.md is missing, its content cannot be the approved one"
-        return [{"code": "overview-missing", "message": message}]
-    if current != state.approved_overview:
-        message = "overview.md differs from the one of the last plan-approved"
-        return [{"code": "overview-changed", "message": message}]
-    return []
+    return overview_alarms(view)
 
 
 def check_plan(folder: PlanFolder, *, require: str | None) -> Payload:
@@ -258,6 +284,8 @@ def render_show(payload: Payload) -> str:
     ]
     if payload["pending_proposal"] is not None:
         lines.append(f"pending proposal: {payload['pending_proposal']}")
+    alarms: list[Payload] = payload["alarms"]
+    lines.extend(f"ALARM {alarm['code']}: {alarm['message']}" for alarm in alarms)
     lines.append("settings:")
     lines.extend(f"  {key}: {_plain(value)}" for key, value in settings.items())
     return "\n".join(lines) + "\n"

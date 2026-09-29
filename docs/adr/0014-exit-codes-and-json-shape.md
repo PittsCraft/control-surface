@@ -14,7 +14,7 @@ Exit codes: 0 when an event is accepted or a check passes, 1 when an event is re
 With `--json`, standard output holds one JSON object, indented by two spaces, with `"v": 1` first. Without it, an answer goes to standard output and a refusal or an error to standard error. The shapes, pinned by the golden files of `tests/fixtures/cli/`:
 
 - list (no subcommand): `plans`, a list of `{name, state, hand}`; a plan whose journal cannot be read has `state` and `hand` null and an `error`;
-- `show`: `plan`, `state`, `hand`, `next_step`, `slices {declared, done, remaining}`, `passes {planning, execution, ceiling}`, `pending_proposal`, `last_event`, `settings` (the effective ones, in the shape of `surface.json`);
+- `show`: `plan`, `state`, `hand`, `next_step`, `slices {declared, done, remaining}`, `passes {planning, execution, ceiling}`, `pending_proposal`, `last_event`, `alarms`, `settings` (the effective ones, in the shape of `surface.json`); `alarms` is a list of `{code, message}`, `overview-changed` or `overview-missing`, raised while the last approval binds the work (from `plan-approved` to `conform`, a block during execution and a pending plan change included), so that a dispatcher branches on a field instead of reading the git history;
 - `record` and `abandon`, accepted: `ok` true, `plan`, `event`, `at`, `state`; refused: `ok` false, `plan`, `event`, `refused {code, reason}`, where `code` is one of the refusal codes of `guards.RefusalCode`;
 - `check`: `ok`, `require` (null or `conform`), `plans`, a list of `{name, state, ok, problems}`, each problem `{code, message}`, the codes being `in-progress`, `abandoned-after-approval`, `overview-changed`, `overview-missing` and `journal-unreadable`;
 - any call that exits 2: `ok` false and `error`.

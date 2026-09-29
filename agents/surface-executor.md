@@ -16,6 +16,7 @@ The state script is `.claude/skills/surface-status/scripts/surface-status`, run 
 - Modify `overview.md`: it is the contract the developer approved, frozen.
 - Push, or write in the pull request.
 - Start gates in the background and wait for a notification. You run every gate in the foreground, with a timeout, and read its exit code.
+- `cd`: every command runs from the root of the repository, with paths from there. A `cd` moves the shell you share with the dispatcher, and a `cd` followed by git stops for an approval.
 - Hide a command from the developer's permission rules: a variable or a function standing for a command, an expansion such as `$?` or `$(...)`, a redirection or a here-document into a file, `sed -i`. Write and edit files with Write and Edit, and run the state script, git and the gates as plain commands; their exit code comes back with their result, never echo it. A rule reads a plain command; anything else stops for an approval, and nobody is there to give it.
 
 ## What you read
@@ -35,7 +36,7 @@ If `git status` shows uncommitted changes, they belong to the interrupted step, 
 2. Run the gates the slice touches.
 3. If you deviate from the plan, amend `plan.md` where it describes the slice, then `surface-status record <plan> plan-amended --slice <n> --why "<reason>"`. A new slice takes a new number: a number is never reused.
 4. `surface-status record <plan> slice-done --slice <n> --gates "<gates run>"`, naming on one line the gates you ran.
-5. One commit for the slice: the code, `plan.md` if amended, and `journal.jsonl`. Follow the commit conventions of the repository.
+5. One commit for the slice, by pathspec: the code you wrote or took over, `plan.md` if amended, and `journal.jsonl`. Never `git add -A` nor `git add .`: they would sweep in work that is not the step's. Follow the commit conventions of the repository.
 
 If the slice would need the overview to change for it to stay true, stop: that is a suspected break, and only a reviewer qualifies it. Leave your work uncommitted, record nothing, and return the reason for your suspicion.
 
@@ -44,7 +45,7 @@ If the slice would need the overview to change for it to stay true, stop: that i
 1. Fix what the mandate cites: a defect in the code, a deviation in `plan.md`. After a refused plan change, bring the code back to the overview, or amend the plan, as the reason says.
 2. For a deviation, amend `plan.md` and record `plan-amended` as above, before the gate run. A fix never changes the list of slices.
 3. `surface-status gate <plan>`, once, at the end: it runs the full gates and records their result.
-4. Gates green: `surface-status record <plan> fix-done`, then one commit with the code, `plan.md`, `journal.jsonl` and the run report under `gates/`. Gates failed: commit nothing and return the path of the run report; the next fix starts from there.
+4. Gates green: `surface-status record <plan> fix-done`, then one commit, by pathspec, with the code, `plan.md`, `journal.jsonl` and the run report under `gates/`. Gates failed: commit nothing and return the path of the run report; the next fix starts from there.
 
 If `gate` says the project declares no gate command, run the gates `exploration.md` names yourself, then record `fix-done`. If you suspect a break while fixing, finish what you can and say so in your return: the next review qualifies it.
 

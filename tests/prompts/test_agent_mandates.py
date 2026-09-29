@@ -5,6 +5,9 @@ finding, the paths the reviewer writes, the rules of the executor, and calls of 
 that its parser accepts.
 """
 
+import re
+from pathlib import Path
+
 import pytest
 from chain_contract import BREAK_QUESTION, DEFECT_QUESTION, NO_FINDING_END, REVIEWER_WRITES
 from prompt_support import (
@@ -12,8 +15,10 @@ from prompt_support import (
     call_arguments,
     marked_block,
     prompt_calls,
+    prompt_files,
     read_agent,
     section,
+    split_agent,
 )
 
 from surface_status.cli import UsageError, build_parser
@@ -124,6 +129,38 @@ def test_executor_runs_plain_commands_the_permission_rules_can_read() -> None:
     assert "never echo it" in never
 
 
+# Commands run from the root of the repository: a `cd` moves the shell the dispatcher and its
+# agents share, and a `cd` followed by git stops for an approval nobody gives.
+
+_CODE = re.compile(r"```.*?```|`[^`\n]+`", re.DOTALL)
+_CD = re.compile(r"(?:^|[\s;&|(!])cd ")
+
+
+def _prompt_id(path: Path) -> str:
+    return path.parent.name if path.name == "SKILL.md" else path.stem
+
+
+@pytest.mark.parametrize("path", prompt_files(), ids=_prompt_id)
+def test_no_command_of_a_prompt_changes_directory(path: Path) -> None:
+    code = _CODE.findall(path.read_text(encoding="utf-8"))
+    assert [span for span in code if _CD.search(span.strip("`"))] == []
+
+
+def test_the_cd_check_sees_a_cd_in_code() -> None:
+    for text in ("`cd docs/plans/x && git log`", "```sh\ngit status; cd app\n```"):
+        assert [span for span in _CODE.findall(text) if _CD.search(span.strip("`"))]
+    assert not [span for span in _CODE.findall("never `cd`") if _CD.search(span.strip("`"))]
+
+
+@pytest.mark.parametrize("path", prompt_files(), ids=_prompt_id)
+def test_every_prompt_that_runs_commands_stays_at_the_root(path: Path) -> None:
+    fields, body = split_agent(path.read_text(encoding="utf-8"))
+    runs_bash = "Bash" in fields.get("tools", "") or "Bash(" in fields.get("allowed-tools", "")
+    if runs_bash:
+        assert "from the root of the repository, with paths from there" in body
+        assert "`cd`" in body
+
+
 def test_executor_commits_each_slice_with_its_journal_line_and_amendment() -> None:
     _, body = read_agent("surface-executor")
     slice_steps = section(body, "A slice")
@@ -132,6 +169,25 @@ def test_executor_commits_each_slice_with_its_journal_line_and_amendment() -> No
     assert "suspected break" in slice_steps
     assert "Leave your work uncommitted" in slice_steps
     assert "continue them or undo them" in section(body, "Uncommitted work")
+
+
+def test_executor_commits_by_pathspec_never_the_whole_tree() -> None:
+    _, body = read_agent("surface-executor")
+    assert "One commit for the slice, by pathspec" in section(body, "A slice")
+    assert "Never `git add -A` nor `git add .`" in section(body, "A slice")
+    assert "one commit, by pathspec" in section(body, "A fix")
+
+
+def test_reviewer_reads_the_alarm_of_the_script_instead_of_hashing() -> None:
+    _, body = read_agent("surface-reviewer")
+    reads = section(body, "What you read")
+    assert "`alarms` of `surface-status show <plan> --json`" in reads
+    assert "Never hash it yourself" in reads
+
+
+def test_extractor_names_no_identifier_of_the_plan_or_the_interview() -> None:
+    _, body = read_agent("surface-extractor")
+    assert "cross-reference the overview and the plan, nor the interview" in body
 
 
 # Calls of the state script, by the agents and the skills: only subcommands, events and fields

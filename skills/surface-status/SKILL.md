@@ -3,14 +3,16 @@ name: surface-status
 description: Says where the plans of the project stand and details one of them, runs the conformity check, and abandons a plan once the developer confirms. Takes a plan folder, `check`, or `abandon` with an optional plan folder.
 argument-hint: "[plan] | check | abandon [plan]"
 disable-model-invocation: true
-allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *)
+allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *)
 ---
 
 # surface-status
 
 You tell the developer where the plans stand, from the state script alone, and you record one act of theirs: the abandonment of a plan, once they have confirmed it. Every other act belongs to `/surface-plan` or `/surface-execute`: name the one to run, and record nothing else.
 
-The state script is `${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. It is the only writer of the journal, and the same script the project's CI calls. Exit code 0 is accepted, 1 refused or check failed with the reason, 2 a usage error. The state lives in files: read it from the script at each step, never from memory of this conversation.
+The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. It is the only writer of the journal, and the same script the project's CI calls. Exit code 0 is accepted, 1 refused or check failed with the reason, 2 a usage error. The state lives in files: read it from the script at each step, never from memory of this conversation.
+
+Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval. Plain commands only, which the developer's permission rules can read: no variable or function standing for a command, no expansion such as `$?` or `$(...)`, no here-document; the exit code comes back with the result, never echo it.
 
 ## What the developer asked
 

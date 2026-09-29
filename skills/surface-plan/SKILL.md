@@ -5,7 +5,7 @@ argument-hint: <specs, a path to them, a plan folder, or an amendment>
 disable-model-invocation: true
 model: opus
 effort: high
-allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(true)
+allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(true)
 ---
 
 # surface-plan
@@ -26,7 +26,9 @@ This command pins Opus and the effort `high` for the turn that invokes it, and o
 
 ## The state script
 
-It is `${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status`, below written `surface-status`, and `<plan>` is the plan folder. Read its answers with `--json` and branch on the exit code, never on prose. Exit 0: accepted, or one plan found. Exit 1: refused, or no single plan found; a refusal carries `refused.code` and `refused.reason`: tell the developer and never work around it. Exit 2: a usage error or a journal it cannot read: report the message and stop.
+It is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository, below written `surface-status`, and `<plan>` is the plan folder. Read its answers with `--json` and branch on the exit code, never on prose. Exit 0: accepted, or one plan found. Exit 1: refused, or no single plan found; a refusal carries `refused.code` and `refused.reason`: tell the developer and never work around it. Exit 2: a usage error or a journal it cannot read: report the message and stop.
+
+Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval. Plain commands only, which the developer's permission rules can read: no variable or function standing for a command, no expansion such as `$?` or `$(...)`, no here-document; the exit code comes back with the result, never echo it.
 
 Found when this command loaded:
 
