@@ -11,7 +11,7 @@ Several tests asserted the README's sentences and snippets. They held the text e
 
 ## Decision
 
-The chain ships no permission rule and checks none at launch. The README's Permissions section is a warning alone: the loop stops at every command the developer's rules or mode do not allow; run it in auto mode. The installer never writes the host's Claude Code settings, and ends by pointing at that section. The commands keep their `allowed-tools` for their first turn.
+The chain ships no permission rule and checks none at launch. The installer never writes the host's Claude Code settings. The commands keep their `allowed-tools` for their first turn.
 
 The prompts still run every command from the root of the repository as a plain command (no `cd`, no `git -C`, no command run by another, no expansion), since that serves a developer on the default mode.
 
