@@ -2,8 +2,8 @@
 
 Prompt behavior is judged end to end. These tests hold what can be read: the frontmatter against
 the fields the Claude Code documentation of skills defines, the state injected at load, the
-planning sequence and the states this command resumes, the sensitive zones it carries, and
-templates the script and the agents can read.
+planning sequence and the states this command resumes, the hand it keeps in the conversation, the
+sensitive zones it carries, and templates the script and the agents can read.
 """
 
 import re
@@ -185,6 +185,9 @@ def test_resumption_reads_the_files_never_the_conversation() -> None:
     assert "as soon as it is given, before anything else" in resuming
     assert "never from memory" in resuming
     assert "does not explore again" in resuming
+    assert "a reply is written before it is acted on" in resuming
+    assert "never by a sentence of the conversation" in resuming
+    assert "After a dead session, relaunching `/surface-plan` is the way to resume" in resuming
     table = section(body, "Which plan")
     assert "the first question of `interview.md` without an answer" in table
     assert "Never ask again a question that has an answer" in table
@@ -203,6 +206,12 @@ def test_a_decision_on_a_proposal_is_written_before_it_is_recorded() -> None:
     for event in ("plan-change-accepted", "plan-change-refused"):
         line = next(line for line in proposal.splitlines() if event in line)
         assert line.index("into `interview.md`") < line.index(event)
+
+
+def test_a_proposal_relaunched_here_is_taken_once() -> None:
+    proposal = section(_body(), "A plan change proposal")
+    assert "`/surface-execute` puts it to the developer itself" in proposal
+    assert "already holds the decision on this proposal, take it and ask nothing again" in proposal
 
 
 def test_a_launch_that_died_before_opening_its_plan_is_continued() -> None:
@@ -262,12 +271,62 @@ def test_extraction_and_cross_check_go_to_fresh_agents_on_the_models_of_the_sett
         assert hasattr(Models(), ROLES[role])
 
 
-def test_planning_stops_at_the_ceiling_and_hands_back() -> None:
+def test_planning_stops_at_the_ceiling_and_asks_in_the_conversation() -> None:
     agents = section(_body(), "The agents")
     assert "passes.planning" in section(_body(), "First launch, with specs")
     assert "with the code `ceiling`" in agents
     assert "launch nothing more" in agents
-    assert "record <plan> blocked --why" in agents
+    ceiling = next(line for line in agents.splitlines() if line.startswith("Stop at the ceiling"))
+    positions = _positions(
+        ceiling,
+        [
+            "record <plan> blocked --why",
+            "keep the hand: present what does not converge",
+            "ask the developer's instruction in the conversation",
+            '"After a block"',
+        ],
+    )
+    assert positions == sorted(positions)
+    assert "`/surface-plan`" not in ceiling
+
+
+# The hand-over: the command keeps the hand, and only the launch of `/surface-execute` approves.
+
+
+def _hand_over() -> str:
+    steps = section(_body(), "First launch, with specs")
+    start = steps.index("11. Hand over.")
+    end = steps.find("\n\n", start)
+    return steps[start:] if end < 0 else steps[start:end]
+
+
+def test_the_hand_over_keeps_the_hand_and_asks_amend_or_approve() -> None:
+    hand_over = _hand_over()
+    assert "Then stop" not in hand_over
+    assert (
+        "keep the hand and ask: amend, or approve by launching `/surface-execute`, whose launch"
+        " alone approves this revision" in hand_over
+    )
+
+
+def test_a_change_asked_at_hand_over_is_an_amendment_then_the_same_question() -> None:
+    bullets = [line.strip() for line in _hand_over().splitlines() if line.strip().startswith("- ")]
+    change = next(line for line in bullets if "asks for a change" in line)
+    taken, again = _positions(
+        change, ['is an amendment: take it as "Taking an amendment" says', "ask the same question"]
+    )
+    assert taken < again
+    taking = section(_body(), "Taking an amendment")
+    assert "and on to step 11" in taking
+
+
+def test_a_question_at_hand_over_records_nothing_and_a_doubt_is_asked() -> None:
+    bullets = [line.strip() for line in _hand_over().splitlines() if line.strip().startswith("- ")]
+    question = next(line for line in bullets if line.startswith("- A question"))
+    assert "is answered from the files, and nothing is recorded" in question
+    assert "- In doubt, ask whether the reply is an amendment." in bullets
+    agreeing = next(line for line in bullets if "approves nothing" in line)
+    assert "the launch of `/surface-execute` approves, and record nothing" in agreeing
 
 
 # The states this command resumes, and those it leaves to `/surface-execute`.
@@ -306,6 +365,7 @@ def test_a_block_is_taken_back_by_planning_or_by_amendment() -> None:
     block = section(_body(), "After a block")
     assert "no `plan-approved` after its last" in block
     planning, execution = (line for line in block.splitlines() if line.startswith("- During"))
+    assert "ask the developer's instruction in the conversation" in planning
     assert 'under "Instructions after a block"' in planning
     assert "record <plan> resumed" in planning
     assert "take the amendment" in execution

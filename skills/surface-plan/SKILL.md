@@ -1,6 +1,6 @@
 ---
 name: surface-plan
-description: Plans a feature with the developer and holds the plan until its approval. Explores the code, asks one question at a time, writes the plan, has the overview drawn and cross-checked by fresh agents, then commits, pushes and opens a draft pull request. Relaunched, it resumes from the plan folder and takes an amendment, a decision on a plan change proposal, or an instruction after a block.
+description: Plans a feature with the developer and holds the plan until its approval. Explores the code, asks one question at a time, writes the plan, has the overview drawn and cross-checked by fresh agents, then commits, pushes and opens a draft pull request. It keeps the hand and takes amendments in the conversation until the developer approves with /surface-execute. Relaunched, it resumes from the plan folder and takes an amendment, a decision on a plan change proposal, or an instruction after a block.
 argument-hint: <specs, a path to them, a plan folder, or an amendment>
 disable-model-invocation: true
 allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(true)
@@ -17,6 +17,7 @@ Every launch starts from what the repository holds, never from a conversation: a
 - Write each answer, amendment and decision into `interview.md` as soon as it is given, before anything else.
 - Read the state from the script at every launch and after every recorded event, never from memory.
 - Once `exploration.md` is written, a relaunch reads it and does not explore again.
+- Keeping the hand in the conversation changes none of this: a reply is written before it is acted on, and the state read again from the script. A revision is approved only by the launch of `/surface-execute`, never by a sentence of the conversation. After a dead session, relaunching `/surface-plan` is the way to resume.
 
 ## The state script
 
@@ -70,7 +71,11 @@ One question at a time, and wait for its answer before the next. Each question n
 8. Cross-check. Launch a fresh `surface-checker` with the report path `checks/rev-NN-MM.md` and wait for its return. Check that the report exists and opens with the count returned, then `surface-status record <plan> check-done --report checks/rev-NN-MM.md --omissions <k> --json`.
 9. Omissions. None: step 10. Otherwise, when `passes.planning` of `show` has reached `passes.ceiling`, stop at the ceiling (see "The agents"). Else read the report and choose: the overview must show more, then step 7 with the report's path; or the plan does more than the need, then correct `plan.md` and step 7. Then step 8 again.
 10. Draft. `surface-status record <plan> plan-drafted --json`, then "Commit, push and pull request". Refused with the code `gate-list`: `plan.md` lacks its gates block or holds a malformed one; correct it, then step 8.
-11. Hand over. Tell the developer where to read the overview: its path, and its link in the pull request. Name the gates the loop will run, `gates` of `show`, or say that the plan names none and the loop then has no objective check. Next: `/surface-plan` with an amendment, or `/surface-execute`, whose launch approves this revision. Then stop.
+11. Hand over. Tell the developer where to read the overview: its path, and its link in the pull request. Name the gates the loop will run, `gates` of `show`, or say that the plan names none and the loop then has no objective check. Then keep the hand and ask: amend, or approve by launching `/surface-execute`, whose launch alone approves this revision.
+    - A reply that asks for a change is an amendment: take it as "Taking an amendment" says, which writes it first, records it, draws and cross-checks the next revision, commits and pushes it. Then ask the same question again.
+    - A question, about the plan or the overview, is answered from the files, and nothing is recorded.
+    - In doubt, ask whether the reply is an amendment.
+    - A reply that agrees approves nothing: say that the launch of `/surface-execute` approves, and record nothing.
 
 `NN` is the revision: 1 plus the `amendment-received` and `plan-change-accepted` lines of `journal.jsonl`. `MM` is the next pass number not yet taken under `checks/` for that revision. Both on two digits.
 
@@ -92,7 +97,7 @@ A fresh agent for each extraction and each cross-check, launched with the Agent 
 
 If an agent returns without its file, launch it once more; then tell the developer and stop.
 
-Stop at the ceiling: once the planning passes reach the ceiling, or when the script refuses `check-done` with the code `ceiling`, launch nothing more. `surface-status record <plan> blocked --why "<what does not converge>" --json`, commit (see "Commit, push and pull request"), and tell the developer what does not converge, citing the reports under `checks/`: they give an instruction or an amendment with `/surface-plan`.
+Stop at the ceiling: once the planning passes reach the ceiling, or when the script refuses `check-done` with the code `ceiling`, launch nothing more. `surface-status record <plan> blocked --why "<what does not converge>" --json`, commit (see "Commit, push and pull request"), then keep the hand: present what does not converge and ask the developer's instruction in the conversation, as "After a block" says for a block during planning, and go on as it says.
 
 ## Drafting, the missing step
 
@@ -108,7 +113,7 @@ Only in `awaiting-approval`, or `blocked` during execution. The amendment is the
 
 ## A plan change proposal
 
-A reviewer found that the overview would have to change to stay true, and wrote the proposal at `pending_proposal`. Present it at the level of the overview: what would change in it, why, and the proof, not the code. Then ask: accept or refuse, with your recommendation.
+A reviewer found that the overview would have to change to stay true, and wrote the proposal at `pending_proposal`. `/surface-execute` puts it to the developer itself when its loop meets it; you take it when the developer launches `/surface-plan` in that state instead. When `interview.md` already holds the decision on this proposal, take it and ask nothing again. Otherwise present it at the level of the overview: what would change in it, why, and the proof, not the code. Then ask: accept or refuse, with your recommendation.
 
 - Accepted: write the decision into `interview.md` under "Plan change decisions", then `surface-status record <plan> plan-change-accepted --json`, then step 6: the plan grows slices with new numbers, and a new revision of the overview follows.
 - Refused: ask the reason in one line and write it into `interview.md`, then `surface-status record <plan> plan-change-refused --why "<reason>" --json`, commit, and invite the developer to relaunch `/surface-execute`: the agents bring the code back to the overview, and the next reviewer does not raise the same break again.
@@ -117,7 +122,7 @@ A reviewer found that the overview would have to change to stay true, and wrote 
 
 The loop stopped at the ceiling of autonomous passes; the `blocked` line of `journal.jsonl` says why. It stopped during planning when the journal holds no `plan-approved` after its last `interview-closed`, `amendment-received` or `plan-change-accepted`; otherwise during execution.
 
-- During planning: present what does not converge, from the last reports under `checks/`, and ask the developer's instruction. Write it into `interview.md` under "Instructions after a block", then `surface-status record <plan> resumed --json`, and resume at the missing step. An instruction that amends the plan is taken as an amendment instead.
+- During planning: present what does not converge, from the last reports under `checks/`, and ask the developer's instruction in the conversation. Write it into `interview.md` under "Instructions after a block", then `surface-status record <plan> resumed --json`, and resume at the missing step. An instruction that amends the plan is taken as an amendment instead.
 - During execution: the developer took the hand back to revise the plan: take the amendment. If they only want the loop to go on, `/surface-execute` resumes it: say so and stop. When `pending_suspicion` of `surface-status show <plan> --json` is not null, name that suspected break and its reason too: an amendment drops it, a resumption hands it to a reviewer.
 
 ## Outside your hand

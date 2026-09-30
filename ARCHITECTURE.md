@@ -22,7 +22,7 @@ install.py --copies--> host .claude/skills/surface-*/ and .claude/agents/surface
 host CI    --runs----> surface-status check --require conform
 ```
 
-- **Commands** are three skills the developer types. `/surface-plan` explores, interviews, writes `plan.md` and its gates, has the overview drawn and cross-checked, then commits, pushes and opens a draft pull request. `/surface-execute` approves the drafted revision by being launched, then dispatches slices, gate runs, reviews and fixes. `/surface-status` reports, runs the conformity check, and abandons a plan on confirmation.
+- **Commands** are three skills the developer types. `/surface-plan` explores, interviews, writes `plan.md` and its gates, has the overview drawn and cross-checked, then commits, pushes and opens a draft pull request. It then keeps the hand and takes amendments in the conversation, as it does after a block during planning, since a reply that approves nothing needs no new launch. `/surface-execute` approves the drafted revision by being launched, then dispatches slices, gate runs, reviews and fixes. It puts a plan change proposal and the ceiling to the developer in the conversation: a refusal or a resumption goes on in the session, while an accepted change or an amendment goes to `/surface-plan`, since this command cannot load it and never writes the plan. `/surface-status` reports, runs the conformity check, and abandons a plan on confirmation.
 - **Agents** are four roles. The extractor draws `overview.md` from `plan.md`. The checker looks for what the plan does and the overview does not show. The executor carries out a slice or a fix. The reviewer judges the branch against the approved overview, writes `conformity.md` when it finds nothing, and judges a break an executor suspects.
 - **The state script** derives the state, refuses illegal steps, runs the gates, and answers the skills and the host's CI.
 - **A plan folder**, `docs/plans/<date>-<slug>/` by default, holds the specs, the exploration, the interview, the plan, the overview, the reports (`checks/`, `reviews/`, `plan-changes/`, `gates/`), `conformity.md` and `journal.jsonl`. It is the whole state of a plan.
@@ -57,7 +57,7 @@ host CI    --runs----> surface-status check --require conform
 - The installer writes only in its namespace, and creates no settings file ([ADR 0019](docs/adr/0019-ownership-by-namespace.md)).
 - No prompt pins or checks the session's model or effort ([ADR 0031](docs/adr/0031-session-model-left-to-the-developer.md)), and the chain ships no permission rule ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)).
 - Every agent is a leaf: no `Agent` tool, no `isolation`, no `permissionMode`. A role does its mandate itself, a slice's work must stay on the branch for the next step, and the host decides what runs unattended.
-- Every command sets `disable-model-invocation: true`: launching `/surface-execute` is an approval, which only the developer gives.
+- Every command sets `disable-model-invocation: true`: launching `/surface-execute` is an approval, which only the developer gives, and no sentence of a conversation approves a revision.
 - Each step goes to a fresh agent that reads files, never a conversation, one agent at a time.
 - Prompts run every command from the repository root as a plain command: no `cd`, no `git -C`, no `find -exec`, no `$(...)`, since a permission rule matches plain command text only.
 - The chain never marks a pull request ready: that triggers the host's CI, after the developer reads `conformity.md`.
