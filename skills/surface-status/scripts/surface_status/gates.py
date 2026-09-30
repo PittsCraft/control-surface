@@ -240,7 +240,7 @@ def run_gate(
     limit = TIMEOUT_MINUTES * SECONDS_PER_MINUTE if timeout_seconds is None else timeout_seconds
     number = folder.next_gate_run()
     # A failed run is the one that counts as a pass, so it is the one asked about: it is refused
-    # from a state that takes no gate run and at the ceiling, where a green one would be too.
+    # from a state that takes no gate run and past the ceiling, where a green one would be too.
     asked = admit(
         state,
         GatesRun(run=number, result=GateResult.FAIL),

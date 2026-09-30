@@ -11,5 +11,6 @@
 {"v": 1, "at": "2026-09-29T09:10:00Z", "event": "gates-run", "run": 3, "result": "fail"}
 {"v": 1, "at": "2026-09-29T09:11:00Z", "event": "gates-run", "run": 4, "result": "pass"}
 {"v": 1, "at": "2026-09-29T09:12:00Z", "event": "fix-done", "pass": 1}
-{"v": 1, "at": "2026-09-29T09:13:00Z", "event": "blocked", "why": "ceiling reached before the next review"}
-{"v": 1, "at": "2026-09-29T09:14:00Z", "event": "resumed"}
+{"v": 1, "at": "2026-09-29T09:13:00Z", "event": "review-done", "pass": 2, "report": "reviews/pass-02.md", "defects": 1, "deviations": 0, "breaks": 0}
+{"v": 1, "at": "2026-09-29T09:14:00Z", "event": "blocked", "why": "a fourth pass, after a fix at the ceiling"}
+{"v": 1, "at": "2026-09-29T09:15:00Z", "event": "resumed"}

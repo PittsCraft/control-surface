@@ -1,12 +1,12 @@
 {
-  "state": "plan-change-proposed",
+  "state": "conform",
   "remaining": [],
   "done": [
     1,
     2
   ],
   "planning_passes": 0,
-  "execution_passes": 0,
+  "execution_passes": 3,
   "before_blocked": null,
-  "proposal_origin": "review"
+  "proposal_origin": null
 }

@@ -269,6 +269,8 @@ def test_the_ceiling_blocks_and_hands_back_to_the_developer() -> None:
     # Checked before any row that launches an agent; conformity is the one step it lets through.
     assert _row_index(rows, "Ceiling reached") < _row_index(rows, "`executing`")
     assert "recording `conform` is the one step the ceiling lets through" in body
+    # The script records the pass after the ceiling, which hands back: the ceiling is passed.
+    assert "`passes.execution` of `show --json` is more than `passes.ceiling`" in body
 
 
 def test_the_reason_of_a_suspected_break_is_read_from_a_field_show_gives() -> None:

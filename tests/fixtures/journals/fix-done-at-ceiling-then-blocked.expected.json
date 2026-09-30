@@ -6,7 +6,7 @@
     2
   ],
   "planning_passes": 0,
-  "execution_passes": 3,
-  "before_blocked": "reviewing",
+  "execution_passes": 4,
+  "before_blocked": "fixing",
   "proposal_origin": null
 }

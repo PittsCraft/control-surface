@@ -105,11 +105,17 @@ def test_a_child_left_behind_by_a_command_that_finished_is_killed_too(
     assert wait_gone(int(pids.read_text(encoding="utf-8")))
 
 
-def test_the_gate_refuses_to_start_at_the_ceiling(project: Project, tmp_path: Path) -> None:
+def test_the_gate_runs_at_the_ceiling_and_refuses_to_start_past_it(
+    project: Project, tmp_path: Path
+) -> None:
     marker = tmp_path / "marker"
     reviewing(project, f"touch {marker}; false", max_autonomous_passes=1)
     assert project.run("gate", PLAN).code == 1
     assert _execution_passes(project) == 1
+    marker.unlink()
+    assert project.run("gate", PLAN).code == 1  # the run of the one fixer the ceiling allows
+    assert marker.exists()
+    assert _execution_passes(project) == 2
     marker.unlink()
     before = project.journal()
     refused = project.run("gate", PLAN)
@@ -121,17 +127,20 @@ def test_the_gate_refuses_to_start_at_the_ceiling(project: Project, tmp_path: Pa
         "event": "gates-run",
         "refused": {
             "code": "ceiling",
-            "reason": "1 autonomous passes reached the ceiling of 1",
+            "reason": "2 autonomous passes went past the ceiling of 1",
         },
     }
     assert not marker.exists()
     assert project.journal() == before
-    assert not (project.plans / PLAN / "gates" / "run-02.txt").exists()
+    assert not (project.plans / PLAN / "gates" / "run-03.txt").exists()
 
 
-def test_a_green_command_is_not_run_at_the_ceiling_either(project: Project, tmp_path: Path) -> None:
+def test_a_green_command_is_not_run_past_the_ceiling_either(
+    project: Project, tmp_path: Path
+) -> None:
     marker, green = tmp_path / "marker", tmp_path / "green"
     reviewing(project, f"touch {marker}; test -e {green}", max_autonomous_passes=1)
+    project.run("gate", PLAN)
     project.run("gate", PLAN)
     marker.unlink()
     green.touch()

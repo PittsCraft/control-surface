@@ -127,5 +127,8 @@ def test_the_ceiling_hands_back_to_the_developer(tmp_path: Path) -> None:
     lines = journal(project)
     assert lines[-1]["event"] == "blocked"
     reviews = [line for line in lines if line["event"] == "review-done"]
-    assert len(reviews) == 1
-    assert reviews[0]["defects"] + reviews[0]["deviations"] > 0
+    # The ceiling of one lets one fix run, prepared here: the second review with findings is the
+    # pass after the ceiling, recorded, and no second fix follows it.
+    assert len(reviews) == 2
+    assert reviews[-1]["defects"] + reviews[-1]["deviations"] > 0
+    assert events(project).count("fix-done") == 1

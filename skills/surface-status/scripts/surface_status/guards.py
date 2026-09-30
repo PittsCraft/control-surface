@@ -40,7 +40,7 @@ from surface_status.events import (
     SliceDone,
     SuspicionDismissed,
 )
-from surface_status.machine import TRANSITIONS, PlanState, State, apply
+from surface_status.machine import TRANSITIONS, PlanState, State, apply, sends_work_back
 
 
 class RefusalCode(StrEnum):
@@ -246,25 +246,25 @@ def journal_guards(prev: PlanState | None, event: Event) -> Refusal | None:  # n
             assert_never(event)
 
 
-def _pass_count(prev: PlanState, event: Event) -> int | None:
-    """Return the counter an event would raise if it is a loop pass, None if it is not one."""
-    match event:
-        case CheckDone() if event.omissions > 0:
-            return prev.planning_passes
-        case ReviewDone() | SuspicionDismissed():
-            return prev.execution_passes
-        case GatesRun() if event.result is not GateResult.PASS:
-            return prev.execution_passes
-        case _:
-            return None
-
-
 def _check_ceiling(prev: PlanState, event: Event, context: RecordContext) -> Refusal | None:
-    passes = _pass_count(prev, event)
-    if passes is not None and passes >= context.ceiling:
+    """Refuse a pass the loop may no longer take on its own.
+
+    Planning: the check that brings its counter to the ceiling is the last one recorded, and hands
+    back. Execution: the loop sends work back `ceiling` times; the event that would send it once
+    more is still recorded, since it holds what does not converge, and hands back; none after it.
+    So a fixer whose own gate run fails is one pass, and the fixer sent after it the next.
+    """
+    if isinstance(event, CheckDone) and event.omissions > 0:
+        if prev.planning_passes >= context.ceiling:
+            return _refuse(
+                RefusalCode.CEILING,
+                f"{prev.planning_passes} autonomous passes reached the ceiling of"
+                f" {context.ceiling}",
+            )
+    elif sends_work_back(event) and prev.execution_passes > context.ceiling:
         return _refuse(
             RefusalCode.CEILING,
-            f"{passes} autonomous passes reached the ceiling of {context.ceiling}",
+            f"{prev.execution_passes} autonomous passes went past the ceiling of {context.ceiling}",
         )
     return None
 
