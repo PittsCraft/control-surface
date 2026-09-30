@@ -1,0 +1,4 @@
+{"v": 1, "at": "2026-09-30T20:20:48Z", "event": "plan-opened", "slug": "quieter-install"}
+{"v": 1, "at": "2026-09-30T20:23:57Z", "event": "interview-closed"}
+{"v": 1, "at": "2026-09-30T20:26:25Z", "event": "check-done", "rev": 1, "report": "checks/rev-01-01.md", "omissions": 0, "overview": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b", "plan": "sha256:ce02126c278bd55c24a528a029392abe30683c835aed8844e6796ad7d5b0dcfc"}
+{"v": 1, "at": "2026-09-30T20:26:28Z", "event": "plan-drafted", "rev": 1, "overview": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b", "plan": "sha256:ce02126c278bd55c24a528a029392abe30683c835aed8844e6796ad7d5b0dcfc", "slices": [1, 2], "gates": ["scripts/gate.sh"]}
