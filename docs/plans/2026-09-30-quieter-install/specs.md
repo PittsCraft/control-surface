@@ -28,7 +28,7 @@ written : .claude/agents/surface-checker.md
 written : .claude/agents/surface-executor.md
 written : .claude/agents/surface-extractor.md
 written : .claude/agents/surface-reviewer.md
-control-surface installed in /Users/pierremardon/Workspaces/PittsCraft/control-surface
+control-surface installed in /path/to/host
 Before your first /surface-execute, read how the loop runs unattended: https://github.com/PittsCraft/control-surface#permissions
 
 The installer ran and wrote 28 files, but it wrote them into the control-surface repository itself. They are the untracked .claude/agents/ and .claude/skills/ in your git status. If you meant to try control-surface out on its own repo, that's fine; just keep those two directories out of commits unless you want them there. If you meant to install it in another project, run the command from that project's directory, then delete these two directories here.

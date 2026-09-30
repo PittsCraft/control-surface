@@ -36,7 +36,7 @@ Le fond de l'ADR tient : la chaîne ne livre ni ne vérifie aucune règle, aucun
 
 Options :
 - A. Retirer de l'ADR 0032 les deux détails (texte du README, renvoi de l'installateur), qui ne sont pas des décisions dures à renverser ; `ARCHITECTURE.md` porte le reste. Git garde l'histoire.
-- B. Un ADR 0035 qui remplace le 0032, marqué superseded, et redit la décision entière avec la nouvelle nuance.
+- B. Un nouvel ADR qui remplace le 0032, marqué superseded, et redit la décision entière avec la nouvelle nuance.
 - C. Laisser l'ADR tel quel, ne changer que `ARCHITECTURE.md`.
 
 Recommandé : A, un nouvel ADR pour un changement de ton serait disproportionné, et C laisserait un ADR contredit par le dépôt.

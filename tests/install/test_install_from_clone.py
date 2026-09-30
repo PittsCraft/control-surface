@@ -51,11 +51,62 @@ def test_install_on_fresh_git_init(tmp_path: Path) -> None:
         ".claude/skills/surface-status/scripts/surface_status/cli.py",
         ".claude/agents/surface-checker.md",
         ".claude/agents/surface-executor.md",
-    }  # no settings file, and never the Claude Code settings: the last line points at the rules
-    assert result.stdout.splitlines()[-1].endswith("control-surface#permissions")
+    }  # no settings file, and never the Claude Code settings
+    assert result.stdout.splitlines() == [
+        f"control-surface installed in {host.resolve()} (8 files written)"
+    ]
     launcher = host / ".claude/skills/surface-status/scripts/surface-status"
     assert launcher.stat().st_mode & 0o111
     assert not (host / ".claude/skills/surface-plan/SKILL.md").stat().st_mode & 0o111
+
+
+def test_update_reports_files_written_and_removed(tmp_path: Path) -> None:
+    source = clone(tmp_path)
+    host = tmp_path / "host"
+    git_init(host)
+    run_clone(source, str(host))
+    (host / ".claude/agents/surface-old.md").write_text("orphan\n", encoding="utf-8")
+    commit_all(host)
+    (source / "agents/surface-executor.md").write_text("executor, changed\n", encoding="utf-8")
+
+    result = run_clone(source, str(host))
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        f"control-surface updated in {host.resolve()} (1 file written, 1 removed)"
+    ]
+
+
+def test_update_that_only_removes_reports_files_removed(tmp_path: Path) -> None:
+    source = clone(tmp_path)
+    host = tmp_path / "host"
+    git_init(host)
+    run_clone(source, str(host))
+    (host / ".claude/agents/surface-old.md").write_text("orphan\n", encoding="utf-8")
+    commit_all(host)
+
+    result = run_clone(source, str(host))
+
+    assert result.stdout.splitlines() == [
+        f"control-surface updated in {host.resolve()} (1 file removed)"
+    ]
+
+
+def test_output_never_mentions_permissions_or_the_readme(tmp_path: Path) -> None:
+    source = clone(tmp_path)
+    host = tmp_path / "host"
+    git_init(host)
+    (host / ".claude").mkdir()
+    (host / ".claude/surface.md").write_text("# Critical zones\n", encoding="utf-8")
+    outputs = [run_clone(source, str(host)).stdout]
+    commit_all(host)
+    outputs.append(run_clone(source, str(host)).stdout)
+    (source / "agents/surface-executor.md").write_text("changed\n", encoding="utf-8")
+    outputs.append(run_clone(source, str(host)).stdout)
+
+    for output in outputs:
+        assert "permission" not in output.lower()
+        assert "github.com" not in output
 
 
 def test_bytecode_never_copied(tmp_path: Path) -> None:
@@ -82,7 +133,7 @@ def test_reinstall_is_idempotent(tmp_path: Path) -> None:
 
     assert again.returncode == 0
     assert "already up to date" in again.stdout
-    assert "control-surface#permissions" in again.stdout
+    assert again.stdout.splitlines() == ["already up to date"]
     assert tree(host) == before
     assert run_clone(source, "--check", str(host)).returncode == 0
 

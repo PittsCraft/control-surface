@@ -28,7 +28,7 @@ Critères d'acceptation :
 - « installed » contre « updated » se décide sur l'existence, avant écriture, d'au moins un fichier de l'espace de noms dans l'hôte (`owned_files`), déjà calculée par `install`. Écartée : distinguer par le seul nombre de fichiers écrits, qui confondrait une réparation totale avec une première installation.
 - `install` renvoie des comptes structurés au lieu de lignes de texte ; `run` compose la phrase. Précédent : `check` garde ses lignes, inchangé.
 - Paragraphe nuancé dans le README (Q2). Écartées : une phrase sans recommandation, qui laisse sans repère sur le danger du bypass hors conteneur ; un tableau, plus long que le sujet.
-- ADR 0032 allégé en place (Q3), sans nouvel ADR : le texte du README et la dernière ligne de l'installateur ne sont pas des décisions dures à renverser. Écartés : un ADR 0035 qui remplacerait le 0032 pour un changement de ton ; laisser l'ADR contredit par le dépôt.
+- ADR 0032 allégé en place (Q3), sans nouvel ADR : le texte du README et la dernière ligne de l'installateur ne sont pas des décisions dures à renverser. Écartés : un nouvel ADR qui remplacerait le 0032 pour un changement de ton ; laisser l'ADR contredit par le dépôt.
 - Décisions existantes qui s'appliquent : ADR 0019 (l'installateur n'écrit que son espace de noms, aucun fichier de réglages), ADR 0032 (aucune règle livrée, aucun test sur la prose du README), l'invariant « aucun tiret cadratin ».
 
 ## 3. Tranches
