@@ -1,6 +1,6 @@
 # Plan: <feature>
 
-Revision <N>. Execution instructions for the agents, slice by slice. Written in the language of `specs.md`: translate the headings, keep the markers as they are. Sources: `specs.md`, `exploration.md`, `interview.md`. The plan stays alive: an executor that deviates amends it in the commit of its code.
+Revision <N>. Execution instructions for the agents, slice by slice. Written in the language `exploration.md` names in its repository rules: translate the headings, keep the markers as they are. Sources: `specs.md`, `exploration.md`, `interview.md`. The plan stays alive: an executor that deviates amends it in the commit of its code.
 
 ## 1. Goal and scope
 

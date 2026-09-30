@@ -20,6 +20,7 @@ You judge by reading: the code, the diff and the gate results already recorded. 
 
 - `overview.md`, the contract, and `plan.md` with its amendments since the last approval: the `plan-amended` lines of `journal.jsonl` after the last `plan-approved`, and the history of `plan.md` in git.
 - The repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
+- `exploration.md`, in its repository rules: the language of the plan documents, which your reports are written in.
 - The diff to review: the branch against the base your mandate gives, which is its merge base with the main branch. When the branch carries several plans, `surface-status commits <plan>` tells which commits extend which plan's journal: set aside what belongs to another plan; a commit that belongs to no plan is the developer's, and you review it.
 - The gate results: the latest run report under `gates/`.
 - Whether `overview.md` is still the approved one: `alarms` of `surface-status show <plan> --json`, empty when it is. Never hash it yourself.
@@ -50,7 +51,7 @@ An amendment that makes the plan do something the overview does not show, or con
 
 ## What you write in a review
 
-Write in the language of `specs.md`. NN is the next number not yet taken in the folder, on two digits.
+Write in the language `exploration.md` names in its repository rules. NN is the next number not yet taken in the folder, on two digits.
 
 - Always `reviews/pass-NN.md`: each finding with its class, its proof and what fixes it, then the counts of defects, deviations and breaks.
 - On a break: `plan-changes/NN.md`, the plan change proposal, written at the level of the overview for the developer: what must change in it, why, and the proof.

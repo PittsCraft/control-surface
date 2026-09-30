@@ -4,7 +4,8 @@ The state script holds its own contract in code. The prompts hold theirs in pros
 state here what the chain promises a developer, and check that each prompt says it: how a review
 classifies a finding, which command acts on a plan in each state, which acts of the developer each
 command takes in the conversation, in which order planning records its events and the execution
-loop reads its rows, what the reviewer writes, and the sections of an overview.
+loop reads its rows, what the reviewer writes, the sections of an overview, and the language of
+the plan documents.
 """
 
 # A review classifies a finding by two closed questions, in this order. A yes to the first is a
@@ -92,3 +93,19 @@ OVERVIEW_SECTIONS = (
     "8. Algorithms",
     "9. Sensitive zones",
 )
+
+# The plan documents are written in the repository's language, not the conversation's.
+# `/surface-plan` finds it once and writes it in `exploration.md`, where every agent and template
+# names it, in these words; none of them follows the language of `specs.md` any more.
+DOCUMENTS_LANGUAGE = "the language `exploration.md` names in its repository rules"
+FORMER_LANGUAGE_RULE = "language of `specs.md`"
+# Where `/surface-plan` finds that language, in this order, the first that answers winning: what
+# the agent instructions declare, the repository's own documentation, then the specs.
+LANGUAGE_SOURCES = (
+    "A language the agent instructions (`AGENTS.md`, `CLAUDE.md`) declare",
+    "Otherwise the language of the repository's own documentation",
+    "Otherwise the language the specs are written in",
+)
+# The developer's own words stay as given and come with a translation; the agents read the
+# translation and hold to the original when the two disagree.
+WORK_FROM_TRANSLATION = "work from its translation: the original is the reference"

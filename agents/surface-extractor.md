@@ -22,13 +22,15 @@ In the plan folder your mandate gives:
 - `plan.md`, the instructions, slice by slice;
 - the last cross-check report under `checks/`, when your mandate names one: the overview must now show what it reports as missing.
 
+Where `specs.md` or `interview.md` quotes the developer in another language, work from its translation: the original is the reference when the two disagree.
+
 And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
 
 ## What you write
 
 `overview.md` in the plan folder, and nothing else. You never touch `plan.md`, `journal.jsonl` or the code.
 
-Write in the language of `specs.md`. Nine sections, in this order, each filled in or stating explicitly that there is no change:
+Write in the language `exploration.md` names in its repository rules. Nine sections, in this order, each filled in or stating explicitly that there is no change:
 
 1. The idea in one sentence
 2. Acceptance criteria, numbered, taken from the specs and the interview

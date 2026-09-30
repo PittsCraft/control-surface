@@ -1,6 +1,6 @@
 # Exploration: <feature>
 
-What the exploration of the repository established, so that a relaunched session never explores again. Written in the language of `specs.md`: translate the headings. What is not listed under "Read" was not read.
+What the exploration of the repository established, so that a relaunched session never explores again. Written in the language it names below, in its repository rules, the language of every document of the plan folder: translate the headings. What is not listed under "Read" was not read.
 
 ## Repository rules
 
@@ -11,6 +11,7 @@ What the exploration of the repository established, so that a relaunched session
 - Conventions: branches, commits, pull requests, reviews.
 - Decisions: where they are recorded, and in what form.
 - CI: what triggers it (a push, a pull request opened, marked ready for review, a merge).
+- Language: the language of the plan documents, and where it was found: a language the agent instructions declare, else that of the repository's documentation, else that of the specs. Every document of the plan folder is written in it, and every agent reads it here.
 
 If the repository states none of this, say so, and the minimum the plan will hold to.
 

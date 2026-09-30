@@ -12,7 +12,14 @@ import re
 from pathlib import Path
 
 import pytest
-from chain_contract import CONFORM_HAND_BACK, EXECUTE, EXECUTION_LOOP, IN_CONVERSATION, SEEN_BY
+from chain_contract import (
+    CONFORM_HAND_BACK,
+    DOCUMENTS_LANGUAGE,
+    EXECUTE,
+    EXECUTION_LOOP,
+    IN_CONVERSATION,
+    SEEN_BY,
+)
 from chain_contract import PLAN as PLAN_COMMAND
 from cli_support import PLAN, Project
 from prompt_support import SKILLS, call_arguments, prompt_calls, prompt_files, section
@@ -187,6 +194,15 @@ def test_execute_writes_neither_code_nor_plan() -> None:
     assert "Never code, never `plan.md`, never `overview.md`" in rules
     assert "`interview.md` for a decision of the developer" in rules
     assert "Only the script writes the journal" in rules
+
+
+def test_execute_speaks_the_developers_language_and_quotes_their_decisions() -> None:
+    rules = section(_execute(), "Ground rules")
+    assert "You speak to the developer in the language they write in" in rules
+    assert DOCUMENTS_LANGUAGE in rules
+    assert "quoted in their words, then translated" in rules
+    declined = _proposal_replies()["Declined"]
+    assert "quoted in the developer's words and translated" in declined
 
 
 def test_execute_writes_under_headings_the_interview_template_holds() -> None:
