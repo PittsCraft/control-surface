@@ -2,8 +2,9 @@
 
 Prompt behavior is judged end to end; these tests hold what can be read: the frontmatter the
 Claude Code documentation of skills defines, the order of the execution loop and the states it
-leaves to `/surface-plan`, the sensitive zones the loop must honor, and the calls of the state
-script the two skills spell (their parsing is tested over every prompt).
+leaves to `/surface-plan`, the acts of the developer it takes in the conversation, the sensitive
+zones the loop must honor, and the calls of the state script the two skills spell (their parsing
+is tested over every prompt).
 """
 
 import json
@@ -11,9 +12,12 @@ import re
 from pathlib import Path
 
 import pytest
-from chain_contract import EXECUTE, EXECUTION_LOOP, SEEN_BY
+from chain_contract import EXECUTE, EXECUTION_LOOP, IN_CONVERSATION, SEEN_BY
+from chain_contract import PLAN as PLAN_COMMAND
 from cli_support import PLAN, Project
 from prompt_support import SKILLS, call_arguments, prompt_calls, prompt_files, section
+
+from surface_status.machine import TRANSITIONS, Rule, State
 
 # Frontmatter fields of a skill, from the reference table of the documentation of skills.
 SKILL_FIELDS = {
@@ -130,7 +134,12 @@ def test_the_skill_calls_are_found() -> None:
     called = {(name, *call_arguments(call)[:3:2]) for name, call in prompt_calls()}
     for event in ("plan-approved", "resumed", "review-done", "conform", "blocked"):
         assert ("surface-execute", "record", event) in called
-    for event in ("plan-change-proposed", "suspicion-dismissed"):
+    for event in (
+        "plan-change-proposed",
+        "suspicion-dismissed",
+        "plan-change-refused",
+        "plan-change-accepted",
+    ):
         assert ("surface-execute", "record", event) in called
     # The executor keeps the reason of a suspected break in the journal, not in its return.
     assert ("surface-executor", "record", "break-suspected") in called
@@ -173,8 +182,27 @@ def test_execute_resumes_from_files_never_from_the_conversation() -> None:
 def test_execute_writes_neither_code_nor_plan() -> None:
     body = _execute()
     assert "You write neither code nor plan" in body
-    assert "You never edit a file" in section(body, "Ground rules")
-    assert "Only the script writes the journal" in section(body, "Ground rules")
+    rules = section(body, "Ground rules")
+    assert "You edit one file only: `interview.md` of the plan folder" in rules
+    assert "Never code, never `plan.md`, never `overview.md`" in rules
+    assert "`interview.md` for a decision of the developer" in rules
+    assert "Only the script writes the journal" in rules
+
+
+def test_execute_writes_under_headings_the_interview_template_holds() -> None:
+    template = (SKILLS / "surface-plan" / "templates" / "interview.md").read_text(encoding="utf-8")
+    headings = set(re.findall(r"^## (.+)$", template, re.MULTILINE))
+    lines = [line for line in _execute().splitlines() if "`interview.md`" in line]
+    under = set(re.findall(r'under "([^"]+)"', "\n".join(lines)))
+    assert under == {"Plan change decisions"}
+    assert under <= headings
+
+
+def test_only_the_launch_approves_and_a_relaunch_resumes() -> None:
+    opening = _execute().split("\n## ", 1)[0]
+    assert "the developer's launch is the approval" in opening
+    assert "never by a sentence of the conversation" in opening
+    assert "after a dead session, relaunching it is the way to resume" in opening
 
 
 def test_a_fresh_agent_for_every_slice_review_and_fix() -> None:
@@ -216,8 +244,27 @@ def test_the_ceiling_blocks_and_hands_back_to_the_developer() -> None:
     assert "`surface-status record <plan> blocked" in ceiling
     assert "the developer takes the hand back" in ceiling
     assert "Launch no fix" in ceiling
-    assert "relaunch `/surface-execute`" in ceiling
-    assert "amend the plan with `/surface-plan`" in ceiling
+    blocked, stopped, asked = _positions(
+        ceiling,
+        [
+            "record <plan> blocked",
+            'Do the steps of "When the loop stops"',
+            "Keep the hand and ask: resume, or amend the plan, with your recommendation",
+        ],
+    )
+    assert blocked < stopped < asked
+    bullets = [line.strip() for line in ceiling.splitlines() if line.strip().startswith("- ")]
+    resume = next(line for line in bullets if line.startswith("- Resume:"))
+    recorded, goes_on = _positions(
+        resume, ["`surface-status record <plan> resumed`", "back to the loop in this session"]
+    )
+    assert recorded < goes_on
+    amend = next(line for line in bullets if line.startswith("- Amend:"))
+    assert "run `/surface-plan <amendment>`" in amend
+    assert "Record nothing, and stop" in amend
+    question = next(line for line in bullets if line.startswith("- A question"))
+    assert "nothing is recorded" in question
+    assert 'the row "`blocked` during execution, at launch"' in ceiling
     rows = _loop_rows()
     # Checked before any row that launches an agent; conformity is the one step it lets through.
     assert _row_index(rows, "Ceiling reached") < _row_index(rows, "`executing`")
@@ -234,11 +281,111 @@ def test_the_reason_of_a_suspected_break_is_read_from_a_field_show_gives() -> No
     assert "`slice` and `why` of `pending_suspicion`" in section(body, "A suspected break")
 
 
-def test_a_break_hands_back_through_surface_plan() -> None:
+def _positions(text: str, needles: list[str]) -> list[int]:
+    positions = [text.find(needle) for needle in needles]
+    missing = [needle for needle, at in zip(needles, positions, strict=True) if at < 0]
+    assert not missing, f"not found: {missing}"
+    return positions
+
+
+def _proposal_replies() -> dict[str, str]:
+    proposal = section(_execute(), "A plan change proposal")
+    bullets = [line.strip() for line in proposal.splitlines() if line.strip().startswith("- ")]
+    return {line[2:].split(":", 1)[0]: line for line in bullets}
+
+
+def test_a_proposal_is_put_to_the_developer_in_the_conversation() -> None:
     rows = _table_rows(section(_execute(), "The loop"))
     proposed = next(action for state, action in rows if state == "`plan-change-proposed`")
-    assert proposed.startswith("Stop.")
-    assert "`/surface-plan`" in proposed
+    assert proposed == 'See "A plan change proposal".'
+    proposal = section(_execute(), "A plan change proposal")
+    assert "`pending_proposal` of `show --json`" in proposal
+    stopped, presented, asked = _positions(
+        proposal,
+        [
+            'first do the steps of "When the loop stops"',
+            "present the proposal yourself, at the level of the overview",
+            "Ask: accept or decline, with your recommendation",
+        ],
+    )
+    assert stopped < presented < asked
+    assert "the proof, not the code" in proposal
+
+
+def test_a_decision_already_written_is_not_asked_again() -> None:
+    proposal = section(_execute(), "A plan change proposal")
+    assert "already holds the decision on this proposal" in proposal
+    assert "nothing is asked again" in proposal
+    interrupted = section(_execute(), "Interrupted work")
+    assert "A decision of the developer in `interview.md`" in interrupted
+
+
+def test_a_declined_proposal_is_written_recorded_and_the_loop_goes_on() -> None:
+    declined = _proposal_replies()["Declined"]
+    positions = _positions(
+        declined,
+        [
+            "ask the reason in one line",
+            'into `interview.md` under "Plan change decisions"',
+            'record <plan> plan-change-refused --why "<reason>"',
+            "commit `interview.md` with the journal",
+            "Back to the loop, in this session",
+        ],
+    )
+    assert positions == sorted(positions)
+
+
+def test_an_accepted_proposal_is_written_recorded_then_goes_to_surface_plan() -> None:
+    accepted = _proposal_replies()["Accepted"]
+    positions = _positions(
+        accepted,
+        [
+            'into `interview.md` under "Plan change decisions"',
+            "record <plan> plan-change-accepted",
+            "commit `interview.md` with the journal",
+            'stop as "When the loop stops" says',
+            "run `/surface-plan`, which draws the next revision",
+        ],
+    )
+    assert positions == sorted(positions)
+    assert "You draw no revision" in accepted
+    assert "approved by a new launch of `/surface-execute`" in accepted
+
+
+def test_a_question_on_a_proposal_records_nothing() -> None:
+    question = next(
+        line for key, line in _proposal_replies().items() if key.startswith("A question")
+    )
+    assert "is answered from the files, and nothing is recorded" in question
+    assert "In doubt, ask whether the reply is a decision" in question
+
+
+# The acts of the developer taken in the conversation, against the state script's table.
+
+
+def _command_records(command: str) -> set[str]:
+    """Return the events a command records, the command named like its skill folder."""
+    return {
+        call_arguments(call)[2]
+        for name, call in prompt_calls()
+        if name == command and call_arguments(call)[0] == "record"
+    }
+
+
+def test_every_act_in_the_conversation_is_legal_where_it_is_recorded() -> None:
+    for command, state, event in IN_CONVERSATION:
+        assert State(state) in TRANSITIONS[event], (command, state, event)
+        assert command in SEEN_BY[state], (command, state)
+        assert event in _command_records(command), (command, event)
+        assert event != "plan-approved"
+
+
+def test_what_the_conversation_cannot_take_goes_to_surface_plan() -> None:
+    accepted = TRANSITIONS["plan-change-accepted"][State.PLAN_CHANGE_PROPOSED]
+    assert accepted is State.DRAFTING
+    assert SEEN_BY[accepted.value] == frozenset({PLAN_COMMAND})
+    # A resumption returns to the state before the block, which the command that blocked sees.
+    assert TRANSITIONS["resumed"][State.BLOCKED] is Rule.BEFORE_BLOCKED
 
 
 def test_a_refusal_is_reported_never_worked_around() -> None:

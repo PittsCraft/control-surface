@@ -31,8 +31,8 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 `overview.md` is the only thing you have to read. It shows what will be built, in fixed sections, with diagrams where they help: the idea in one sentence, acceptance criteria, scope, data, boundaries, sequences, state machines, algorithms, and the sensitive zones, the points that touch your control, your work or your time and that you did not see go by. It does not show the order of construction: that stays in the plan.
 
-- To change something, run `/surface-plan` again and say what. It records your amendment and produces the next revision of the plan and of the overview.
-- To approve, run `/surface-execute`. Launching it counts as approval, gates included: it names the plan, the revision and the gates it approves, then freezes the overview.
+- To change something, say what in the conversation: `/surface-plan` keeps the hand after it hands over. It records your amendment, produces the next revision of the plan and of the overview, then asks again. A question is answered and changes nothing. In a new session, run `/surface-plan` with your amendment.
+- To approve, run `/surface-execute`. Launching it counts as approval, gates included: it names the plan, the revision and the gates it approves, then freezes the overview. No sentence of the conversation approves a revision.
 
 ### Permissions
 
@@ -50,12 +50,12 @@ While the agents work, you do not amend the plan: you wait for the loop to stop,
 
 ### 4. When you get the hand back
 
-The loop stops in three cases, and tells you in the terminal.
+The loop hands back in three cases, tells you in the terminal, and in the first two asks you what to do in the conversation.
 
 | What stopped it | What you find | What you do |
 |---|---|---|
-| A contract break: the overview would have to change to stay true | a plan change proposal, in `plan-changes/` | Run `/surface-plan`, which presents it at the level of the overview. Accept it, and you get a new revision to approve. Refuse it with a reason, then relaunch `/surface-execute`: the agents bring the code back to the overview and do not raise the same break again. |
-| The ceiling of autonomous passes, three by default | a summary of what does not converge | Relaunch `/surface-execute` to continue with a fresh count, or amend the plan with `/surface-plan`. |
+| A contract break: the overview would have to change to stay true | a plan change proposal, in `plan-changes/`, presented at the level of the overview | Decline it with a reason in one line: the loop goes on, the agents bring the code back to the overview and do not raise the same break again. Accept it, then run `/surface-plan`, which draws the new revision for you to approve with `/surface-execute`. |
+| The ceiling of autonomous passes, three by default | a summary of what does not converge | Answer that it resumes: the loop goes on in the session with a fresh count. Or amend the plan with `/surface-plan <amendment>`. |
 | The conform state | `conformity.md`, and an updated PR description | Go to step 5. |
 
 ### 5. Check the proof, then merge
@@ -110,7 +110,7 @@ you      /surface-plan Add a CSV export to the invoices page
 agent    explores the code, then asks its questions one at a time, each with a recommended option
 you      answer them
 agent    writes the plan and the overview, pushes the branch, opens a draft PR
-you      read overview.md, then /surface-plan with an amendment, or /surface-execute to approve
+you      read overview.md, then ask for changes in the conversation, or run /surface-execute to approve
 agents   slices, gates, review, fixes, until conform or until they hand back
 you      read conformity.md against overview.md, mark the PR ready, merge
 ```

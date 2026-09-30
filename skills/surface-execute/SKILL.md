@@ -1,6 +1,6 @@
 ---
 name: surface-execute
-description: Approves a drafted plan, then hands its slices, reviews and fixes to fresh agents and runs the full gates, until the plan is conform or the loop hands back to the developer. Takes the plan folder as an optional argument.
+description: Approves a drafted plan, then hands its slices, reviews and fixes to fresh agents and runs the full gates, until the plan is conform or the loop hands back to the developer. A plan change proposal or the ceiling is put to the developer in the conversation. Takes the plan folder as an optional argument.
 argument-hint: "[plan]"
 disable-model-invocation: true
 allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *)
@@ -8,7 +8,7 @@ allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash
 
 # surface-execute
 
-You dispatch the execution of a plan. Launched on a plan awaiting approval, you approve it: the developer's launch is the approval. Then you hand each slice, each review and each fix to a fresh agent, run the full gates through the state script, and record each outcome, until the plan is conform or the loop hands back to the developer. You write neither code nor plan: agents write them, the state script writes the journal, you record through the script and commit.
+You dispatch the execution of a plan. Launched on a plan awaiting approval, you approve it: the developer's launch is the approval. Then you hand each slice, each review and each fix to a fresh agent, run the full gates through the state script, and record each outcome, until the plan is conform or the loop hands back to the developer. You write neither code nor plan: agents write them, the state script writes the journal, you record through the script and commit. When the loop hands back, you keep the hand wherever the developer's reply approves nothing new: a plan change proposal, the ceiling. A revision is approved only by the launch of this command, never by a sentence of the conversation, and after a dead session, relaunching it is the way to resume.
 
 ## Ground rules
 
@@ -17,7 +17,7 @@ You dispatch the execution of a plan. Launched on a plan awaiting approval, you 
 - Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval, nor `git -C`, which the permission rules do not read as the git command it runs. Plain commands only, which the developer's permission rules can read: no variable or function standing for a command, no command run by another such as `find -exec`, no expansion such as `$?` or `$(...)`, no here-document; the exit code comes back with the result, never echo it.
 - A fresh agent for every slice, every review, every fix and every suspected break: one Agent call with `subagent_type` set to the role, `surface-executor` or `surface-reviewer`, and `model` set to that role's model under `settings.models` of `show --json`. Its prompt gives the plan folder, file paths and the facts its mandate lists below, never a summary of this conversation. Never resume an agent that already returned.
 - One agent at a time. Ask for the foreground, `run_in_background` false, when the Agent tool offers it: the loop then stays in the turn the developer launched, with the grants of this command. Wait for the result before the next step, even when it arrives in a later turn, and start nothing meanwhile.
-- You never edit a file. You commit through git, by pathspec, following the repository's commit conventions. A journal line goes in the same commit as the files it describes: the reports it cites, `plan.md` for a `plan-amended`. You push only when the loop stops.
+- You edit one file only: `interview.md` of the plan folder, where you write the developer's decisions on a plan change proposal, in their words. Never code, never `plan.md`, never `overview.md`. You commit through git, by pathspec, following the repository's commit conventions. A journal line goes in the same commit as the files it describes: the reports it cites, `plan.md` for a `plan-amended`, `interview.md` for a decision of the developer. You push only when the loop stops or hands back to the developer.
 
 ## Finding the plan
 
@@ -32,6 +32,7 @@ At launch, before the first row, run `git status` and read the journal:
 
 - Journal lines not committed yet: `slice-done` or `fix-done` means the executor stopped between its record and its commit; make that commit, its work with the journal. A `plan-amended` with neither after it belongs to the step still under way: leave it, with the work, to the next executor. A `break-suspected` that nothing judged after it waits for its reviewer: leave it, with the work, and the loop launches the reviewer on it. A `plan-change-proposed` after a `break-suspected`: make the commit "A suspected break" describes, the unfinished work of the slice with it. Any other line: commit the journal with the files its lines describe.
 - A report under `reviews/` or `plan-changes/`, or a `conformity.md`, that no journal line cites is the return of a reviewer interrupted before its record: record it as "A review" or "A suspected break" says, instead of launching a new reviewer.
+- A decision of the developer in `interview.md` that no journal line records yet: "A plan change proposal" takes it.
 - Any other uncommitted work belongs to the interrupted step: the fresh agent of that step is told about it, rereads it, then continues or undoes it.
 
 ## The loop
@@ -43,7 +44,7 @@ Read the state, apply the first row that holds, read the state again, and so on 
 | `alarms` of `show --json` not empty | Stop, and name each alarm. `overview-changed`: see "When the loop stops". |
 | `awaiting-approval`, at launch | Say in one line the plan and the revision you approve, the `rev` of the last `plan-drafted`, and the gates it names, `gates` of `show --json`. Then `surface-status record <plan> plan-approved` and commit the journal. |
 | `blocked` during execution, at launch | `surface-status record <plan> resumed`, and commit the journal. |
-| `plan-change-proposed` | Stop. Name the proposal, `pending_proposal` of `show --json`, and invite the developer to run `/surface-plan`, which presents it. |
+| `plan-change-proposed` | See "A plan change proposal". |
 | `conform`, `abandoned` | Stop: the plan is over. |
 | `interview`, `drafting`, `blocked` during planning, or no event yet | Stop: this plan belongs to `/surface-plan`. |
 | Ceiling reached, and work left to the agents | See "At the ceiling". |
@@ -85,6 +86,17 @@ The executor's reason is in the journal, not in this conversation: a relaunch fi
 - `dismissed`, with the note: `surface-status record <plan> suspicion-dismissed --slice <n> --report <path>`. Commit the note and the journal, not the work: the next executor resumes the slice from it, with the note.
 - Anything else, a refusal included: stop and report it.
 
+## A plan change proposal
+
+A reviewer found that the overview would have to change to stay true, and wrote the proposal at `pending_proposal` of `show --json`. The developer decides, and you keep the hand while they do.
+
+1. When `interview.md` already holds the decision on this proposal, under "Plan change decisions", a relaunch after a session died: it is the reply of step 3, and nothing is asked again.
+2. Otherwise, first do the steps of "When the loop stops", so the pull request shows who has the hand. Then present the proposal yourself, at the level of the overview: what would change in it, why, and the proof, not the code. Ask: accept or decline, with your recommendation and its reason in one line.
+3. The reply:
+   - Declined: ask the reason in one line. Write the decision and the reason into `interview.md` under "Plan change decisions", in the developer's words, then `surface-status record <plan> plan-change-refused --why "<reason>"`, and commit `interview.md` with the journal. Back to the loop, in this session: the agents bring the code back to the overview, and the next reviewer does not raise the same break again.
+   - Accepted: write the decision into `interview.md` under "Plan change decisions", then `surface-status record <plan> plan-change-accepted`, and commit `interview.md` with the journal. The plan is back in drafting, which belongs to `/surface-plan`: stop as "When the loop stops" says, and tell the developer to run `/surface-plan`, which draws the next revision and may ask its questions first. You draw no revision: you cannot load `/surface-plan`, and you never write the plan. The new revision is approved by a new launch of `/surface-execute`.
+   - A question is answered from the files, and nothing is recorded. In doubt, ask whether the reply is a decision.
+
 ## Gates
 
 `surface-status gate <plan>` runs the project's full gates, the commands the approved plan names, in order, writes their report under `gates/` and records `gates-run`. The run may last up to 30 minutes: give the call the longest timeout the tool allows. If the tool moves the run to the background, check its output file at intervals until the run ends: never end the turn waiting for a notification.
@@ -120,7 +132,13 @@ The last review found nothing and nothing changed since: the reviewer wrote `con
 The loop does not converge within its autonomous passes: the developer takes the hand back. Launch no fix.
 
 1. `surface-status record <plan> blocked --why "<reason>"`, the reason naming on one line what does not converge. Commit the journal.
-2. Stop, and say in the terminal: blocked, the developer takes the hand back; a summary of what does not converge, from the reports of the passes (review counts with their paths, failed gate runs, dismissed suspicions), and a suspected break still waiting for its reviewer, with its reason; and the two ways on: relaunch `/surface-execute` to resume where the loop stopped with a fresh count, or amend the plan with `/surface-plan`.
+2. Do the steps of "When the loop stops", and say in the terminal: blocked, the developer takes the hand back; a summary of what does not converge, from the reports of the passes (review counts with their paths, failed gate runs, dismissed suspicions), and a suspected break still waiting for its reviewer, with its reason.
+3. Keep the hand and ask: resume, or amend the plan, with your recommendation and its reason in one line.
+   - Resume: `surface-status record <plan> resumed`, commit the journal, and back to the loop in this session, with a fresh count. A suspected break still waiting goes to its reviewer.
+   - Amend: tell the developer to run `/surface-plan <amendment>`, which takes it and draws the next revision. Record nothing, and stop.
+   - A question is answered from the files, and nothing is recorded.
+
+A relaunch of `/surface-execute` on a plan blocked during execution resumes it too: the row "`blocked` during execution, at launch".
 
 ## When the loop stops
 

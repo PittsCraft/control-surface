@@ -2,9 +2,9 @@
 
 The state script holds its own contract in code. The prompts hold theirs in prose, so the tests
 state here what the chain promises a developer, and check that each prompt says it: how a review
-classifies a finding, which command acts on a plan in each state, in which order planning records
-its events and the execution loop reads its rows, what the reviewer writes, and the sections of an
-overview.
+classifies a finding, which command acts on a plan in each state, which acts of the developer each
+command takes in the conversation, in which order planning records its events and the execution
+loop reads its rows, what the reviewer writes, and the sections of an overview.
 """
 
 # A review classifies a finding by two closed questions, in this order. A yes to the first is a
@@ -29,6 +29,18 @@ SEEN_BY: dict[str, frozenset[str]] = {
     "plan-change-proposed": frozenset({PLAN, EXECUTE}),
     "blocked": frozenset({PLAN, EXECUTE}),
 }
+
+# The acts of the developer each command takes in the conversation, without a new launch, as
+# (command, the state it records from, the event). None of them approves a revision: only the
+# launch of `/surface-execute` does. An accepted plan change and an amendment at the execution
+# ceiling go to `/surface-plan`, which alone writes the plan.
+IN_CONVERSATION = (
+    (PLAN, "awaiting-approval", "amendment-received"),
+    (PLAN, "blocked", "resumed"),
+    (EXECUTE, "plan-change-proposed", "plan-change-refused"),
+    (EXECUTE, "plan-change-proposed", "plan-change-accepted"),
+    (EXECUTE, "blocked", "resumed"),
+)
 
 # The events `/surface-plan` records on a first launch, in the order it records them.
 PLANNING_EVENTS = ("plan-opened", "interview-closed", "check-done", "plan-drafted")

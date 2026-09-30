@@ -85,6 +85,15 @@ python3 $toy run $p $work/amend-1.jsonl "/surface-plan Put the year first: year,
 
 Run it in the background and kill it as soon as `journal.jsonl` holds `amendment-received`. Then relaunch with `/surface-plan` alone. The amendment must be under "Amendments" in `interview.md` and in the journal, and revision 2 of `plan.md` and `overview.md` must carry it.
 
+### An amendment in the conversation
+
+```sh
+p=$(python3 $toy build specs $work/converse)
+python3 $toy run $p $work/converse-1.jsonl "/surface-plan Export the shelf as CSV for the bookshop: title, author and year, sorted by author then title."
+```
+
+Answer the questions with `--resume` until the session hands over the overview and asks: amend, or approve with `/surface-execute`. Answer with `--resume` a question, "why this order?": it is answered and the journal does not move. Then answer "put the year first": it goes under "Amendments" in `interview.md`, the journal holds `amendment-received`, revision 2 is drawn, cross-checked and pushed, and the same question comes back. Answer "fine, go": the journal must hold no `plan-approved`, and the session says that the launch of `/surface-execute` approves.
+
 ### A break raised on a commit of the developer, then refused
 
 ```sh
@@ -92,8 +101,8 @@ p=$(python3 $toy build developer-break $work/break)
 python3 $toy run $p $work/break-1.jsonl /surface-execute
 ```
 
-The review must raise a contract break on the `isbn` column, with a proposal under `plan-changes/`, and the loop stops in `plan-change-proposed`. Then `/surface-plan` presents the proposal and asks: answer with `--resume` that you refuse it, and why. Relaunch `/surface-execute`: the fix brings the code back to the overview, and no later review raises the same break again.
+The review must raise a contract break on the `isbn` column, with a proposal under `plan-changes/`, and the loop hands back in `plan-change-proposed`: the session pushes, presents the proposal and asks accept or decline. Answer with `--resume` that you decline it, and why: the reason goes under "Plan change decisions" in `interview.md`, the journal holds `plan-change-refused`, and the same session goes on: the fix brings the code back to the overview, and no later review raises the same break again. Played again with an acceptance instead, the journal holds `plan-change-accepted`, the plan is in `drafting`, and the session tells you to run `/surface-plan`.
 
 ### The ceiling, then both ways on
 
-From the project the ceiling test leaves blocked, under `/out/basetemp/`, copy the toy folder twice into `$work`. In one copy, relaunch `/surface-execute`: it records `resumed` and goes on with a fresh count. In the other, give an amendment with `/surface-plan`: it records `amendment-received` and drafts revision 2.
+The ceiling test ends on the question: resume, or amend. From the project it leaves blocked, under `/out/basetemp/`, copy the toy folder three times into `$work`. In the first, answer resume with `--resume` on the session of its log: it records `resumed` and goes on with a fresh count in the same session. In the second, relaunch `/surface-execute` in a new session: it records `resumed` too. In the third, give an amendment with `/surface-plan`: it records `amendment-received` and drafts revision 2.
