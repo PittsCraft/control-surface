@@ -2,6 +2,8 @@
 
 Never use Claude Code's native memory (the files under `~/.claude/projects/*/memory/`): do not read it, do not write to it. What must outlast a session goes in the repository, in the documents it already has.
 
+Everything committed to this repository is in English, whatever the language of the conversation.
+
 ## Architecture and decisions
 
 - Read `ARCHITECTURE.md` first. Read an ADR of `docs/adr/` only when the task touches the decision it records.

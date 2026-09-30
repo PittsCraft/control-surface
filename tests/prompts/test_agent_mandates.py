@@ -13,8 +13,10 @@ from chain_contract import (
     BREAK_QUESTION,
     CHAIN_REPORTS,
     DEFECT_QUESTION,
+    DOCUMENTS_LANGUAGE,
     NO_FINDING_END,
     REVIEWER_WRITES,
+    WORK_FROM_TRANSLATION,
 )
 from prompt_support import (
     ROLES,
@@ -131,6 +133,36 @@ def test_judgment_roles_write_only_their_own_files(name: str, writes: str) -> No
     _, body = read_agent(name)
     assert writes in body
     assert "journal.jsonl`" in body
+
+
+# The language of what the roles write: the one `exploration.md` names, never the specs'.
+
+
+@pytest.mark.parametrize(
+    ("name", "writes"),
+    [
+        ("surface-extractor", "Write in"),
+        ("surface-checker", "Write it in"),
+        ("surface-reviewer", "Write in"),
+        ("surface-executor", "amend `plan.md` where it describes the slice, in"),
+    ],
+)
+def test_every_role_writes_in_the_language_exploration_names(name: str, writes: str) -> None:
+    _, body = read_agent(name)
+    assert f"{writes} {DOCUMENTS_LANGUAGE}" in body
+
+
+@pytest.mark.parametrize("name", ["surface-extractor", "surface-checker"])
+def test_roles_that_read_the_developers_words_work_from_the_translation(name: str) -> None:
+    _, body = read_agent(name)
+    reading = section(body, "What you read")
+    assert "Where `specs.md` or `interview.md` quotes the developer in another language" in reading
+    assert WORK_FROM_TRANSLATION in reading
+
+
+def test_reviewer_reads_the_language_in_exploration() -> None:
+    _, body = read_agent("surface-reviewer")
+    assert "`exploration.md`, in its repository rules" in section(body, "What you read")
 
 
 def test_executor_never_modifies_the_overview() -> None:

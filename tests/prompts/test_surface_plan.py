@@ -11,12 +11,21 @@ from fnmatch import fnmatchcase
 from pathlib import Path
 
 import pytest
-from chain_contract import OVERVIEW_SECTIONS, PLAN, PLANNING_EVENTS, SEEN_BY
+from chain_contract import (
+    DOCUMENTS_LANGUAGE,
+    FORMER_LANGUAGE_RULE,
+    LANGUAGE_SOURCES,
+    OVERVIEW_SECTIONS,
+    PLAN,
+    PLANNING_EVENTS,
+    SEEN_BY,
+)
 from prompt_support import (
     AGENTS,
     ROLES,
     SKILLS,
     call_arguments,
+    prompt_files,
     read_skill,
     script_calls,
     section,
@@ -249,6 +258,54 @@ def test_the_plan_folder_names_no_path_of_the_machine_and_passes_the_gates() -> 
     assert "a path under a home directory becomes a neutral form such as `/path/to/...`" in steps
     assert "Tell the developer what you replaced" in steps
     assert "Every document you write in the plan folder must pass the gates of step 1" in steps
+
+
+# Languages: the plan folder is the repository's, the conversation the developer's.
+
+
+def test_the_documents_language_is_found_at_step_one_in_order() -> None:
+    steps = section(_body(), "First launch, with specs")
+    conventions = steps.split("\n2. Branch.", 1)[0]
+    assert "The documents' language" in conventions
+    assert "the first that answers wins" in conventions
+    positions = _positions(conventions, list(LANGUAGE_SOURCES))
+    assert positions == sorted(positions)
+
+
+def test_the_documents_language_is_written_once_where_every_agent_reads_it() -> None:
+    languages = section(_body(), "Languages")
+    assert "written once in `exploration.md`, in its repository rules" in languages
+    assert "every agent reads it there" in languages
+    assert "The markers, the `gates` tag and the journal stay as they are" in languages
+
+
+def test_the_conversation_stays_in_the_developers_language() -> None:
+    languages = section(_body(), "Languages")
+    assert "Speak to the developer in the language they write in" in languages
+    assert "questions, options, hand-overs and summaries" in languages
+    assert "not repository content" in languages
+
+
+def test_the_developers_words_are_quoted_as_given_then_translated() -> None:
+    body = _body()
+    languages = section(body, "Languages")
+    for quoted in ("`specs.md`", "answer", "amendment", "decision", "instruction"):
+        assert quoted in languages
+    assert "is quoted in their words, then" in languages
+    assert "followed by its translation into the documents' language" in languages
+    assert "Everything you write yourself is in the documents' language only" in languages
+    assert "the original is the reference when the two disagree" in languages
+    steps = section(body, "First launch, with specs")
+    assert "add their translation below the text, under a heading that says so" in steps
+    for writing in (section(body, "Asking a question"), section(body, "Taking an amendment")):
+        assert 'in the developer\'s words then translated (see "Languages")' in writing
+
+
+def test_the_interview_template_quotes_then_translates() -> None:
+    template = _template("interview.md")
+    assert "The developer's words are quoted as given, then translated" in template
+    assert "Answer (<date>): <the developer's words, as given>" in template
+    assert "<their translation, when they are in another language>" in template
 
 
 def test_questions_come_one_at_a_time_with_options_and_a_recommendation() -> None:
@@ -515,9 +572,31 @@ def test_the_command_writes_only_in_the_plan_folder() -> None:
 
 
 @pytest.mark.parametrize("name", ["plan.md", "overview.md", "interview.md", "exploration.md"])
-def test_every_template_is_cited_and_follows_the_language_of_the_specs(name: str) -> None:
+def test_every_template_is_cited(name: str) -> None:
     assert f"${{CLAUDE_SKILL_DIR}}/templates/{name}" in _body()
-    assert "Written in the language of `specs.md`" in _template(name)
+
+
+@pytest.mark.parametrize("name", ["plan.md", "overview.md", "interview.md"])
+def test_every_template_is_written_in_the_language_exploration_names(name: str) -> None:
+    assert f"Written in {DOCUMENTS_LANGUAGE}: translate the headings" in _template(name)
+
+
+def test_exploration_is_the_one_place_the_language_is_written() -> None:
+    template = _template("exploration.md")
+    assert "Written in the language it names below, in its repository rules" in template
+    rules = section(template, "Repository rules")
+    language = next(line for line in rules.splitlines() if line.startswith("- Language:"))
+    assert "the language of the plan documents, and where it was found" in language
+    assert "every agent reads it here" in language
+
+
+@pytest.mark.parametrize(
+    "path",
+    [*prompt_files(), *sorted(TEMPLATES.glob("*.md"))],
+    ids=lambda path: path.relative_to(SKILLS.parent).as_posix(),
+)
+def test_no_prompt_follows_the_language_of_the_specs(path: Path) -> None:
+    assert FORMER_LANGUAGE_RULE not in path.read_text(encoding="utf-8")
 
 
 def test_the_extractor_is_given_the_overview_template() -> None:

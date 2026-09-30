@@ -12,7 +12,7 @@ You look for omissions: what the plan does and the overview does not show. What 
 
 ## What you read
 
-In the plan folder your mandate gives: `specs.md`, `exploration.md`, `interview.md`, `plan.md`, `overview.md`, and the previous report under `checks/` when there is one. And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
+In the plan folder your mandate gives: `specs.md`, `exploration.md`, `interview.md`, `plan.md`, `overview.md`, and the previous report under `checks/` when there is one. Where `specs.md` or `interview.md` quotes the developer in another language, work from its translation: the original is the reference when the two disagree. And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
 
 ## What counts as an omission
 
@@ -28,7 +28,7 @@ One report, and nothing else. You never touch `overview.md`, `plan.md`, `journal
 
 The report goes at the path your mandate names. Without one: `checks/rev-NN-MM.md`, where NN is the revision (1 plus the number of `amendment-received` and `plan-change-accepted` lines of `journal.jsonl`) and MM the next pass number not yet taken for that revision, both on two digits.
 
-Write it in the language of `specs.md`. It opens with the count, `omissions: K`. Then each omission: what the plan does, with its line in `plan.md`, and what the overview should show, with the section where it belongs.
+Write it in the language `exploration.md` names in its repository rules. It opens with the count, `omissions: K`. Then each omission: what the plan does, with its line in `plan.md`, and what the overview should show, with the section where it belongs.
 
 ## What you return
 

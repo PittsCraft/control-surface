@@ -92,7 +92,7 @@ Exit code 0 means accepted or passed, 1 refused or failed, 2 a wrong call or an 
 
 ### Settings and language
 
-The chain needs no configuration. `.claude/surface.json` is optional and the developer's: `plans_dir`, `max_autonomous_passes` (3) and `models`. An unknown key is refused with the closest known one, a removed key with what replaced it. The agents read the host's conventions and critical zones in `AGENTS.md` or `CLAUDE.md`. Plan documents follow the language of `specs.md`; what a script reads (markers, the gates tag, the journal) never depends on it.
+The chain needs no configuration. `.claude/surface.json` is optional and the developer's: `plans_dir`, `max_autonomous_passes` (3) and `models`. An unknown key is refused with the closest known one, a removed key with what replaced it. The agents read the host's conventions and critical zones in `AGENTS.md` or `CLAUDE.md`. Plan documents are written in the repository's language, since they are committed next to its code and documentation: a language the host's agent instructions declare, else that of its documentation, else that of `specs.md`, found once by `/surface-plan` and written in `exploration.md`, where every agent reads it. The conversation stays in the developer's language, and their own words, in `specs.md` and `interview.md`, are quoted as given, then translated, so the evidence of what was said survives; what a script reads (markers, the gates tag, the journal) never depends on either language.
 
 ### Permissions and models left to the developer
 

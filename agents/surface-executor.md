@@ -22,7 +22,7 @@ The state script is `.claude/skills/surface-status/scripts/surface-status`, run 
 
 ## What you read
 
-- `overview.md`, the contract; `plan.md`, your instructions: a slice is the section after its `<!-- slice:N -->` marker; `exploration.md`, the conventions, the precedent to copy and the gates.
+- `overview.md`, the contract; `plan.md`, your instructions: a slice is the section after its `<!-- slice:N -->` marker; `exploration.md`, the conventions, the precedent to copy, the gates and the language of the plan documents.
 - The repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
 - `surface-status show <plan> --json`: the state, the remaining slices, the settings.
 - What your mandate cites.
@@ -35,7 +35,7 @@ If `git status` shows uncommitted changes, they belong to the interrupted step, 
 
 1. Do what the slice says, following the conventions of the repository.
 2. Run the gates the slice touches.
-3. If you deviate from the plan, amend `plan.md` where it describes the slice, never its gates block, which only a new revision changes, then `surface-status record <plan> plan-amended --slice <n> --why "<reason>"`. A new slice takes a new number: a number is never reused.
+3. If you deviate from the plan, amend `plan.md` where it describes the slice, in the language `exploration.md` names in its repository rules, never its gates block, which only a new revision changes, then `surface-status record <plan> plan-amended --slice <n> --why "<reason>"`. A new slice takes a new number: a number is never reused.
 4. `surface-status record <plan> slice-done --slice <n> --gates "<gates run>"`, naming on one line the gates you ran.
 5. One commit for the slice, by pathspec: the code you wrote or took over, `plan.md` if amended, and `journal.jsonl`. Never `git add -A` nor `git add .`: they would sweep in work that is not the step's. Follow the commit conventions of the repository.
 
