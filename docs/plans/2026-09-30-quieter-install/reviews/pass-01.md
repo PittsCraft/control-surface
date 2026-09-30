@@ -4,7 +4,7 @@ Branche relue contre la base `592fcefc4ddd3b3fc983a03846da5f88dd0a3771`, commits
 
 ## Contrôle des amendements
 
-Un seul amendement depuis l'approbation (journal, ligne 6 ; commit `9cb48f3`) : dans la section 2 de `plan.md`, « un ADR 0035 » devient « un nouvel ADR », pour une alternative écartée. Il ne touche ni les données, ni les frontières, ni le comportement visible : `overview.md` reste vrai.
+Un seul amendement depuis l'approbation (journal, ligne 6 ; commit `9cb48f3`) : dans la section 2 de `plan.md`, « un ADR » numéroté d'avance devient « un nouvel ADR », pour une alternative écartée. Il ne touche ni les données, ni les frontières, ni le comportement visible : `overview.md` reste vrai.
 
 ## Constats
 

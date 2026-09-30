@@ -36,7 +36,7 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 ### Permissions
 
-The loop advances until it reaches a command your rules or mode do not allow, then waits for you. The choice is yours: auto mode (`claude --permission-mode auto`) on your own machine, `bypassPermissions` only in a disposable container or VM, or the default mode with your own allow rules.
+The loop runs until a command needs an approval your rules or mode do not give, then waits for you. How much it does alone is your call: auto mode on your machine, `bypassPermissions` only in a container or a VM you can throw away, or the default mode with your own allow rules.
 
 ### 3. Let the agents work
 

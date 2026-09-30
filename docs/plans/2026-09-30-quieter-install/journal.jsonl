@@ -8,3 +8,6 @@
 {"v": 1, "at": "2026-09-30T20:45:06Z", "event": "slice-done", "slice": 2, "gates": "scripts/gate.sh"}
 {"v": 1, "at": "2026-09-30T20:45:23Z", "event": "gates-run", "run": 1, "result": "pass"}
 {"v": 1, "at": "2026-09-30T20:51:35Z", "event": "review-done", "pass": 1, "report": "reviews/pass-01.md", "defects": 1, "deviations": 0, "breaks": 0}
+{"v": 1, "at": "2026-09-30T20:51:46Z", "event": "gates-run", "run": 2, "result": "fail"}
+{"v": 1, "at": "2026-09-30T20:54:34Z", "event": "gates-run", "run": 2, "result": "pass"}
+{"v": 1, "at": "2026-09-30T20:58:55Z", "event": "fix-done", "pass": 1}

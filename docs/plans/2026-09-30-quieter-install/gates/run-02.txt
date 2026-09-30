@@ -1,17 +1,17 @@
 result: pass
-duration: 260.0 seconds
+duration: 253.0 seconds
 timeout: 1800 seconds for the whole run
 commands: 1, in order, stopping at the first that fails
 
 command 1: scripts/gate.sh
 result: pass
 exit code: 0
-duration: 260.0 seconds
+duration: 253.0 seconds
 output (last 200 lines at most):
 
 
 == ruff format ==
-133 files already formatted
+134 files already formatted
 
 == ruff check ==
 All checks passed!
@@ -33,7 +33,7 @@ Validating components in: <repo>/skills
 ✔ Validation passed
 
 == pytest, Python 3.11 (with coverage report) ==
-Installed 27 packages in 113ms
+Installed 27 packages in 120ms
 ============================= test session starts ==============================
 platform darwin -- Python 3.11.13, pytest-9.1.1, pluggy-1.6.0
 rootdir: <repo>
@@ -122,10 +122,10 @@ skills/surface-status/scripts/surface_status/settings.py         88      0   100
 skills/surface-status/scripts/surface_status/strict_json.py      28      0   100%
 -------------------------------------------------------------------------------------------
 TOTAL                                                          1983     70    96%
-======================= 1376 passed in 131.98s (0:02:11) =======================
+======================= 1376 passed in 131.62s (0:02:11) =======================
 
 == pytest, newest Python (3.14) ==
-Installed 27 packages in 135ms
+Installed 27 packages in 140ms
 ============================= test session starts ==============================
 platform darwin -- Python 3.14.0rc2, pytest-9.1.1, pluggy-1.6.0
 rootdir: <repo>
@@ -190,6 +190,6 @@ tests/state/test_table.py .............................................. [ 67%]
 tests/state/test_transitions.py ...........................              [ 99%]
 tests/test_conftest.py .                                                 [100%]
 
-======================= 1376 passed in 118.65s (0:01:58) =======================
+======================= 1376 passed in 112.38s (0:01:52) =======================
 
 gate: all green
