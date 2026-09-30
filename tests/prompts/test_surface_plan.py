@@ -219,7 +219,8 @@ def test_first_launch_follows_the_planning_sequence() -> None:
     order = [
         "plan-opened",
         "`exploration.md`",
-        "`interview.md`",
+        # The step that creates it: the branch step names it earlier, for a question it holds.
+        "in `interview.md` from",
         "interview-closed",
         "`plan.md`",
         "`surface-extractor`",
@@ -315,6 +316,57 @@ def test_a_new_branch_only_from_the_main_branch() -> None:
     assert "Launched from the main branch, create a branch" in branch
     assert "From any other branch, stay" in branch
     assert "A new branch comes only from the main branch" in branch
+
+
+def _branch_step() -> str:
+    steps = section(_body(), "First launch, with specs")
+    start = steps.index("\n2. Branch.")
+    return steps[start : steps.index("\n3. ", start)]
+
+
+def test_the_branch_is_named_after_the_practice_in_order_of_evidence() -> None:
+    # Branches are deleted after merge, so live branches alone miss the practice; the head
+    # branches of past pull requests outlive them.
+    order = [
+        "A convention written in what step 1 read",
+        "`gh pr list --state all --author @me --limit 50 --json headRefName`",
+        "`gh pr list --state all --limit 50 --json headRefName,author`",
+        "Without `gh`, or when it finds no pull request",
+        "`git branch -r`",
+        "`git log --merges --format=%s -n 50`",
+        "Follow the dominant prefix",
+        "No evidence at all",
+    ]
+    branch = _branch_step()
+    positions = _positions(branch, order)
+    assert positions == sorted(positions)
+    assert "stop at the first that answers" in branch
+    assert "leaving out the branches of bots" in branch
+    assert "matches the nature of the need" in branch
+    assert "Reproduce the format of the slug too" in branch
+
+
+def test_without_evidence_one_question_names_the_branch_and_lands_in_the_interview() -> None:
+    branch = _branch_step()
+    assert "ask one question before creating the branch" in branch
+    assert "recommending `feature/<slug>`" in branch
+    # No plan folder yet: the answer reaches `interview.md` once step 5 creates it, and the
+    # branch itself keeps a relaunch from asking again.
+    assert 'when step 5 creates `interview.md`, write them there under "Git"' in branch
+    assert "never asks again: the branch holds the answer" in branch
+    git = _template("interview.md").split("\n## Git\n", 1)[1]
+    assert "the branch name asked" in git
+
+
+def test_the_branch_is_found_with_plain_commands_and_no_setting() -> None:
+    branch = _branch_step()
+    commands = [
+        span for span in re.findall(r"`([^`\n]+)`", branch) if span.startswith(("gh ", "git "))
+    ]
+    assert len(commands) == 4
+    for command in commands:
+        assert not re.search(r"\$\(|[|;&<>]|\bcd\b|git -C", command), command
+    assert "surface.json" not in branch
 
 
 def test_an_amendment_outside_the_hand_is_explained_and_refused() -> None:
