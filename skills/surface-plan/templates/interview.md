@@ -34,4 +34,6 @@ Answer (<date>): <the developer's words>
 
 ## Git
 
+<date>: <the branch name asked when the repository showed no practice, its options, the recommendation, and the developer's answer>
+
 <date>: <what the CI triggers react to, and the developer's answer on pushing>
