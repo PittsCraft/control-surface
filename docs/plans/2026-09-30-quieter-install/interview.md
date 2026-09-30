@@ -42,3 +42,7 @@ Options :
 Recommandé : A, un nouvel ADR pour un changement de ton serait disproportionné, et C laisserait un ADR contredit par le dépôt.
 
 Réponse (2026-09-30) : « A. Retirer les détails (Recommandé) »
+
+## Git
+
+2026-09-30 : `ci.yml` réagit à l'ouverture d'une pull request, brouillon compris, mais ses jobs `gates` et `conformity` sautent les brouillons ; un push de branche ne déclenche rien (push écouté sur `main` seul). Réponse : « Pousser et ouvrir (Recommandé) ».
