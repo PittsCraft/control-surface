@@ -59,11 +59,6 @@ REF_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/+-]*")
 ALLOWED_URL_SCHEMES = ("https", "file")
 EXIT_DRIFT = 1
 EXIT_USAGE = 2
-# The installer never writes the host's Claude Code settings: it points at the README instead.
-PERMISSIONS_HINT = (
-    "Before your first /surface-execute, read how the loop runs unattended:"
-    " https://github.com/PittsCraft/control-surface#permissions"
-)
 
 
 class InstallError(Exception):
@@ -364,8 +359,11 @@ def refuse_unsaved_work(host: Path, touched: set[str]) -> None:
         raise InstallError(message)
 
 
-def install(source: Path, host: Path, *, force: bool = False) -> list[str]:
-    """Copy the chain into the host; returns one line per change, empty when up to date.
+def install(source: Path, host: Path, *, force: bool = False) -> tuple[int, int, bool]:
+    """Copy the chain into the host; returns (written, removed, fresh) counts.
+
+    `fresh` is true when the host held no file of the namespace before. Both counts are zero when
+    up to date.
 
     Before writing or removing anything, refuses when a file it would overwrite or remove has
     unsaved work in git, unless `force`. Only paths of the namespace are ever removed.
@@ -376,18 +374,33 @@ def install(source: Path, host: Path, *, force: bool = False) -> list[str]:
         for relative, source_file in expected.items()
         if not same_as_source(source_file, host / relative)
     ]
-    orphans = sorted(owned_files(host) - set(expected))
+    owned = owned_files(host)
+    orphans = sorted(owned - set(expected))
     if not force:
         refuse_unsaved_work(host, {*stale, *orphans})
-    lines: list[str] = []
     for relative in stale:
         write_file(expected[relative], host / relative)
-        lines.append(f"written : {relative}")
     for relative in orphans:
         remove_path(host / relative)
-        lines.append(f"removed : {relative}")
     prune(host, expected)
-    return lines
+    return len(stale), len(orphans), not owned
+
+
+def count_files(count: int) -> str:
+    return f"{count} file" if count == 1 else f"{count} files"
+
+
+def summary(host: Path, written: int, removed: int, *, fresh: bool) -> str:
+    """Compose the one line an installation prints."""
+    if not written and not removed:
+        return "already up to date"
+    parts: list[str] = []
+    if written:
+        parts.append(f"{count_files(written)} written")
+    if removed:
+        parts.append(f"{removed} removed" if written else f"{count_files(removed)} removed")
+    verb = "installed" if fresh else "updated"
+    return f"control-surface {verb} in {host} ({', '.join(parts)})"
 
 
 # Download side
@@ -503,13 +516,10 @@ def run(source: Path, host: Path, *, check_only: bool, force: bool = False) -> i
         message = f"{host} is not a directory"
         raise InstallError(message)
     host.mkdir(parents=True, exist_ok=True)
-    lines = install(source, host.resolve(), force=force)
-    for line in lines:
-        say(line)
-    say(f"control-surface installed in {host.resolve()}" if lines else "already up to date")
+    written, removed, fresh = install(source, host.resolve(), force=force)
+    say(summary(host.resolve(), written, removed, fresh=fresh))
     for note in migration_notes(host.resolve()):
         say(note)
-    say(PERMISSIONS_HINT)
     return 0
 
 

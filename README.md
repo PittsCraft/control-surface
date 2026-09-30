@@ -6,7 +6,7 @@ Approve a short overview of your feature, then let agents build it and review th
 curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/install.py | python3 -
 ```
 
-Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and needs no configuration. It never writes your Claude Code settings: [Permissions](#permissions) says how the loop runs unattended. Add `--ref <tag or commit>` to pin a version.
+Run it at the root of your project. It installs the chain in `.claude/`, with its three commands, `/surface-plan`, `/surface-execute` and `/surface-status`, and needs no configuration. It never writes your Claude Code settings. Add `--ref <tag or commit>` to pin a version.
 
 ## Prerequisites
 
@@ -36,8 +36,7 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 ### Permissions
 
-> [!WARNING]
-> The loop stops at every command your permission rules or mode do not allow, until you approve it. Run it in auto mode (`claude --permission-mode auto`).
+The loop runs until a command needs an approval your rules or mode do not give, then waits for you. How much it does alone is your call: auto mode on your machine, `bypassPermissions` only in a container or a VM you can throw away, or the default mode with your own allow rules.
 
 ### 3. Let the agents work
 

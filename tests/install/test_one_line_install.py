@@ -121,6 +121,22 @@ def test_piped_check_reports_drift_exactly_as_a_clone_does(tmp_path: Path, archi
         assert line in piped.stdout
 
 
+def test_piped_install_prints_what_a_clone_prints(tmp_path: Path, archives: Path) -> None:
+    clone = make_source(tmp_path / "clone")
+    (clone / "install.py").write_bytes((ROOT / "install.py").read_bytes())
+    cloned_host = tmp_path / "cloned-host"
+    piped_host = tmp_path / "piped-host"
+    piped_host.mkdir()
+
+    from_clone = run_clone(clone, str(cloned_host))
+    piped = run_piped(cwd=piped_host, archive_dir=archives)
+
+    assert from_clone.returncode == piped.returncode == 0
+    assert piped.stdout.replace(str(piped_host.resolve()), "HOST") == from_clone.stdout.replace(
+        str(cloned_host.resolve()), "HOST"
+    )
+
+
 def test_piped_check_writes_nothing(tmp_path: Path, archives: Path) -> None:
     host = tmp_path / "host"
     host.mkdir()
