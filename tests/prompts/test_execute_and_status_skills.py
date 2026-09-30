@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 import pytest
-from chain_contract import EXECUTE, EXECUTION_LOOP, IN_CONVERSATION, SEEN_BY
+from chain_contract import CONFORM_HAND_BACK, EXECUTE, EXECUTION_LOOP, IN_CONVERSATION, SEEN_BY
 from chain_contract import PLAN as PLAN_COMMAND
 from cli_support import PLAN, Project
 from prompt_support import SKILLS, call_arguments, prompt_calls, prompt_files, section
@@ -444,6 +444,23 @@ def test_every_stop_pushes_and_refreshes_the_pr_description() -> None:
     assert "`surface-status pr-body`" in stopping
     assert "`gh pr edit --body-file -`" in stopping
     assert "Nothing else is written on the pull request" in stopping
+
+
+def test_conform_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_developer() -> None:
+    body = _execute()
+    conformity = section(body, "Conformity")
+    assert f"hand back in one line: {CONFORM_HAND_BACK}" in conformity
+    assert "one it cannot prove is a finding" in conformity
+    assert "nothing asks the developer to read it" in conformity
+    stopping = section(body, "When the loop stops")
+    assert "Never mark the pull request ready, since that triggers the CI" in stopping
+
+
+def test_no_prompt_makes_conformity_a_required_reading() -> None:
+    reading = re.compile(r"\b(read|reads|reading)\b[^.]*`conformity\.md`")
+    for path in prompt_files():
+        text = path.read_text(encoding="utf-8")
+        assert reading.search(text) is None, path
 
 
 # `/surface-status`: the state, the check, and an abandonment only once confirmed.

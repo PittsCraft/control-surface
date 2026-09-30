@@ -24,7 +24,7 @@ REMOVED_KEYS: Mapping[str, str] = {
         " which /surface-plan finds in the project"
     ),
     "gate_timeout_minutes": "a gate run has a fixed timeout of 30 minutes",
-    "mark_pr_ready": "the developer marks the pull request ready, after reading conformity.md",
+    "mark_pr_ready": "the developer marks the pull request ready, when they want, once conform",
 }
 
 
