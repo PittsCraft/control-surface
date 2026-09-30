@@ -14,6 +14,12 @@ BREAK_QUESTION = "Must the overview be modified for it to stay true?"
 DEFECT_QUESTION = "Must the code be fixed?"
 # A review with no finding ends the loop in this state.
 NO_FINDING_END = "conform state"
+# On conform, the loop hands back in one line. A criterion the reviewer cannot prove is a finding,
+# so conform leaves nothing to check: `conformity.md` is kept, never a required reading. The chain
+# never marks the pull request ready, since that triggers the host's CI.
+CONFORM_HAND_BACK = (
+    "the plan is conform, and the developer marks the pull request ready when they want"
+)
 
 # The commands that act on a plan in each state where work remains. The other command does not
 # see the plan: it neither resumes it nor offers it.

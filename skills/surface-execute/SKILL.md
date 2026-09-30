@@ -125,7 +125,7 @@ The fixer runs the full gates once at its end. Green, it records `fix-done` and 
 
 ## Conformity
 
-The last review found nothing and nothing changed since: the reviewer wrote `conformity.md`. `surface-status record <plan> conform --conformity conformity.md`, then commit the journal, with `conformity.md` if it is not committed yet. Stop.
+The last review found nothing and nothing changed since: the reviewer wrote `conformity.md`. `surface-status record <plan> conform --conformity conformity.md`, then commit the journal, with `conformity.md` if it is not committed yet. Stop, as "When the loop stops" says, and hand back in one line: the plan is conform, and the developer marks the pull request ready when they want, which triggers their CI. Conform means the reviewer proved every acceptance criterion, since one it cannot prove is a finding: `conformity.md` keeps that proof, and nothing asks the developer to read it.
 
 ## At the ceiling
 
@@ -149,4 +149,4 @@ At every stop, once a plan was found:
 1. Say in the terminal why the loop stopped and who has the hand, with the paths worth reading.
 2. Push the branch to its upstream, which `/surface-plan` set at the first draft. Without an upstream, push nothing and say so.
 3. Refresh the pull request's description: the output of `surface-status pr-body` (it takes no argument, since it describes every plan of the branch), given to `gh pr edit --body-file -` on its standard input. Without a pull request or without `gh`, say so. Nothing else is written on the pull request.
-4. Never mark the pull request ready: on `conform`, the developer does, after reading `conformity.md`, since that triggers the CI.
+4. Never mark the pull request ready, since that triggers the CI: on `conform`, the developer does, when they want.

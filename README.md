@@ -56,13 +56,15 @@ The loop hands back in three cases, tells you in the terminal, and in the first 
 |---|---|---|
 | A contract break: the overview would have to change to stay true | a plan change proposal, in `plan-changes/`, presented at the level of the overview | Decline it with a reason in one line: the loop goes on, the agents bring the code back to the overview and do not raise the same break again. Accept it, then run `/surface-plan`, which draws the new revision for you to approve with `/surface-execute`. |
 | The ceiling of autonomous passes, three by default | a summary of what does not converge | Answer that it resumes: the loop goes on in the session with a fresh count. Or amend the plan with `/surface-plan <amendment>`. |
-| The conform state | `conformity.md`, and an updated PR description | Go to step 5. |
+| The conform state | one line that says so, and an updated PR description | Mark the PR ready when you want: step 5. |
 
-### 5. Check the proof, then merge
+### 5. Mark the PR ready, then merge
 
-`conformity.md` lists each acceptance criterion of the overview and what proves it holds: a test, a file and line, a gate result. You check it against the overview you approved, not against the code.
+Conform means the last review proved every acceptance criterion of the overview you approved: a criterion it cannot prove is a finding, and the loop goes on. Nothing is left for you to check. The proof stays in `conformity.md`, each criterion with a test, a file and line or a gate result, for whoever wants it.
 
-Then you mark the PR ready for review, which triggers your CI, and you merge. The conformity check belongs in your CI when the PR is marked ready, and in your hands before merging:
+The PR description lists, one line each and for information, the decisions the agents took within the contract that you did not see go by: the plan amendments that keep the overview true, and the suspected breaks a reviewer dismissed. It lists nothing when there is nothing to list.
+
+When you want, you mark the PR ready for review, which triggers your CI, and you merge. The chain never does it for you. The conformity check belongs in your CI when the PR is marked ready, and in your hands before merging:
 
 ```sh
 .claude/skills/surface-status/scripts/surface-status check --require conform
@@ -112,7 +114,7 @@ you      answer them
 agent    writes the plan and the overview, pushes the branch, opens a draft PR
 you      read overview.md, then ask for changes in the conversation, or run /surface-execute to approve
 agents   slices, gates, review, fixes, until conform or until they hand back
-you      read conformity.md against overview.md, mark the PR ready, merge
+you      mark the PR ready when you want, merge
 ```
 
 ## Settings

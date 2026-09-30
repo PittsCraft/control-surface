@@ -4,7 +4,7 @@ This page describes the chain as it is now. Read it first. The few decisions who
 
 ## Purpose
 
-control-surface is a chain of Claude Code skills and agents that a developer installs into their own project, the host. The developer approves a short overview of a feature. Agents then build it, run the project's gates and review the work against that overview, pass after pass, until it conforms or the loop hands back. The developer reads the overview and the proof of conformity, not the code. Everything the chain knows lives in files of the host repository, so any session may die and the next one resumes.
+control-surface is a chain of Claude Code skills and agents that a developer installs into their own project, the host. The developer approves a short overview of a feature. Agents then build it, run the project's gates and review the work against that overview, pass after pass, until it conforms or the loop hands back. The developer reads the overview, neither the code nor the proof of conformity: a criterion the reviewer cannot prove is a finding that sends the loop round again, so conform leaves nothing to check. Everything the chain knows lives in files of the host repository, so any session may die and the next one resumes.
 
 ## The parts
 
@@ -60,7 +60,7 @@ host CI    --runs----> surface-status check --require conform
 - Every command sets `disable-model-invocation: true`: launching `/surface-execute` is an approval, which only the developer gives, and no sentence of a conversation approves a revision.
 - Each step goes to a fresh agent that reads files, never a conversation, one agent at a time.
 - Prompts run every command from the repository root as a plain command: no `cd`, no `git -C`, no `find -exec`, no `$(...)`, since a permission rule matches plain command text only.
-- The chain never marks a pull request ready: that triggers the host's CI, after the developer reads `conformity.md`.
+- The chain never marks a pull request ready: that triggers the host's CI, so the developer does it, when they want, once the plan is conform. `conformity.md` is the audit trail the `conform` event cites, never a required reading.
 - No test asserts the prose of the README or of these documents ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)).
 - No file holds an em dash, and no commit message carries an attribution.
 
@@ -80,7 +80,7 @@ A journal line is `v`, `at`, `event`, then the event's fields in declared order,
 
 ### Plans of a branch
 
-The plans of a branch are the plan folders it adds against its merge base with the main branch, so a plan kept on main after an earlier merge is never the branch's. The main branch is `origin/HEAD`, else `main`, `master`, `origin/main`, `origin/master`, with no setting. `resolve` designates the plan a command acts on, or hands the choice to the developer. `commits` assigns each commit to the plans whose journal it touches ([ADR 0016](docs/adr/0016-plans-of-a-branch-from-git-objects.md)).
+The plans of a branch are the plan folders it adds against its merge base with the main branch, so a plan kept on main after an earlier merge is never the branch's. The main branch is `origin/HEAD`, else `main`, `master`, `origin/main`, `origin/master`, with no setting. `resolve` designates the plan a command acts on, or hands the choice to the developer. `commits` assigns each commit to the plans whose journal it touches ([ADR 0016](docs/adr/0016-plans-of-a-branch-from-git-objects.md)). `pr-body` describes them in the pull request, refreshed whole at every stop: each plan's state and links, then, one line each and for information, the decisions agents took within the contract, read from the journal (a `plan-amended` with its reason, a `suspicion-dismissed` with the reason of the suspicion and its note), since the developer did not see them go by.
 
 ### Command line contract
 
