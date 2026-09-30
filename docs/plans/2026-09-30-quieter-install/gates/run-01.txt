@@ -1,0 +1,195 @@
+result: pass
+duration: 260.0 seconds
+timeout: 1800 seconds for the whole run
+commands: 1, in order, stopping at the first that fails
+
+command 1: scripts/gate.sh
+result: pass
+exit code: 0
+duration: 260.0 seconds
+output (last 200 lines at most):
+
+
+== ruff format ==
+133 files already formatted
+
+== ruff check ==
+All checks passed!
+
+== mypy ==
+Success: no issues found in 73 source files
+
+== pyright ==
+0 errors, 0 warnings, 0 informations
+
+== claude plugin validate agents ==
+Validating components in: /Users/pierremardon/Workspaces/PittsCraft/control-surface/agents
+
+✔ Validation passed
+
+== claude plugin validate skills ==
+Validating components in: /Users/pierremardon/Workspaces/PittsCraft/control-surface/skills
+
+✔ Validation passed
+
+== pytest, Python 3.11 (with coverage report) ==
+Installed 27 packages in 113ms
+============================= test session starts ==============================
+platform darwin -- Python 3.11.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/pierremardon/Workspaces/PittsCraft/control-surface
+configfile: pyproject.toml
+testpaths: tests
+plugins: hypothesis-6.168.3, cov-7.1.0, platformdirs-4.12.1
+collected 1376 items
+
+tests/ci/test_ci_checkout.py .....                                       [  0%]
+tests/cli/test_check.py ....................                             [  1%]
+tests/cli/test_cli_properties.py ...                                     [  2%]
+tests/cli/test_derivation.py ........................................... [  5%]
+............                                                             [  6%]
+tests/cli/test_json_shapes.py .............                              [  6%]
+tests/cli/test_launcher.py ......                                        [  7%]
+tests/cli/test_record_command.py ...........................             [  9%]
+tests/cli/test_runtime_purity.py .....................................   [ 12%]
+tests/cli/test_show_and_list.py .............................            [ 14%]
+tests/gates/test_gate_acceptance.py ............                         [ 15%]
+tests/gates/test_gate_command.py ...............                         [ 16%]
+tests/git/test_commits.py ........                                       [ 16%]
+tests/git/test_git_json_shapes.py ...                                    [ 16%]
+tests/git/test_pr_body.py ..........                                     [ 17%]
+tests/git/test_resolve.py .............................                  [ 19%]
+tests/git/test_resolve_properties.py .                                   [ 19%]
+tests/install/test_install_from_clone.py ............................... [ 22%]
+....                                                                     [ 22%]
+tests/install/test_one_line_install.py ........................          [ 24%]
+tests/install/test_settings_property.py ..                               [ 24%]
+tests/journal/test_codec.py ............................................ [ 27%]
+............................                                             [ 29%]
+tests/journal/test_plan_folder.py ....................................   [ 32%]
+tests/journal/test_reader_writer.py ............                         [ 32%]
+tests/journal/test_record.py ..........................                  [ 34%]
+tests/journal/test_settings.py ................................          [ 37%]
+tests/prompts/test_adr_index.py .                                        [ 37%]
+tests/prompts/test_agent_frontmatter.py ...............................  [ 39%]
+tests/prompts/test_agent_mandates.py ................................... [ 42%]
+............................................                             [ 45%]
+tests/prompts/test_commit_msg_hook.py ..........................         [ 47%]
+tests/prompts/test_decision_links.py .........                           [ 47%]
+tests/prompts/test_execute_and_status_skills.py ........................ [ 49%]
+.......                                                                  [ 50%]
+tests/prompts/test_host_neutrality.py ..........                         [ 50%]
+tests/prompts/test_privacy.py ....                                       [ 51%]
+tests/prompts/test_repo_text.py ..                                       [ 51%]
+tests/prompts/test_surface_plan.py ..................................... [ 53%]
+..                                                                       [ 54%]
+tests/state/test_counters.py ....................................        [ 56%]
+tests/state/test_events.py .......................                       [ 58%]
+tests/state/test_golden.py ................................              [ 60%]
+tests/state/test_guards.py .....................................         [ 63%]
+tests/state/test_properties.py .....                                     [ 63%]
+tests/state/test_purity.py ........                                      [ 64%]
+tests/state/test_table.py .............................................. [ 67%]
+........................................................................ [ 72%]
+........................................................................ [ 78%]
+........................................................................ [ 83%]
+........................................................................ [ 88%]
+........................................................................ [ 93%]
+.........................................................                [ 97%]
+tests/state/test_transitions.py ...........................              [ 99%]
+tests/test_conftest.py .                                                 [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.11.13-final-0 _______________
+
+Name                                                          Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------------------------
+scripts/check_commit_msg.py                                      36      1    97%   67
+skills/surface-status/scripts/surface_status/__init__.py          0      0   100%
+skills/surface-status/scripts/surface_status/build.py           110     16    85%   150-151, 178, 188, 191-192, 195-196, 214, 217-218, 252, 260, 264-266
+skills/surface-status/scripts/surface_status/cli.py             269      9    97%   186-189, 217-218, 340, 434, 452
+skills/surface-status/scripts/surface_status/events.py          111      0   100%
+skills/surface-status/scripts/surface_status/gates.py           122      0   100%
+skills/surface-status/scripts/surface_status/gitops.py           99     14    86%   44-46, 58-60, 67-68, 110-114, 153-156
+skills/surface-status/scripts/surface_status/guards.py          206      2    99%   245-246
+skills/surface-status/scripts/surface_status/journal.py         172      5    97%   111, 113-114, 173-174
+skills/surface-status/scripts/surface_status/machine.py         161     12    93%   196-197, 283-284, 308-309, 311-312, 323-324, 327-328
+skills/surface-status/scripts/surface_status/plan_folder.py     157      2    99%   175-176
+skills/surface-status/scripts/surface_status/pr_body.py          37      0   100%
+skills/surface-status/scripts/surface_status/record.py           44      0   100%
+skills/surface-status/scripts/surface_status/report.py          176      2    99%   282, 284
+skills/surface-status/scripts/surface_status/resolve.py         167      7    96%   48, 60-62, 147-148, 154
+skills/surface-status/scripts/surface_status/settings.py         88      0   100%
+skills/surface-status/scripts/surface_status/strict_json.py      28      0   100%
+-------------------------------------------------------------------------------------------
+TOTAL                                                          1983     70    96%
+======================= 1376 passed in 131.98s (0:02:11) =======================
+
+== pytest, newest Python (3.14) ==
+Installed 27 packages in 135ms
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0rc2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/pierremardon/Workspaces/PittsCraft/control-surface
+configfile: pyproject.toml
+testpaths: tests
+plugins: hypothesis-6.168.3, cov-7.1.0, platformdirs-4.12.1
+collected 1376 items
+
+tests/ci/test_ci_checkout.py .....                                       [  0%]
+tests/cli/test_check.py ....................                             [  1%]
+tests/cli/test_cli_properties.py ...                                     [  2%]
+tests/cli/test_derivation.py ........................................... [  5%]
+............                                                             [  6%]
+tests/cli/test_json_shapes.py .............                              [  6%]
+tests/cli/test_launcher.py ......                                        [  7%]
+tests/cli/test_record_command.py ...........................             [  9%]
+tests/cli/test_runtime_purity.py .....................................   [ 12%]
+tests/cli/test_show_and_list.py .............................            [ 14%]
+tests/gates/test_gate_acceptance.py ............                         [ 15%]
+tests/gates/test_gate_command.py ...............                         [ 16%]
+tests/git/test_commits.py ........                                       [ 16%]
+tests/git/test_git_json_shapes.py ...                                    [ 16%]
+tests/git/test_pr_body.py ..........                                     [ 17%]
+tests/git/test_resolve.py .............................                  [ 19%]
+tests/git/test_resolve_properties.py .                                   [ 19%]
+tests/install/test_install_from_clone.py ............................... [ 22%]
+....                                                                     [ 22%]
+tests/install/test_one_line_install.py ........................          [ 24%]
+tests/install/test_settings_property.py ..                               [ 24%]
+tests/journal/test_codec.py ............................................ [ 27%]
+............................                                             [ 29%]
+tests/journal/test_plan_folder.py ....................................   [ 32%]
+tests/journal/test_reader_writer.py ............                         [ 32%]
+tests/journal/test_record.py ..........................                  [ 34%]
+tests/journal/test_settings.py ................................          [ 37%]
+tests/prompts/test_adr_index.py .                                        [ 37%]
+tests/prompts/test_agent_frontmatter.py ...............................  [ 39%]
+tests/prompts/test_agent_mandates.py ................................... [ 42%]
+............................................                             [ 45%]
+tests/prompts/test_commit_msg_hook.py ..........................         [ 47%]
+tests/prompts/test_decision_links.py .........                           [ 47%]
+tests/prompts/test_execute_and_status_skills.py ........................ [ 49%]
+.......                                                                  [ 50%]
+tests/prompts/test_host_neutrality.py ..........                         [ 50%]
+tests/prompts/test_privacy.py ....                                       [ 51%]
+tests/prompts/test_repo_text.py ..                                       [ 51%]
+tests/prompts/test_surface_plan.py ..................................... [ 53%]
+..                                                                       [ 54%]
+tests/state/test_counters.py ....................................        [ 56%]
+tests/state/test_events.py .......................                       [ 58%]
+tests/state/test_golden.py ................................              [ 60%]
+tests/state/test_guards.py .....................................         [ 63%]
+tests/state/test_properties.py .....                                     [ 63%]
+tests/state/test_purity.py ........                                      [ 64%]
+tests/state/test_table.py .............................................. [ 67%]
+........................................................................ [ 72%]
+........................................................................ [ 78%]
+........................................................................ [ 83%]
+........................................................................ [ 88%]
+........................................................................ [ 93%]
+.........................................................                [ 97%]
+tests/state/test_transitions.py ...........................              [ 99%]
+tests/test_conftest.py .                                                 [100%]
+
+======================= 1376 passed in 118.65s (0:01:58) =======================
+
+gate: all green

@@ -6,3 +6,4 @@
 {"v": 1, "at": "2026-09-30T20:36:08Z", "event": "plan-amended", "slice": 1, "why": "plan.md and planning notes reworded so the repository gates (decision links, privacy) pass: no ADR number 0035, no personal path", "plan": "sha256:929798c57674200e2e9b31601613d909b2fd6af6c061c50ec3a7ae0059869656", "slices": [1, 2]}
 {"v": 1, "at": "2026-09-30T20:40:19Z", "event": "slice-done", "slice": 1, "gates": "scripts/gate.sh"}
 {"v": 1, "at": "2026-09-30T20:45:06Z", "event": "slice-done", "slice": 2, "gates": "scripts/gate.sh"}
+{"v": 1, "at": "2026-09-30T20:45:23Z", "event": "gates-run", "run": 1, "result": "pass"}
