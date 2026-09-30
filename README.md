@@ -117,7 +117,7 @@ you      read conformity.md against overview.md, mark the PR ready, merge
 
 ## Settings
 
-The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the judgment roles, `sonnet` for the executor).
+The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the judgment roles, `sonnet` for the executor). During execution, a pass is one time the loop sends work back to an agent on its own, to fix a review's findings or a failed gate run, or to resume a slice after a dismissed suspicion; a clean review or a green gate run costs none.
 
 ## Update and drift check
 

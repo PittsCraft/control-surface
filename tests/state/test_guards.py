@@ -299,12 +299,12 @@ class TestSuspectedBreak:
         blocked = must_accept(replay(self.pending()), Blocked(why="at the ceiling"))
         assert must_accept(blocked, AmendmentReceived()).suspicion is None
 
-    def test_is_no_pass_and_is_kept_even_at_the_ceiling(self) -> None:
-        prev = state_in(State.EXECUTING, execution_passes=3)
-        assert must_accept(prev, BreakSuspected(slice_=1, why="x")).execution_passes == 3
+    def test_is_no_pass_and_is_kept_even_past_the_ceiling(self) -> None:
+        prev = state_in(State.EXECUTING, execution_passes=4)
+        assert must_accept(prev, BreakSuspected(slice_=1, why="x")).execution_passes == 4
 
-    def test_at_the_ceiling_a_confirmation_passes_and_a_dismissal_does_not(self) -> None:
-        prev = state_in(State.EXECUTING, execution_passes=3, suspicion=Suspicion(1, "x"))
+    def test_past_the_ceiling_a_confirmation_passes_and_a_dismissal_does_not(self) -> None:
+        prev = state_in(State.EXECUTING, execution_passes=4, suspicion=Suspicion(1, "x"))
         dismissal = SuspicionDismissed(slice_=1, report="r")
         assert must_refuse(prev, dismissal).code is RefusalCode.CEILING
         assert must_accept(prev, PlanChangeProposed(proposal=PROPOSAL, slice_=1))

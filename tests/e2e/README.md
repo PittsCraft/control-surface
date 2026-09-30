@@ -19,7 +19,7 @@ Every scenario is billed and takes minutes: run them on demand, before a release
 | `awaiting-approval` | the branch `feat/csv-export`, a plan drafted at revision 1 (two slices), pushed |
 | `overview-modified` | revision 1 approved, slice 1 done, then a commit of the developer that edits `overview.md` |
 | `developer-break` | both slices done, then a commit of the developer that adds an `isbn` column the overview leaves out |
-| `ceiling` | both slices done with a defect the tests do not see (lines sorted by title only), `max_autonomous_passes: 1` |
+| `ceiling` | both slices done with a defect the tests do not see (lines sorted by title only), a first review that found it, then a fix that missed it, `max_autonomous_passes: 1` |
 
 `toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
 
@@ -39,7 +39,7 @@ The gate builds the image, mounts this clone read-only at `/clone` and the outpu
 | `test_the_nominal_path_reaches_conform` | `awaiting-approval` | `/surface-execute` | `conform`, one approval, each slice done once, `conformity.md` |
 | `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conform` |
 | `test_a_modified_overview_stops_the_loop` | `overview-modified` | `/surface-execute` | nothing recorded, still `executing`, the final message names the overview |
-| `test_the_ceiling_hands_back_to_the_developer` | `ceiling` | `/surface-execute` | `blocked` after one review with findings |
+| `test_the_ceiling_hands_back_to_the_developer` | `ceiling` | `/surface-execute` | `blocked` after a second review with findings, and no second fix |
 
 `test_a_prepared_state_is_the_one_named` builds each state, and `test_a_session_bypasses_permissions_in_the_container_only` checks the command line of a session and its refusal outside the container: both cost nothing, and run without a token (`scripts/gate.sh e2e -k "prepared or bypasses"`).
 

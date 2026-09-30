@@ -143,7 +143,7 @@ class PlanState:
     declared: frozenset[int]  # slices of the last `plan-drafted` or `plan-amended`
     done: frozenset[int]
     planning_passes: int  # counted since the last act of the developer
-    execution_passes: int
+    execution_passes: int  # likewise, counting the events `sends_work_back` names
     drafted_overview: str | None
     drafted_plan: str | None
     drafted_gates: tuple[str, ...] | None  # gates of the last `plan-drafted`
@@ -164,6 +164,25 @@ class PlanState:
     @property
     def terminal(self) -> bool:
         return self.state in TERMINAL
+
+
+def sends_work_back(event: Event) -> bool:
+    """Whether an event is an execution pass: it sends work back to an agent, on the loop's own.
+
+    A review's defects or deviations and a failed or timed out gate run send the work to a fixer,
+    and a dismissed suspicion sends its slice back to an executor. A clean review and a green gate
+    run send nothing back. Nor does a review that finds a break: it goes to the developer, whose
+    act resets the counter before any agent takes the work up.
+    """
+    match event:
+        case ReviewDone():
+            return event.breaks == 0 and (event.defects > 0 or event.deviations > 0)
+        case GatesRun():
+            return event.result is not GateResult.PASS
+        case SuspicionDismissed():
+            return True
+        case _:
+            return False
 
 
 def _opened(event: PlanOpened) -> PlanState:
@@ -187,6 +206,10 @@ def _opened(event: PlanOpened) -> PlanState:
         suspicion=None,
         last_event=event,
     )
+
+
+def _execution_passes(prev: PlanState, event: Event) -> int:
+    return prev.execution_passes + (1 if sends_work_back(event) else 0)
 
 
 def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911, PLR0912
@@ -234,7 +257,7 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
         case BreakSuspected():
             return replace(prev, suspicion=Suspicion(event.slice_, event.why))
         case SuspicionDismissed():
-            return replace(prev, execution_passes=prev.execution_passes + 1, suspicion=None)
+            return replace(prev, execution_passes=_execution_passes(prev, event), suspicion=None)
         case PlanChangeProposed():
             return replace(
                 prev,
@@ -243,11 +266,8 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
                 suspicion=None,
             )
         case GatesRun():
-            failed = event.result is not GateResult.PASS
             return replace(
-                prev,
-                gates=event.result,
-                execution_passes=prev.execution_passes + (1 if failed else 0),
+                prev, gates=event.result, execution_passes=_execution_passes(prev, event)
             )
         case ReviewDone():
             review = ReviewSummary(event.pass_, event.defects, event.deviations, event.breaks)
@@ -256,7 +276,7 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
                 prev,
                 last_review=review,
                 gates=None,
-                execution_passes=prev.execution_passes + 1,
+                execution_passes=_execution_passes(prev, event),
                 proposal_origin=Origin.REVIEW if broke else prev.proposal_origin,
                 pending_proposal=event.proposal if broke else prev.pending_proposal,
             )

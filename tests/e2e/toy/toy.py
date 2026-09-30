@@ -65,7 +65,7 @@ class State(StrEnum):
     AWAITING = "awaiting-approval"  # a plan drafted at revision 1, pushed
     OVERVIEW_MODIFIED = "overview-modified"  # approved, slice 1 done, then the overview edited
     DEVELOPER_BREAK = "developer-break"  # every slice done, then a commit against the schema
-    CEILING = "ceiling"  # every slice done with a defect, a ceiling of one pass
+    CEILING = "ceiling"  # a defect, its review, a fix that missed it, a ceiling of one pass
 
 
 def plan_name() -> str:
@@ -466,6 +466,21 @@ EXPORT_DEFECT = EXPORT.replace(
     "key=lambda book: (book.author, book.title)", "key=lambda book: book.title"
 )
 
+# The first review of the ceiling scenario, which found that defect.
+REVIEW_OF_THE_DEFECT = """\
+# Review 1
+
+## Finding 1: the lines are sorted by title alone
+
+Class: defect. Acceptance criterion 4 sorts the lines by author, then by title. `to_csv` in
+`shelf/export.py` sorts them by `book.title` alone, and no test has two authors whose order by
+title differs. Fix: sort by `(book.author, book.title)`, with a test that tells the two apart.
+
+## Counts
+
+defects 1, deviations 0, breaks 0
+"""
+
 TEST_EXPORT = """\
 import unittest
 
@@ -607,6 +622,22 @@ def record(project: Path, plan: str, event: str, *options: str) -> dict[str, obj
     return answer
 
 
+def gate(project: Path, plan: str) -> str:
+    """Run the gates of the approved plan through the installed state script; return the report."""
+    done = subprocess.run(
+        [str(project / STATE_SCRIPT), "--json", "gate", plan],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    answer: dict[str, object] = json.loads(done.stdout)
+    if done.returncode != 0 or answer.get("result") != "pass":
+        message = f"gate not green: {done.stdout}{done.stderr}"
+        raise RuntimeError(message)
+    return f"{plan}/{answer['report']}"
+
+
 def show(project: Path, plan: str) -> dict[str, object]:
     done = subprocess.run(
         [str(project / STATE_SCRIPT), "--json", "show", plan],
@@ -716,6 +747,19 @@ def _slice_two(project: Path, plan: str, *, defect: bool) -> None:
     _slice(project, plan, 2, "export: add the export command", files)
 
 
+def _reviewed_then_missed(project: Path, plan: str) -> None:
+    """Record a review that finds the defect, then a fix that misses it: one pass is spent."""
+    report = f"{plan}/reviews/pass-01.md"
+    run = gate(project, plan)
+    write(project, {report: REVIEW_OF_THE_DEFECT})
+    review = ("--report", "reviews/pass-01.md", "--defects", "1", "--deviations", "0")
+    record(project, plan, "review-done", *review, "--breaks", "0")
+    commit(project, "review: pass 1, one defect", [run, report, f"{plan}/journal.jsonl"])
+    run = gate(project, plan)
+    record(project, plan, "fix-done")
+    commit(project, "export: a fix that leaves the order as it was", [run, f"{plan}/journal.jsonl"])
+
+
 def build(state: State, dest: Path) -> Path:
     """Build the toy project under `dest` in `state` and return its path."""
     settings: dict[str, object] = {}
@@ -743,6 +787,8 @@ def build(state: State, dest: Path) -> Path:
         }
         write(project, files)
         commit(project, "export: add the isbn column, the bookshop asked for it", list(files))
+    if state is State.CEILING:
+        _reviewed_then_missed(project, plan)
     git(project, "push", "--quiet", "origin", BRANCH)
     return project
 

@@ -32,15 +32,24 @@ from surface_status.guards import Accepted, RecordContext, Refusal, RefusalCode,
 from surface_status.machine import PlanState, State, Suspicion
 
 
-def raises_a_counter(prev: PlanState, event: Event) -> int | None:
-    """Independent statement of the ceiling rules: the counter an event raises, if it is a pass."""
+def past_the_ceiling(prev: PlanState, event: Event, ceiling: int) -> bool:
+    """Independent statement of the ceiling rules: whether a pass comes once none may be taken.
+
+    Planning stops at the check that brings its counter to the ceiling. Execution sends work back
+    `ceiling` times, records the pass after them, which hands back, and none after it.
+    """
     if isinstance(event, CheckDone) and event.omissions > 0:
-        return prev.planning_passes
-    if isinstance(event, ReviewDone | SuspicionDismissed):
-        return prev.execution_passes
-    if isinstance(event, GatesRun) and event.result is not GateResult.PASS:
-        return prev.execution_passes
-    return None
+        return prev.planning_passes >= ceiling
+    sends_back = (
+        (
+            isinstance(event, ReviewDone)
+            and event.breaks == 0
+            and event.defects + event.deviations > 0
+        )
+        or (isinstance(event, GatesRun) and event.result is not GateResult.PASS)
+        or isinstance(event, SuspicionDismissed)
+    )
+    return sends_back and prev.execution_passes > ceiling
 
 
 def unjudged(journal: list[Event]) -> Suspicion | None:
@@ -64,8 +73,7 @@ def check_attempt(
         assert result.code is RefusalCode.TRANSITION
         return
     if prev is not None:
-        passes = raises_a_counter(prev, event)
-        if passes is not None and passes >= context.ceiling:
+        if past_the_ceiling(prev, event, context.ceiling):
             assert isinstance(result, Refusal), "a pass was accepted beyond the ceiling"
         if isinstance(event, SliceDone | PlanAmended | FixDone | Conform) and (
             context.overview_hash != prev.approved_overview
@@ -78,7 +86,7 @@ def check_attempt(
     if isinstance(result, Accepted):
         assert result.state.state in allowed
         assert result.state.planning_passes <= context.ceiling
-        assert result.state.execution_passes <= context.ceiling
+        assert result.state.execution_passes <= context.ceiling + 1
 
 
 @given(runs())
@@ -166,7 +174,7 @@ class PlanMachine(RuleBasedStateMachine):
     def the_counters_stay_within_the_ceiling(self) -> None:
         if self.state is not None:
             assert 0 <= self.state.planning_passes <= self.ceiling
-            assert 0 <= self.state.execution_passes <= self.ceiling
+            assert 0 <= self.state.execution_passes <= self.ceiling + 1
 
     @invariant()
     def a_suspicion_waits_for_its_judgment(self) -> None:

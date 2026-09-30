@@ -7,4 +7,5 @@
 {"v": 1, "at": "2026-09-29T09:06:00Z", "event": "suspicion-dismissed", "slice": 2, "report": "reviews/suspicion-01.md"}
 {"v": 1, "at": "2026-09-29T09:07:00Z", "event": "suspicion-dismissed", "slice": 2, "report": "reviews/suspicion-02.md"}
 {"v": 1, "at": "2026-09-29T09:08:00Z", "event": "suspicion-dismissed", "slice": 2, "report": "reviews/suspicion-03.md"}
-{"v": 1, "at": "2026-09-29T09:09:00Z", "event": "blocked", "why": "three dismissed suspicions"}
+{"v": 1, "at": "2026-09-29T09:09:00Z", "event": "suspicion-dismissed", "slice": 2, "report": "reviews/suspicion-04.md"}
+{"v": 1, "at": "2026-09-29T09:10:00Z", "event": "blocked", "why": "a fourth dismissed suspicion, past the ceiling"}

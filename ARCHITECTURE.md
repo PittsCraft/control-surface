@@ -68,7 +68,7 @@ host CI    --runs----> surface-status check --require conform
 
 ### Journal and state
 
-A journal line is `v`, `at`, `event`, then the event's fields in declared order, in one canonical JSON form. A line that does not re-encode to the same text is refused, so a hand edit fails at replay with its line number. The writer appends one line and flushes it; a journal without a final newline, what a torn write leaves, is refused. Every command replays the journal. The pass counters live in the state and each act of the developer resets them. A content hash is the SHA-256 of the bytes with CRLF read as LF, so other line endings never read as an edit of a frozen overview.
+A journal line is `v`, `at`, `event`, then the event's fields in declared order, in one canonical JSON form. A line that does not re-encode to the same text is refused, so a hand edit fails at replay with its line number. The writer appends one line and flushes it; a journal without a final newline, what a torn write leaves, is refused. Every command replays the journal. The pass counters live in the state and each act of the developer resets them. An execution pass is one time the loop sends work back to an agent (a review's defects or deviations, a failed gate run, a dismissed suspicion), so a clean review or a green run costs none, and the pass after the ceiling is still recorded, since it holds what does not converge, and hands back. A content hash is the SHA-256 of the bytes with CRLF read as LF, so other line endings never read as an edit of a frozen overview.
 
 ### Guards
 
@@ -76,7 +76,7 @@ A journal line is `v`, `at`, `event`, then the event's fields in declared order,
 
 ### Gates
 
-`/surface-plan` finds the commands that check the host (manifest, build files, CI, `AGENTS.md`, `CLAUDE.md`) and writes them in the `gates` block of `plan.md`; approval pins them. `surface-status gate` first asks the journal and runs nothing it would refuse, at the ceiling for instance. It runs the commands in order, each in its own process group, stops at the first failure, kills the group after 30 minutes for the whole run, writes `gates/run-NN.txt` and records `gates-run`. A failed run costs a pass ([ADR 0034](docs/adr/0034-gates-named-by-the-plan-run-by-the-script.md)). The report names the repository root `.` and the home directory `~`, since it is committed in the plan folder and the host's text checks read it. A run takes the number after the highest run of the journal and the highest report on disk, so a deleted report never frees its number and no report is ever overwritten.
+`/surface-plan` finds the commands that check the host (manifest, build files, CI, `AGENTS.md`, `CLAUDE.md`) and writes them in the `gates` block of `plan.md`; approval pins them. `surface-status gate` first asks the journal and runs nothing it would refuse, past the ceiling for instance. It runs the commands in order, each in its own process group, stops at the first failure, kills the group after 30 minutes for the whole run, writes `gates/run-NN.txt` and records `gates-run`. A failed run costs a pass ([ADR 0034](docs/adr/0034-gates-named-by-the-plan-run-by-the-script.md)). The report names the repository root `.` and the home directory `~`, since it is committed in the plan folder and the host's text checks read it. A run takes the number after the highest run of the journal and the highest report on disk, so a deleted report never frees its number and no report is ever overwritten.
 
 ### Plans of a branch
 
