@@ -4,14 +4,17 @@ The gates are the commands of the `gates` block of the approved revision of the 
 `plan-drafted` recorded them (ADR 0034): an edit of `plan.md` after the approval does not change
 what runs. `gate` runs them in order, each through `/bin/sh -c` at the project root, in its own
 process group, and stops at the first that fails. The whole run has a fixed timeout; the group of
-the command running when it expires is killed. It writes one report,
-`gates/run-NN.txt`, then records `gates-run` through the same path as every other event, so the
-guards decide whether the result is accepted. A run that would be refused is never started: the
-transition and the ceiling are checked first, since a gate can take a quarter of an hour.
+the command running when it expires is killed. It writes one report, `gates/run-NN.txt`, then
+records `gates-run` through the same path as every other event, so the guards decide whether the
+result is accepted. A run that would be refused is never started: the transition and the ceiling
+are checked first, since a gate can take a quarter of an hour. The report is committed in the plan
+folder, so it names the project root `.` and the home directory `~`: no path of the machine
+reaches it.
 """
 
 import contextlib
 import os
+import re
 import signal
 import subprocess
 import tempfile
@@ -180,6 +183,41 @@ def render_report(
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
+# A path starts after a character that cannot end a name, and ends before one that cannot go on
+# it: `/home/me` is found in `rootdir: /home/me/app` and `file:///home/me`, not in `/x/home/me`,
+# `/home/me-2` or `/home/me.d`, while a full stop that ends a sentence is left after it.
+_PATH_START = r"(?<![\w.-])"
+_PATH_END = r"(?![\w-]|\.\w)"
+
+
+def home_directory() -> Path | None:
+    """Find the home directory of the user running the gates, None when the system names none."""
+    try:
+        return Path.home()
+    except RuntimeError:
+        return None
+
+
+def neutral_paths(text: str, root: Path, home: Path | None) -> str:
+    """Write the project root as `.` and the home directory as `~`, the longest path first.
+
+    Each is matched as given and resolved, since a tool may print either. The file system root
+    is never replaced: it would turn every absolute path into a relative one.
+    """
+    forms: dict[str, str] = {}
+    for path, neutral in ((home, "~"), (root, ".")):
+        if path is None:
+            continue
+        for form in (str(path), str(path.resolve())):
+            if Path(form).is_absolute() and Path(form) != Path(form).parent:
+                forms[form] = neutral
+    if not forms:
+        return text
+    found = "|".join(re.escape(form) for form in sorted(forms, key=len, reverse=True))
+    pattern = re.compile(f"{_PATH_START}(?:{found}){_PATH_END}")
+    return pattern.sub(lambda match: forms[match[0]], text)
+
+
 def _write_new(path: Path, text: str) -> None:
     """Create the report; a run number is never reused, so an existing file is an error."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -214,7 +252,8 @@ def run_gate(
     steps = run_all(commands, root, limit)
     seconds = time.monotonic() - started
     name = gate_run_name(number)
-    _write_new(folder.path(name), render_report(commands, steps, seconds, limit))
+    text = neutral_paths(render_report(commands, steps, seconds, limit), root, home_directory())
+    _write_new(folder.path(name), text)
     result = steps[-1].execution.result
     recorded = record(folder, GatesRun(run=number, result=result), settings, now)
     return Ran(number, name, steps, seconds, recorded)

@@ -57,6 +57,10 @@ REVIEWER_WRITES = (
     "conformity.md",
 )
 
+# The reports of a plan folder the state script or a judgment role writes. An executor never
+# edits one: when one fails a gate, the loop stops instead of the report being reworded.
+CHAIN_REPORTS = ("gates/", "reviews/", "checks/", "plan-changes/", "conformity.md")
+
 # The sections of an overview, in order. None of them holds the slices: the plan stays alive,
 # and in the frozen contract any re-slicing would become a break.
 OVERVIEW_SECTIONS = (

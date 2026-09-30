@@ -34,6 +34,7 @@ from surface_status.events import (
     SliceDone,
     SuspicionDismissed,
 )
+from surface_status.journal import read_events
 
 OVERVIEW = "overview.md"
 PLAN = "plan.md"
@@ -265,7 +266,15 @@ class PlanFolder:
         return suspicion_name(self._highest("reviews", pattern, "n") + 1)
 
     def next_gate_run(self) -> int:
-        return self._highest("gates", re.compile(r"run-(?P<n>[0-9]+)\.txt"), "n") + 1
+        """Give the next gate run a number past every run recorded and every report left.
+
+        The journal decides, so a report deleted after its run never frees its number. A report
+        no line records yet, left by a run whose record was refused or cut short, is passed over
+        too: a run never overwrites a report.
+        """
+        recorded = (event.run for event in read_events(self.journal) if isinstance(event, GatesRun))
+        left = self._highest("gates", re.compile(r"run-(?P<n>[0-9]+)\.txt"), "n")
+        return max(max(recorded, default=0), left) + 1
 
     def next_plan_change(self) -> str:
         pattern = re.compile(r"(?P<n>[0-9]+)\.md")

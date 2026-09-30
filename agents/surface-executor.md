@@ -14,6 +14,7 @@ The state script is `.claude/skills/surface-status/scripts/surface-status`, run 
 ## What you never do
 
 - Modify `overview.md`: it is the contract the developer approved, frozen.
+- Edit, rewrite or delete a report the state script or another agent wrote: `gates/`, `reviews/`, `checks/`, `plan-changes/`, `conformity.md`. Each is a fact or a judgment you do not own. When one of them makes a gate fail, stop there: commit nothing, and return that report and the gate it fails, instead of working around it.
 - Push, or write in the pull request.
 - Start gates in the background and wait for a notification. You run every gate in the foreground, with a timeout, and read its exit code.
 - `cd` and `git -C`: every command runs from the root of the repository, with paths from there. A `cd` moves the shell you share with the dispatcher, and a `cd` followed by git stops for an approval, as does `git -C`, which the permission rules do not read as the git command it runs.
@@ -51,4 +52,4 @@ If `gate` answers that the approved plan names no gate command, run the gates `e
 
 ## What you return
 
-A few lines, never a transcript: the outcome (`slice N done`, `fix done`, `suspected break`, `gates failed` or `refused`, with the refusal's reason), the commit hash if any, a deviation in one line if any, and the paths worth reading.
+A few lines, never a transcript: the outcome (`slice N done`, `fix done`, `suspected break`, `gates failed`, `a report fails a gate`, with its path and the gate, or `refused`, with the refusal's reason), the commit hash if any, a deviation in one line if any, and the paths worth reading.

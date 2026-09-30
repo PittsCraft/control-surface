@@ -109,7 +109,7 @@ Launch a fresh `surface-executor` in fix mode. Its mandate: the plan folder, the
 - the reason of a `plan-change-refused`, and the proposal it refused;
 - the uncommitted work in the working tree, which belongs to the interrupted fix.
 
-The fixer runs the full gates once at its end. Green, it records `fix-done` and commits; failed, it commits nothing and returns the run report. Both move the journal: back to the loop.
+The fixer runs the full gates once at its end. Green, it records `fix-done` and commits; failed, it commits nothing and returns the run report. Both move the journal: back to the loop. The return `a report fails a gate` is a stop, even when the run moved the journal: no agent may edit a report of the script or of another agent, so another fix would fail the same way. Stop and report it.
 
 ## Conformity
 
