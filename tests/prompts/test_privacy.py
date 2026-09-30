@@ -19,7 +19,6 @@ MARKERS = (
     "charpente",  # the private workspace template of the author
     "pierremardon",  # the author's account on their machine
     "/Users/",  # a home directory, hence a path of someone's machine
-    "docs/plans/2026-",  # the folders of the design work, kept private
     "bootstrap plan",  # the name of that design work
 )
 # The author's first name, allowed only in the copyright notice.
@@ -72,6 +71,13 @@ def test_the_detector_finds_an_inserted_marker(
 ) -> None:
     inserted = marker.upper() if upper else marker
     assert marker in markers_in(before + inserted + after)
+
+
+def test_a_plan_folder_may_name_its_own_path() -> None:
+    # Plans live in the repository, and a plan document cites its folder; what a developer pastes
+    # into it is still read, so a path of their machine there is a leak.
+    assert markers_in("docs/plans/2026-09-30-quieter-install/specs.md") == set()
+    assert markers_in("docs/plans/2026-09-30-x/specs.md: /Users/someone/app") == {"/Users/"}
 
 
 def test_the_license_may_name_the_author_and_nothing_else() -> None:

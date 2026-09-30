@@ -9,7 +9,13 @@ import re
 from pathlib import Path
 
 import pytest
-from chain_contract import BREAK_QUESTION, DEFECT_QUESTION, NO_FINDING_END, REVIEWER_WRITES
+from chain_contract import (
+    BREAK_QUESTION,
+    CHAIN_REPORTS,
+    DEFECT_QUESTION,
+    NO_FINDING_END,
+    REVIEWER_WRITES,
+)
 from prompt_support import (
     ROLES,
     call_arguments,
@@ -132,6 +138,15 @@ def test_executor_never_modifies_the_overview() -> None:
     never = section(body, "What you never do")
     assert "Modify `overview.md`" in never
     assert "in the foreground, with a timeout" in never
+
+
+def test_executor_never_edits_a_report_it_does_not_own_and_stops_on_one() -> None:
+    _, body = read_agent("surface-executor")
+    never = section(body, "What you never do")
+    rule = next(line for line in never.splitlines() if "Edit, rewrite or delete a report" in line)
+    assert [path for path in CHAIN_REPORTS if f"`{path}`" not in rule] == []
+    assert "stop there" in rule
+    assert "`a report fails a gate`" in section(body, "What you return")
 
 
 def test_executor_runs_plain_commands_the_permission_rules_can_read() -> None:

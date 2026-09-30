@@ -235,6 +235,13 @@ def test_first_launch_follows_the_planning_sequence() -> None:
     assert positions == sorted(positions)
 
 
+def test_the_plan_folder_names_no_path_of_the_machine_and_passes_the_gates() -> None:
+    steps = section(_body(), "First launch, with specs")
+    assert "a path under a home directory becomes a neutral form such as `/path/to/...`" in steps
+    assert "Tell the developer what you replaced" in steps
+    assert "Every document you write in the plan folder must pass the gates of step 1" in steps
+
+
 def test_questions_come_one_at_a_time_with_options_and_a_recommendation() -> None:
     asking = section(_body(), "Asking a question")
     assert "One question at a time, and wait for its answer before the next" in asking

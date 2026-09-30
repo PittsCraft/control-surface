@@ -284,6 +284,11 @@ def test_full_gates_run_at_every_pass() -> None:
     assert "never end the turn waiting for a notification" in section(body, "Gates")
 
 
+def test_a_report_of_the_chain_that_fails_a_gate_stops_the_loop() -> None:
+    fixing = section(_execute(), "A fix")
+    assert "The return `a report fails a gate` is a stop" in fixing
+
+
 def test_every_stop_pushes_and_refreshes_the_pr_description() -> None:
     stopping = section(_execute(), "When the loop stops")
     assert "Push the branch to its upstream" in stopping

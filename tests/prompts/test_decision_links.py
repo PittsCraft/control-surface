@@ -3,6 +3,9 @@
 Records are removed when they no longer meet the criteria, and `ARCHITECTURE.md` changes its
 sections as the chain changes, so a mention in a prompt, a comment or a document can go stale.
 This reads where the pointers lead, never the prose around them.
+
+Plan folders are left out: a plan names decisions still to come, and options set aside, by
+numbers no record holds, and it stays as it was written once the plan is over.
 """
 
 import re
@@ -11,8 +14,11 @@ from pathlib import Path
 import pytest
 from test_repo_text import ROOT, repository_files
 
+from surface_status.settings import load_settings, settings_path
+
 ADR = ROOT / "docs" / "adr"
 ARCHITECTURE = ROOT / "ARCHITECTURE.md"
+PLANS = ROOT / load_settings(settings_path(ROOT)).plans_dir
 
 _MARKDOWN_LINK = re.compile(r"\]\((?P<target>[^()\s]+)\)")
 _ADR_PATH = re.compile(r"docs/adr/(?P<name>[0-9]{4}-[a-z0-9-]+\.md)")
@@ -50,9 +56,16 @@ def anchors(path: Path) -> set[str]:
     return found
 
 
+def in_a_plan_folder(path: Path) -> bool:
+    return path.is_relative_to(PLANS)
+
+
 def text_files() -> list[tuple[Path, str]]:
+    """Read the text files whose pointers must resolve, every one but those of plan folders."""
     found: list[tuple[Path, str]] = []
     for path in repository_files():
+        if in_a_plan_folder(path):
+            continue
         try:
             found.append((path, path.read_text(encoding="utf-8")))
         except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
@@ -77,6 +90,15 @@ def broken_links(path: Path, text: str) -> list[str]:
         if not resolved.is_file() or (anchor and anchor not in anchors(resolved)):
             broken.append(match["target"])
     return broken
+
+
+def test_plan_folders_are_left_out_and_nothing_else() -> None:
+    assert in_a_plan_folder(PLANS / "2026-09-30-x" / "interview.md")
+    assert not in_a_plan_folder(ROOT / "docs" / "adr" / "README.md")
+    assert not in_a_plan_folder(ROOT / "docs" / "plans-notes.md")
+    read = {path for path, _ in text_files()}
+    assert ARCHITECTURE in read
+    assert not {path for path in read if in_a_plan_folder(path)}
 
 
 def test_the_architecture_has_sections() -> None:

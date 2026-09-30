@@ -10,6 +10,7 @@ from hypothesis import strategies as st
 from journal_support import EVENTS, new_folder, write
 
 from surface_status.events import EVENT_TYPES, GateResult, GatesRun, PlanApproved, ReviewDone
+from surface_status.journal import JournalLine, append_line
 from surface_status.plan_folder import (
     GatesBlockError,
     PlanFolderError,
@@ -194,6 +195,45 @@ def test_files_that_do_not_follow_the_naming_are_ignored_by_the_numbering(tmp_pa
     write(folder, "gates/run-2.txt.orig")
     assert folder.next_review() == "reviews/pass-01.md"
     assert folder.next_gate_run() == 1
+
+
+def _recorded_runs(folder_root: Path, *runs: int) -> None:
+    for run in runs:
+        line = JournalLine("2026-09-30T20:45:23Z", GatesRun(run=run, result=GateResult.FAIL))
+        append_line(folder_root / "journal.jsonl", line)
+
+
+def test_a_gate_run_number_follows_the_journal_even_when_its_report_is_gone(
+    tmp_path: Path,
+) -> None:
+    folder = new_folder(tmp_path)
+    _recorded_runs(folder.root, 1, 2)
+    write(folder, "gates/run-01.txt")
+    assert folder.next_gate_run() == 3
+
+
+def test_a_gate_run_number_is_never_that_of_a_report_left_on_disk(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path)
+    _recorded_runs(folder.root, 1)
+    write(folder, "gates/run-04.txt")
+    assert folder.next_gate_run() == 5
+
+
+@given(
+    recorded=st.lists(st.integers(min_value=1, max_value=120), max_size=6),
+    left=st.lists(st.integers(min_value=1, max_value=120), max_size=6),
+)
+def test_a_gate_run_number_is_past_every_recorded_run_and_every_report(
+    recorded: list[int], left: list[int]
+) -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        folder = new_folder(Path(directory))
+        _recorded_runs(folder.root, *recorded)
+        for run in left:
+            write(folder, f"gates/run-{run:02d}.txt")
+        number = folder.next_gate_run()
+        assert number == max([0, *recorded, *left]) + 1
+        assert not folder.path(f"gates/run-{number:02d}.txt").exists()
 
 
 def test_numbers_go_past_two_digits_without_a_clash(tmp_path: Path) -> None:

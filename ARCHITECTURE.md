@@ -49,6 +49,7 @@ host CI    --runs----> surface-status check --require conform
 - Only the state script writes a journal, one appended line per accepted event, and a caller passes judgments only: the script derives dates, hashes, slices, gates and numbers ([ADR 0012](docs/adr/0012-script-computes-derived-fields.md)).
 - State is never stored. It is the fold of the journal, and a replay reads no other file ([ADR 0011](docs/adr/0011-pure-fold-and-two-families-of-guards.md)).
 - The approved overview is frozen: a change to it stops the loop until the developer restores it or abandons the plan.
+- No agent edits, rewrites or deletes a report the script or another agent wrote (`gates/`, `reviews/`, `checks/`, `plan-changes/`, `conformity.md`): one that fails a gate stops the loop, since a report reworded by the step it judges proves nothing.
 - A gate result is a fact the script measures, never an agent's word: `gates-run` cannot be recorded by hand ([ADR 0034](docs/adr/0034-gates-named-by-the-plan-run-by-the-script.md)).
 - A suspected break waits in the journal for a reviewer, and nothing carries its slice on before that ([ADR 0033](docs/adr/0033-a-suspected-break-kept-in-the-journal.md)).
 - The runtime is Python 3.11 and the standard library only, and the state script has no network access ([ADR 0001](docs/adr/0001-python-311-standard-library.md)).
@@ -75,7 +76,7 @@ A journal line is `v`, `at`, `event`, then the event's fields in declared order,
 
 ### Gates
 
-`/surface-plan` finds the commands that check the host (manifest, build files, CI, `AGENTS.md`, `CLAUDE.md`) and writes them in the `gates` block of `plan.md`; approval pins them. `surface-status gate` first asks the journal and runs nothing it would refuse, at the ceiling for instance. It runs the commands in order, each in its own process group, stops at the first failure, kills the group after 30 minutes for the whole run, writes `gates/run-NN.txt` and records `gates-run`. A failed run costs a pass ([ADR 0034](docs/adr/0034-gates-named-by-the-plan-run-by-the-script.md)).
+`/surface-plan` finds the commands that check the host (manifest, build files, CI, `AGENTS.md`, `CLAUDE.md`) and writes them in the `gates` block of `plan.md`; approval pins them. `surface-status gate` first asks the journal and runs nothing it would refuse, at the ceiling for instance. It runs the commands in order, each in its own process group, stops at the first failure, kills the group after 30 minutes for the whole run, writes `gates/run-NN.txt` and records `gates-run`. A failed run costs a pass ([ADR 0034](docs/adr/0034-gates-named-by-the-plan-run-by-the-script.md)). The report names the repository root `.` and the home directory `~`, since it is committed in the plan folder and the host's text checks read it. A run takes the number after the highest run of the journal and the highest report on disk, so a deleted report never frees its number and no report is ever overwritten.
 
 ### Plans of a branch
 
@@ -99,7 +100,7 @@ The loop stops at every command the developer's rules or mode do not allow, and 
 
 ### Tests
 
-Unit and hypothesis property tests cover each part of the script and the installer, with sockets blocked; the `ci` profile runs 500 examples. Golden journals replay to their expected states. Prompt tests hold the frontmatter, the contract the prompts carry (`tests/prompts/chain_contract.py`), host neutrality and privacy. `tests/ci/` proves the conformity check in a checkout shaped like a CI's, and the `conformity` job of `ci.yml` runs it again on a real runner. End to end tests run real sessions on a toy project, in a container, on demand only, since they are billed ([ADR 0025](docs/adr/0025-end-to-end-on-a-toy-project.md)).
+Unit and hypothesis property tests cover each part of the script and the installer, with sockets blocked; the `ci` profile runs 500 examples. Golden journals replay to their expected states. Prompt tests hold the frontmatter, the contract the prompts carry (`tests/prompts/chain_contract.py`), host neutrality and privacy. The privacy check reads plan folders, where a path of the machine is a leak too, while the decision-link check skips them, since a plan names decisions still to come. `tests/ci/` proves the conformity check in a checkout shaped like a CI's, and the `conformity` job of `ci.yml` runs it again on a real runner. End to end tests run real sessions on a toy project, in a container, on demand only, since they are billed ([ADR 0025](docs/adr/0025-end-to-end-on-a-toy-project.md)).
 
 ### Toolchain
 

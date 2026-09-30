@@ -6,6 +6,8 @@ from types import SimpleNamespace
 import pytest
 from cli_support import FIXED_NOW, PLAN, Project, plan_text
 from gates_support import SHORT_MINUTE, events, reviewing, run_report
+from hypothesis import given
+from hypothesis import strategies as st
 
 from surface_status import gates
 from surface_status.events import GateResult
@@ -80,7 +82,7 @@ def test_the_commands_run_in_order_and_stop_at_the_first_failure(
     assert trace.read_text(encoding="utf-8") == "one\ntwo\n"
     report = run_report(project)
     assert "commands: 3, in order, stopping at the first that fails" in report
-    assert report.endswith(f"command 3: echo 3 >> {trace}\nnot run: an earlier command failed\n")
+    assert report.endswith("command 3: echo 3 >> ./trace\nnot run: an earlier command failed\n")
     assert [line["result"] for line in events(project) if line["event"] == "gates-run"] == ["fail"]
 
 
@@ -120,10 +122,46 @@ def test_runs_are_numbered_one_after_the_other(project: Project) -> None:
     assert (project.plans / PLAN / "gates" / "run-02.txt").is_file()
 
 
+def test_a_deleted_report_does_not_free_its_run_number(project: Project) -> None:
+    reviewing(project, "true")
+    project.run("gate", PLAN)
+    project.run("gate", PLAN)
+    (project.plans / PLAN / "gates" / "run-02.txt").unlink()
+    result = project.run("gate", PLAN)
+    assert result.json()["run"] == 3
+    assert [line["run"] for line in events(project) if line["event"] == "gates-run"] == [1, 2, 3]
+
+
+def test_a_report_no_line_records_is_never_overwritten(project: Project) -> None:
+    reviewing(project, "true")
+    left = project.plans / PLAN / "gates" / "run-01.txt"
+    left.parent.mkdir()
+    left.write_text("left by a run cut short\n", encoding="utf-8")
+    result = project.run("gate", PLAN)
+    assert result.json()["report"] == "gates/run-02.txt"
+    assert left.read_text(encoding="utf-8") == "left by a run cut short\n"
+
+
 def test_the_command_runs_at_the_project_root_through_the_shell(project: Project) -> None:
     reviewing(project, "cd . && pwd -P")
     project.run("gate", PLAN)
-    assert str(project.root.resolve()) in run_report(project).splitlines()
+    assert "." in run_report(project).splitlines()
+
+
+def test_the_report_names_the_root_and_the_home_directory_neutrally(
+    project: Project, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path.parent / f"{tmp_path.name}-home"
+    monkeypatch.setenv("HOME", str(home))
+    reviewing(project, 'echo "rootdir: $PWD"; echo "$PWD/src/app.py:3"; echo "$HOME/.cache/x"')
+    project.run("gate", PLAN)
+    report = run_report(project)
+    lines = report.splitlines()
+    assert "rootdir: ." in lines
+    assert "./src/app.py:3" in lines
+    assert "~/.cache/x" in lines
+    assert str(project.root.resolve()) not in report
+    assert str(home) not in report
 
 
 def test_a_command_killed_by_a_signal_is_a_failure(project: Project) -> None:
@@ -210,3 +248,49 @@ def test_the_run_is_recorded_at_the_time_of_the_clock(project: Project) -> None:
     reviewing(project, "true")
     project.run("gate", PLAN)
     assert events(project)[-1]["at"] == FIXED_NOW.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# Neutral paths: a report committed in the plan folder names no path of the machine.
+
+_NAME = st.from_regex(r"[a-z][a-z0-9_]{0,7}", fullmatch=True)
+
+
+@given(user=_NAME, project_name=_NAME, inside=st.lists(_NAME, max_size=3), other=_NAME)
+def test_the_root_becomes_a_dot_and_the_home_a_tilde(
+    user: str, project_name: str, inside: list[str], other: str
+) -> None:
+    home = Path("/home") / user
+    root = home / "work" / project_name
+    rest = "".join(f"/{part}" for part in inside)
+    text = f"rootdir: {root}\nin: {root}{rest}\ncache {home}/{other}, at {root}.\n"
+    expected = f"rootdir: .\nin: .{rest}\ncache ~/{other}, at ..\n"
+    assert gates.neutral_paths(text, root, home) == expected
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "/home/me-2/app",  # another folder whose name starts like the home
+        "/home/me.d/x",
+        "/mnt/home/me/app",  # the same path, under another one
+        "/home/meeting",
+    ],
+)
+def test_a_path_that_only_looks_like_the_home_is_left_alone(text: str) -> None:
+    assert gates.neutral_paths(text, Path("/srv/app"), Path("/home/me")) == text
+
+
+def test_a_file_url_and_a_quoted_path_are_neutral_too() -> None:
+    text = "file:///home/me/x '/home/me/y' (/home/me)"
+    assert gates.neutral_paths(text, Path("/srv/app"), Path("/home/me")) == "file://~/x '~/y' (~)"
+
+
+def test_the_file_system_root_and_a_missing_home_are_never_replaced() -> None:
+    text = "/usr/bin/env at /srv/app"
+    assert gates.neutral_paths(text, Path("/srv/app"), Path("/")) == "/usr/bin/env at ."
+    assert gates.neutral_paths(text, Path("/srv/app"), None) == "/usr/bin/env at ."
+
+
+def test_a_root_under_the_home_is_the_root_first() -> None:
+    text = "/home/me/app/src and /home/me/other"
+    assert gates.neutral_paths(text, Path("/home/me/app"), Path("/home/me")) == "./src and ~/other"
