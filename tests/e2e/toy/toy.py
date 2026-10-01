@@ -427,8 +427,8 @@ Sort the books by author, then by title; write the header, then one row per book
 
 ## 9. Sensitive zones
 
-The columns are a contract with the bookshop (`AGENTS.md`): their names and their order
-are fixed by this overview.
+Critical zone touched: the CSV export (`AGENTS.md`). Its columns are a contract with the
+bookshop: their names and their order are fixed by this overview.
 """
 
 CHECK = """\
@@ -648,6 +648,22 @@ def show(project: Path, plan: str) -> dict[str, object]:
     )
     answer: dict[str, object] = json.loads(done.stdout)
     return answer
+
+
+def critical_files(project: Path) -> list[str]:
+    """List the files the pull request description gives the developer to read themselves."""
+    done = subprocess.run(
+        [str(project / STATE_SCRIPT), "--json", "pr-body"],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [
+        str(item["path"])
+        for plan in json.loads(done.stdout)["plans"]
+        for item in plan["critical_files"]
+    ]
 
 
 def _base(dest: Path, settings: Mapping[str, object]) -> Path:

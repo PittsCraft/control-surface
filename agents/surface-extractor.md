@@ -40,7 +40,9 @@ Write in the language `exploration.md` names in its repository rules. Nine secti
 6. Sequences
 7. State machines
 8. Algorithms
-9. Sensitive zones: what the developer would not see go by and that touches their control, their work or their time
+9. Sensitive zones: first each critical zone the repository's agent instructions declare that the plan touches, named as they name it, or the statement that the plan touches none; then what the developer would not see go by and that touches their control, their work or their time
+
+Section 9 opens with the critical zones because their code is what the developer still reads themselves once the work is conform: this is where they learn which zones that will be.
 
 One idea per section, short prose, and a mermaid diagram wherever one applies: schema, architecture, sequences, state machines, algorithms.
 

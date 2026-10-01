@@ -523,6 +523,14 @@ def test_the_overview_template_holds_the_nine_sections_and_no_slice() -> None:
     assert parse_slice_markers(template) == ()
 
 
+def test_the_overview_template_says_which_critical_zones_the_plan_touches() -> None:
+    template = _template("overview.md")
+    nine = template[template.index("## 9. Sensitive zones") :]
+    said = "Critical zones touched, among those the repository's agent instructions declare: none."
+    assert said in nine
+    assert nine.index(said) < nine.index("No change.")
+
+
 # Git, pull request and CI.
 
 

@@ -51,7 +51,15 @@ def test_the_pr_body_answer_has_its_documented_fields(repo: Repo) -> None:
     repo.plan("executing", A)
     payload = repo.run("pr-body").json()
     assert list(payload) == ["v", "branch", "plans", "body"]
-    assert list(payload["plans"][0]) == ["name", "state", "hand", "overview", "plan", "decisions"]
+    assert list(payload["plans"][0]) == [
+        "name",
+        "state",
+        "hand",
+        "overview",
+        "plan",
+        "decisions",
+        "critical_files",
+    ]
 
 
 def test_golden_pr_body_with_decisions(repo: Repo) -> None:
@@ -73,3 +81,25 @@ def test_golden_pr_body_with_decisions(repo: Repo) -> None:
         ["event", "slice", "why", "note"],
     ]
     assert_golden("pr-body.json", result.out)
+
+
+def test_golden_pr_body_with_critical_files(repo: Repo) -> None:
+    repo.write("billing/old.py")
+    repo.commit("on main")
+    repo.branch("feature")
+    repo.write("billing/pay.py")
+    repo.git("rm", "-q", "billing/old.py")
+    folder = repo.plan("reviewing", A)
+    review = ("--report", "reviews/pass-01.md", "--defects", "0", "--deviations", "0")
+    assert repo.run("record", A, "review-done", *review, "--breaks", "0").code == 0
+    (folder / "conformity.md").write_text(
+        "1. Proved.\n\n```critical-files\nbilling/pay.py\nbilling/old.py\n```\n", encoding="utf-8"
+    )
+    repo.commit("the work and its review")
+    assert repo.run("record", A, "conform", "--conformity", "conformity.md").code == 0
+    result = repo.run("pr-body")
+    assert [list(item) for item in result.json()["plans"][0]["critical_files"]] == [
+        ["path", "link"],
+        ["path", "link"],
+    ]
+    assert_golden("pr-body-critical-files.json", result.out)

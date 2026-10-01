@@ -186,6 +186,16 @@ def commits_of_branch(root: Path, main: str) -> list[Commit]:
     return commits
 
 
+def changed_files(root: Path, base: str) -> frozenset[str]:
+    """Name the files HEAD changed against a commit, relative to the project root.
+
+    Added, modified and deleted files all count, and a rename counts as both of its paths, so a
+    file the branch removed or moved away is still one it changed.
+    """
+    out = _must(root, "diff", "--name-only", "--no-renames", "--relative", "-z", base, "HEAD")
+    return frozenset(path for path in out.decode("utf-8", errors="replace").split("\0") if path)
+
+
 def web_url(root: Path) -> str | None:
     """Give the GitHub address of `origin`, None for any other remote."""
     remote = _try(root, "remote", "get-url", "origin")

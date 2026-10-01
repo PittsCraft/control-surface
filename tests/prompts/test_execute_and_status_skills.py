@@ -14,11 +14,14 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
+    CONFORM_EXCEPTION,
     CONFORM_HAND_BACK,
+    CORRECTIONS_CEILING,
     DOCUMENTS_LANGUAGE,
     EXECUTE,
     EXECUTION_LOOP,
     IN_CONVERSATION,
+    REFUSED_LIST,
     SEEN_BY,
 )
 from chain_contract import PLAN as PLAN_COMMAND
@@ -26,6 +29,7 @@ from cli_support import PLAN, Project
 from prompt_support import SKILLS, call_arguments, prompt_calls, prompt_files, section
 
 from surface_status.events import PlanOpened
+from surface_status.guards import RefusalCode
 from surface_status.machine import TRANSITIONS, Rule, State, apply
 from surface_status.resolve import EXECUTE_COMMAND as EXECUTE_SCRIPT_COMMAND
 from surface_status.resolve import PLAN_COMMAND as PLAN_SCRIPT_COMMAND
@@ -486,6 +490,57 @@ def test_conform_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_develop
     assert "nothing asks the developer to read it" in conformity
     stopping = section(body, "When the loop stops")
     assert "Never mark the pull request ready, since that triggers the CI" in stopping
+
+
+def test_conform_says_the_one_exception_the_code_of_the_critical_zones() -> None:
+    conformity = section(_execute(), "Conformity")
+    assert f"Say the one exception in one sentence: {CONFORM_EXCEPTION}" in conformity
+    assert (
+        "whose changed files the pull request description lists, when there are any" in conformity
+    )
+    assert "for the developer to read themselves" in conformity
+
+
+def test_a_refused_list_of_critical_files_goes_to_a_fresh_reviewer() -> None:
+    body = _execute()
+    conformity = section(body, "Conformity")
+    assert f"Refused with the code `{RefusalCode.CRITICAL_FILES.value}`" in conformity
+    assert "is malformed or names a file the branch did not change" in conformity
+    assert "The developer is not asked to repair an agent's list" in conformity
+    assert "only a reviewer edits a reviewer's report" in conformity
+    assert "launch a fresh `surface-reviewer`. Its mandate" in conformity
+    mandate = "Its mandate: the plan folder, the base commit"
+    assert f"{mandate} (`base` of `surface-status commits <plan> --json`)" in conformity
+    assert f"and the mode, {REFUSED_LIST}, with the refusal's reason" in conformity
+    assert "It corrects that list and nothing else, and records nothing" in conformity
+    assert "when it returns, record `conform` again, as above" in conformity
+    assert "with `conformity.md` when its content is not committed yet" in conformity
+    assert f"every suspected break and every {REFUSED_LIST.removeprefix('a ')}" in section(
+        body, "Ground rules"
+    )
+
+
+def test_the_corrections_of_a_refused_list_are_bounded_by_the_ceiling_of_passes() -> None:
+    conformity = section(_execute(), "Conformity")
+    again = "Refused again: a fresh reviewer again, with the new reason"
+    assert f"{again}, {CORRECTIONS_CEILING}" in conformity
+    assert "the one setting that bounds what the loop does on its own bounds this too" in conformity
+    # No number of its own: the ceiling is the one `show` gives.
+    assert re.search(r"\b(once|twice|three|\d+) (times?|reviewers?)\b", conformity) is None
+    assert "Keep that count yourself" in conformity
+    assert "a refused `conform` leaves no line in the journal" in conformity
+    assert "these attempts do not raise `passes.execution`" in conformity
+    after = "Still refused after them: stop and report the reason to the developer."
+    assert conformity.rstrip().endswith(after)
+
+
+def test_the_reviewers_that_correct_a_list_are_not_taken_for_steps_without_progress() -> None:
+    body = _execute()
+    rule = next(line for line in body.splitlines() if line.startswith("- No progress"))
+    assert "Never launch the same step twice in a row without progress" in rule
+    assert 'The reviewers "Conformity" sends to correct a refused list are the exception' in rule
+    assert "they move no line, the record that follows them does" in rule
+    assert "their own bound is there" in rule
 
 
 def test_no_prompt_makes_conformity_a_required_reading() -> None:

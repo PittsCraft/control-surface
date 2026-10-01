@@ -25,7 +25,7 @@ With a strong enough harness, you can delegate the depth and keep to the surface
 - **Agents draw the detailed plan and build the code.** A fresh agent for each step, which reads files and never a conversation.
 - **Consistency is ensured, not hoped for.** A cross-check proves the overview hides nothing the plan does. Reviews go on until the code matches the overview, each criterion with its proof. A change that would make the overview false comes back to you.
 - **Your harness ensures discipline.** The harness is your project's own gates: its tests, lint, architecture and type checks... The loop runs them before every review and after every fix, and nothing goes on while one is red. The stronger your gates, the more you can delegate.
-- **Where a mistake would cost you most, read the code yourself.** Declare your critical zones in your `AGENTS.md` or `CLAUDE.md`: the agents read them, and what touches one must show in the overview.
+- **Where a mistake would cost you most, read the code yourself.** Declare your critical zones in your `AGENTS.md` or `CLAUDE.md`: the overview names those a plan touches, and when the work is conform the PR description lists the files changed there, for you to read.
 
 ## What you control
 

@@ -37,7 +37,7 @@ from surface_status.events import (
 from surface_status.guards import Accepted, InvalidJournalError, Refusal, RefusalCode
 from surface_status.journal import JournalError, decode_line, read_events
 from surface_status.machine import State
-from surface_status.plan_folder import PlanFolder, PlanFolderError
+from surface_status.plan_folder import PlanFolder, PlanFolderError, parse_critical_files
 from surface_status.record import load_state, record, timestamp
 from surface_status.settings import Settings
 
@@ -454,3 +454,83 @@ def test_a_plan_approved_before_plans_named_their_gates_amends_freely(tmp_path: 
     amended = folder.plan_hash()
     assert amended is not None
     _accept(folder, PlanAmended(slice_=1, why="named the gates", plan=amended, slices=(1, 2)))
+
+
+# The critical-files block of the conformity
+
+
+def _to_clean_review(folder: PlanFolder) -> str:
+    """Drive a plan to a clean review, and return the hash of its overview."""
+    _to_executing(folder)
+    _accept(folder, SliceDone(slice_=1, gates="lint"))
+    _accept(folder, SliceDone(slice_=2, gates="lint"))
+    run = folder.next_gate_run()
+    write(folder, f"gates/run-{run:02d}.txt")
+    _accept(folder, GatesRun(run=run, result=GateResult.PASS))
+    report = write(folder, folder.next_review())
+    _accept(folder, ReviewDone(pass_=1, report=report, defects=0, deviations=0, breaks=0))
+    overview = folder.overview_hash()
+    assert overview is not None
+    return overview
+
+
+@pytest.mark.parametrize(
+    ("block", "reason"),
+    [
+        (
+            "```critical-files\na.py\n```\n```critical-files\nb.py\n```\n",
+            "conformity.md: line 5: a second critical-files block",
+        ),
+        (
+            "```critical-files\nsrc/pay.py\n",
+            "conformity.md: line 2: the critical-files block is not closed",
+        ),
+        (
+            "```critical-files\nsrc/pay.py\n/etc/hosts\n```\n",
+            "conformity.md: line 4: '/etc/hosts' is not the path of a file inside the repository",
+        ),
+    ],
+)
+def test_a_conformity_whose_critical_files_block_is_malformed_is_refused(
+    tmp_path: Path, block: str, reason: str
+) -> None:
+    folder = new_folder(tmp_path)
+    overview = _to_clean_review(folder)
+    conform = Conform(
+        conformity=write(folder, "conformity.md", "proof\n" + block), overview=overview
+    )
+    before = _bytes(folder)
+    refusal = _refusal(folder, conform)
+    assert refusal.code is RefusalCode.CRITICAL_FILES
+    assert refusal.reason.startswith(reason)
+    assert _bytes(folder) == before
+    write(folder, "conformity.md", "proof\n```critical-files\nsrc/pay.py\n```\n")
+    _accept(folder, conform)
+
+
+@pytest.mark.parametrize("text", ["proof\n", "proof\n```critical-files\n```\n"])
+def test_a_conformity_that_lists_no_critical_file_is_recorded_as_before(
+    tmp_path: Path, text: str
+) -> None:
+    folder = new_folder(tmp_path)
+    overview = _to_clean_review(folder)
+    assert not parse_critical_files(text)
+    _accept(folder, Conform(conformity=write(folder, "conformity.md", text), overview=overview))
+
+
+def test_a_missing_conformity_is_refused_as_a_missing_file_before_its_block_is_read(
+    tmp_path: Path,
+) -> None:
+    folder = new_folder(tmp_path)
+    overview = _to_clean_review(folder)
+    refusal = _refusal(folder, Conform(conformity="conformity.md", overview=overview))
+    assert refusal.code is RefusalCode.FILE_MISSING
+
+
+def test_outside_a_git_work_tree_only_the_form_of_the_block_is_checked(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path)
+    overview = _to_clean_review(folder)
+    text = "proof\n```critical-files\nsrc/pay.py\n```\n"
+    conform = Conform(conformity=write(folder, "conformity.md", text), overview=overview)
+    result = record(folder, conform, DEFAULTS, NOW, root=tmp_path)
+    assert isinstance(result, Accepted), result

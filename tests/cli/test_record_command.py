@@ -193,6 +193,29 @@ def test_a_report_outside_the_plan_folder_is_refused(project: Project) -> None:
     assert result.json()["refused"]["code"] == "file-missing"
 
 
+def test_a_conformity_whose_list_of_files_to_read_is_malformed_is_refused(
+    project: Project,
+) -> None:
+    folder = project.reach("reviewing")
+    review = ("--report", "reviews/pass-01.md", "--defects", "0", "--deviations", "0")
+    assert project.record(PLAN, "review-done", *review, "--breaks", "0").code == 0
+    proof = folder / "conformity.md"
+    proof.write_text("proof\n```critical-files\n../secret.py\n```\n", encoding="utf-8")
+    before = project.journal()
+    result = project.record(PLAN, "conform", "--conformity", "conformity.md")
+    assert result.code == 1
+    assert result.json()["refused"] == {
+        "code": "critical-files",
+        "reason": (
+            "conformity.md: line 3: '../secret.py' is not the path of a file inside the repository"
+        ),
+    }
+    assert project.journal() == before
+    # Outside a git work tree there is no branch to ask: the form of the block is all that counts.
+    proof.write_text("proof\n```critical-files\nbilling/pay.py\n```\n", encoding="utf-8")
+    assert project.record(PLAN, "conform", "--conformity", "conformity.md").code == 0
+
+
 def test_a_derived_field_cannot_be_passed(project: Project) -> None:
     project.plan()
     for extra in (["--rev", "1"], ["--overview", "sha256:" + "0" * 64], ["--at", "2020-01-01"]):

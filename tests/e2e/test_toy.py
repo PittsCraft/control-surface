@@ -81,6 +81,8 @@ def test_the_nominal_path_reaches_conform(tmp_path: Path) -> None:
     assert seen.count("plan-approved") == 1
     assert seen.count("slice-done") == 2
     assert (project / "docs" / "plans" / toy.plan_name() / "conformity.md").is_file()
+    # The toy declares the CSV export a critical zone: its code is listed for the developer.
+    assert "shelf/export.py" in toy.critical_files(project)
     assert not dirty(project, "shelf", "tests", "docs")
 
 

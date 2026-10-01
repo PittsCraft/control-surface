@@ -4,8 +4,8 @@ The state script holds its own contract in code. The prompts hold theirs in pros
 state here what the chain promises a developer, and check that each prompt says it: how a review
 classifies a finding, which command acts on a plan in each state, which acts of the developer each
 command takes in the conversation, in which order planning records its events and the execution
-loop reads its rows, what the reviewer writes, the sections of an overview, and the language of
-the plan documents.
+loop reads its rows, what the reviewer writes, the sections of an overview, the critical zones
+whose code the developer still reads, and the language of the plan documents.
 """
 
 # A review classifies a finding by two closed questions, in this order. A yes to the first is a
@@ -21,6 +21,38 @@ NO_FINDING_END = "conform state"
 CONFORM_HAND_BACK = (
     "the plan is conform, and the developer marks the pull request ready when they want"
 )
+# The one exception, which the hand-back says in one sentence: where a mistake would cost most,
+# in the zones the host's agent instructions declare critical, the developer reads the code
+# themselves, from the list of changed files the pull request description gives.
+CONFORM_EXCEPTION = "conform leaves nothing to check, except the code of the critical zones"
+# So the developer learns at approval which zones those will be: section 9 of the overview names
+# each declared critical zone the plan touches, or says the plan touches none, and the cross-check
+# counts a touched zone that section 9 does not name as an omission.
+CRITICAL_ZONES_OF_THE_PLAN = (
+    "each critical zone the repository's agent instructions declare that the plan touches"
+)
+TOUCHES_NONE = "the plan touches none"
+UNNAMED_ZONE = "A critical zone the plan touches and section 9 does not name is an omission"
+# At conformity the reviewer lists the files the branch changed inside those zones, in a fenced
+# block of `conformity.md` that the state script alone takes up, in the pull request description.
+CRITICAL_FILES_OF_THE_BRANCH = (
+    "the files the branch changed inside the critical zones the repository's agent instructions"
+    " declare"
+)
+# A list the script refuses is an agent's mechanical mistake, never the developer's to repair:
+# they are told not to open `conformity.md`. `/surface-execute` sends it to a fresh reviewer,
+# the third thing a reviewer is launched for, whose only mandate is to correct that block, then
+# records `conform` again, as many times as the ceiling of autonomous passes, the one setting
+# that bounds what the loop does on its own; still refused after them, it hands back to the
+# developer. The count is the prompt's, since a refused `conform` leaves no journal line: no
+# pass counted, no journal event, no new gate run, no new review.
+REVIEWER_MODES = (
+    "a review",
+    "a break an executor suspected during slice N, with its reason",
+    "a refused list of critical files, with the refusal's reason",
+)
+REFUSED_LIST = "a refused list of critical files"
+CORRECTIONS_CEILING = "up to `passes.ceiling` of `show --json` reviewers in all"
 
 # The commands that act on a plan in each state where work remains. The other command does not
 # see the plan: it neither resumes it nor offers it, and `resolve` does not find it for it.

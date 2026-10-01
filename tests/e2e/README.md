@@ -11,7 +11,7 @@ Every scenario is billed and takes minutes: run them on demand, before a release
 
 ## The toy project
 
-`toy/toy.py build <state> <dest>` makes `<dest>/shelf`, a git repository holding a small module (`shelf`, a list of books read from a JSON Lines file), its tests and a gate command, `python3 -m unittest discover -s tests -q`, with `<dest>/origin.git` as its bare remote. It installs the chain from this clone, then drives one plan folder, `docs/plans/<date>-csv-export/`, to the state asked for, recording each event through the installed state script. It prints the path of the project.
+`toy/toy.py build <state> <dest>` makes `<dest>/shelf`, a git repository holding a small module (`shelf`, a list of books read from a JSON Lines file), its tests, an `AGENTS.md` that declares the CSV export a critical zone, and a gate command, `python3 -m unittest discover -s tests -q`, with `<dest>/origin.git` as its bare remote. It installs the chain from this clone, then drives one plan folder, `docs/plans/<date>-csv-export/`, to the state asked for, recording each event through the installed state script. It prints the path of the project.
 
 | State | What the project holds |
 |---|---|
@@ -36,7 +36,7 @@ The gate builds the image, mounts this clone read-only at `/clone` and the outpu
 
 | Test | Start | Session | What must hold |
 |---|---|---|---|
-| `test_the_nominal_path_reaches_conform` | `awaiting-approval` | `/surface-execute` | `conform`, one approval, each slice done once, `conformity.md` |
+| `test_the_nominal_path_reaches_conform` | `awaiting-approval` | `/surface-execute` | `conform`, one approval, each slice done once, `conformity.md`, and `shelf/export.py` among the files of the critical zone the description lists |
 | `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conform` |
 | `test_a_modified_overview_stops_the_loop` | `overview-modified` | `/surface-execute` | nothing recorded, still `executing`, the final message names the overview |
 | `test_the_ceiling_hands_back_to_the_developer` | `ceiling` | `/surface-execute` | `blocked` after a second review with findings, and no second fix |

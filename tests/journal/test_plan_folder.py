@@ -1,4 +1,4 @@
-"""Paths, numbering, hashing, slice markers and the gates block of the plan folder."""
+"""Paths, numbering, hashing, slice markers and the fenced blocks of the plan folder."""
 
 import re
 import tempfile
@@ -12,11 +12,14 @@ from journal_support import EVENTS, new_folder, write
 from surface_status.events import EVENT_TYPES, GateResult, GatesRun, PlanApproved, ReviewDone
 from surface_status.journal import JournalLine, append_line
 from surface_status.plan_folder import (
+    CRITICAL_FILES_TAG,
+    CriticalFilesError,
     GatesBlockError,
     PlanFolderError,
     SliceMarkerError,
     cited_files,
     content_hash,
+    parse_critical_files,
     parse_gates,
     parse_slice_markers,
 )
@@ -159,6 +162,78 @@ def test_the_folder_reads_the_gates_of_its_plan(tmp_path: Path) -> None:
     folder.plan.unlink()
     with pytest.raises(PlanFolderError, match=r"plan\.md cannot be read"):
         folder.declared_gates()
+
+
+# The critical-files block of `conformity.md`
+
+_segments = st.text(
+    alphabet=st.characters(exclude_characters="\r\n`/\\", exclude_categories=["Cs"]),
+    min_size=1,
+    max_size=8,
+).filter(lambda part: part == part.strip() and part not in {".", ".."})
+_paths = st.lists(_segments, min_size=1, max_size=4).map("/".join)
+
+
+@given(st.lists(_paths, max_size=5), st.sampled_from(["\n", "\r\n"]))
+def test_the_critical_files_are_the_paths_of_the_block_in_order_each_once(
+    paths: list[str], newline: str
+) -> None:
+    lines = ["# Conformité", "1. Critère : prouvé.", "```critical-files", *paths, "```", "", "fin"]
+    assert parse_critical_files(newline.join(lines)) == tuple(dict.fromkeys(paths))
+
+
+def test_the_tag_of_the_block_is_the_one_the_parser_opens() -> None:
+    assert CRITICAL_FILES_TAG == "critical-files"
+    assert parse_critical_files(f"```{CRITICAL_FILES_TAG}\nsrc/pay.py\n```\n") == ("src/pay.py",)
+
+
+def test_blank_lines_are_skipped_paths_stripped_and_a_repeated_path_listed_once() -> None:
+    text = "```critical-files\n\n  src/pay.py  \n\t\nsrc/tax rules.py\nsrc/pay.py\n```\n"
+    assert parse_critical_files(text) == ("src/pay.py", "src/tax rules.py")
+
+
+def test_an_empty_block_lists_no_file_and_a_missing_one_says_nothing() -> None:
+    assert parse_critical_files("proof\n```critical-files\n```\n") == ()
+    assert parse_critical_files("proof\n```sh\nsrc/pay.py\n```\n") is None
+    assert parse_critical_files("```gates\nmake\n```\n") is None  # another tag, another block
+    assert parse_critical_files("  ```critical-files\nsrc/pay.py\n  ```\n") is None  # column 0
+
+
+def test_a_second_critical_files_block_or_an_unclosed_one_is_an_error() -> None:
+    with pytest.raises(CriticalFilesError, match="line 4: a second critical-files block"):
+        parse_critical_files("```critical-files\na\n```\n```critical-files\nb\n```\n")
+    with pytest.raises(CriticalFilesError, match="line 2: the critical-files block is not closed"):
+        parse_critical_files("proof\n```critical-files\nsrc/pay.py\n")
+
+
+@pytest.mark.parametrize(
+    "line", ["/etc/passwd", "../x.py", "src/../../x.py", "src//x.py", "./src/x.py", "src/", "a\\b"]
+)
+def test_a_line_that_is_no_path_inside_the_repository_is_an_error(line: str) -> None:
+    with pytest.raises(CriticalFilesError, match=r"line 3: .* is not the path of a file inside"):
+        parse_critical_files(f"proof\n```critical-files\n{line}\n```\n")
+
+
+def test_the_gates_block_and_the_critical_files_block_do_not_read_each_other() -> None:
+    text = "```gates\nmake test\n```\n```critical-files\nsrc/pay.py\n```\n"
+    assert parse_gates(text) == ("make test",)
+    assert parse_critical_files(text) == ("src/pay.py",)
+
+
+def test_the_folder_reads_the_critical_files_of_a_conformity(tmp_path: Path) -> None:
+    folder = new_folder(tmp_path)
+    write(folder, "conformity.md", "1. Proved.\n\n```critical-files\nsrc/pay.py\n```\n")
+    assert folder.critical_files("conformity.md") == ("src/pay.py",)
+    write(folder, "conformity.md", "1. Proved.\n")
+    assert folder.critical_files("conformity.md") == ()
+    write(folder, "conformity.md", "```critical-files\n../pay.py\n```\n")
+    with pytest.raises(CriticalFilesError, match=r"conformity\.md: line 2: '\.\./pay\.py'"):
+        folder.critical_files("conformity.md")
+    folder.path("conformity.md").unlink()
+    with pytest.raises(PlanFolderError, match=r"conformity\.md cannot be read"):
+        folder.critical_files("conformity.md")
+    with pytest.raises(PlanFolderError, match="not a path inside the plan folder"):
+        folder.critical_files("../conformity.md")
 
 
 # Numbering
