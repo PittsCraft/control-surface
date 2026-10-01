@@ -191,9 +191,6 @@ def _block(project: Project) -> None:
 
 
 def _propose(project: Project) -> None:
-    proposal = project.plans / PLAN / "plan-changes" / "01.md"
-    proposal.parent.mkdir()
-    proposal.write_text("proposal\n", encoding="utf-8")
     args = ("--proposal", "plan-changes/01.md", "--slice", "1")
     assert project.record(PLAN, "plan-change-proposed", *args).code == 0
 
@@ -219,7 +216,7 @@ BOUND = {
     "fixing": ("reviewing", _defect),
     "conform": ("conform", None),
     "blocked during execution": ("executing", _block),
-    "plan-change-proposed": ("executing", _propose),
+    "plan-change-proposed": ("plan-change-proposed", None),
 }
 
 

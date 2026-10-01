@@ -23,7 +23,7 @@ CONFORM_HAND_BACK = (
 )
 
 # The commands that act on a plan in each state where work remains. The other command does not
-# see the plan: it neither resumes it nor offers it.
+# see the plan: it neither resumes it nor offers it, and `resolve` does not find it for it.
 PLAN = "surface-plan"
 EXECUTE = "surface-execute"
 SEEN_BY: dict[str, frozenset[str]] = {

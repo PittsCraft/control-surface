@@ -10,10 +10,18 @@ from hypothesis import strategies as st
 
 # Restated independently: what each command accepts among the reachable states.
 ACCEPTS = {
-    "plan": {"interview", "drafting", "awaiting-approval"},
-    "execute": {"awaiting-approval", "executing", "reviewing"},
+    "plan": {"interview", "drafting", "awaiting-approval", "plan-change-proposed"},
+    "execute": {"awaiting-approval", "executing", "reviewing", "plan-change-proposed"},
 }
-STATES = ["interview", "drafting", "awaiting-approval", "executing", "reviewing", "conform"]
+STATES = [
+    "interview",
+    "drafting",
+    "awaiting-approval",
+    "executing",
+    "reviewing",
+    "plan-change-proposed",
+    "conform",
+]
 NAMES = [f"2026-09-{day:02d}-plan" for day in range(1, 9)]
 
 

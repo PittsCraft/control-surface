@@ -72,6 +72,7 @@ def test_resolve_says_when_no_plan_matches_and_shows_the_others(repo: Repo) -> N
         ("awaiting-approval", True, True),
         ("executing", False, True),
         ("reviewing", False, True),
+        ("plan-change-proposed", True, True),
         ("conform", False, False),
     ],
 )
@@ -94,6 +95,21 @@ def test_a_blocked_plan_is_seen_by_execute_only_when_it_stopped_during_the_execu
     assert repo.run("record", B, "blocked", "--why", "stuck").code == 0
     assert [item["name"] for item in repo.resolve("plan").json()["candidates"]] == [A, B]
     assert repo.resolve("execute").json()["plan"] == B
+
+
+def test_a_plan_change_proposal_is_found_by_either_command_without_an_argument(
+    repo: Repo,
+) -> None:
+    repo.branch("feature")
+    repo.plan("plan-change-proposed", A)
+    repo.plan("drafting", B)
+    for_execute = repo.resolve("execute")
+    assert (for_execute.code, for_execute.json()["plan"]) == (0, A)
+    assert for_execute.json()["other_plans"] == [{"name": B, "state": "drafting"}]
+    assert [item["name"] for item in repo.resolve("plan").json()["candidates"]] == [A, B]
+    shown = repo.run("show", A).json()
+    assert "surface-plan" in shown["next_step"]
+    assert "surface-execute" in shown["next_step"]
 
 
 def test_an_explicit_argument_wins_whatever_the_state_and_the_branch(repo: Repo) -> None:

@@ -28,6 +28,10 @@ _TO_REVIEWING = (
     ("slice-done", ("--slice", "1", "--gates", "lint")),
     ("slice-done", ("--slice", "2", "--gates", "lint")),
 )
+_TO_PLAN_CHANGE_PROPOSED = (
+    *_TO_EXECUTING,
+    ("plan-change-proposed", ("--proposal", "plan-changes/01.md", "--slice", "1")),
+)
 _TO_CONFORM = (
     *_TO_REVIEWING,
     (
@@ -42,9 +46,10 @@ WAYS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "awaiting-approval": _TO_AWAITING,
     "executing": _TO_EXECUTING,
     "reviewing": _TO_REVIEWING,
+    "plan-change-proposed": _TO_PLAN_CHANGE_PROPOSED,
     "conform": _TO_CONFORM,
 }
-REPORTS = ("checks/rev-01-01.md", "reviews/pass-01.md", "conformity.md")
+REPORTS = ("checks/rev-01-01.md", "reviews/pass-01.md", "plan-changes/01.md", "conformity.md")
 
 
 def plan_text(gates: tuple[str, ...]) -> str:

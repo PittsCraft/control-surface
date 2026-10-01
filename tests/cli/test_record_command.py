@@ -124,10 +124,7 @@ def test_a_fix_cites_the_last_review_and_zero_when_there_was_none(project: Proje
 
 
 def test_a_plan_change_decision_cites_the_pending_proposal(project: Project) -> None:
-    folder = project.reach("executing")
-    (folder / "plan-changes").mkdir()
-    (folder / "plan-changes" / "01.md").write_text("proposal\n", encoding="utf-8")
-    project.record(PLAN, "plan-change-proposed", "--proposal", "plan-changes/01.md", "--slice", "1")
+    project.reach("plan-change-proposed")
     assert project.record(PLAN, "plan-change-refused", "--why", "not needed").code == 0
     assert _last_line(project)["proposal"] == "plan-changes/01.md"
 
