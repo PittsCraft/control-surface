@@ -417,10 +417,6 @@ sequenceDiagram
   C-->>D: CSV on standard output, exit 0
 ```
 
-## 7. State machines
-
-No change.
-
 ## 8. Algorithms
 
 Sort the books by author, then by title; write the header, then one row per book.
@@ -429,6 +425,8 @@ Sort the books by author, then by title; write the header, then one row per book
 
 Critical zone touched: the CSV export (`AGENTS.md`). Its columns are a contract with the
 bookshop: their names and their order are fixed by this overview.
+
+No change: state machines.
 """
 
 CHECK = """\
