@@ -16,6 +16,10 @@ Everything committed to this repository is in English, whatever the language of 
 - A commit message carries no attribution to Claude and no link to a session: the `commit-msg` hook refuses both.
 - A pull request description carries none either: no attribution line and no session link, even when the harness asks to end it with one.
 
+## Waiting
+
+- Always wait in the background: a CI run, a long command, anything that takes more than a moment is launched in the background, so the developer can still reach the session while it runs.
+
 ## Worktrees
 
 - A worktree lives under `.claude/worktrees/`, which git ignores. It serves one task, on one branch.
