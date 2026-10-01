@@ -35,11 +35,11 @@ from surface_status.machine import PlanState, State, Suspicion
 def past_the_ceiling(prev: PlanState, event: Event, ceiling: int) -> bool:
     """Independent statement of the ceiling rules: whether a pass comes once none may be taken.
 
-    Planning stops at the check that brings its counter to the ceiling. Execution sends work back
-    `ceiling` times, records the pass after them, which hands back, and none after it.
+    Planning and execution alike send work back `ceiling` times, record the pass after them,
+    which hands back, and none after it.
     """
     if isinstance(event, CheckDone) and event.omissions > 0:
-        return prev.planning_passes >= ceiling
+        return prev.planning_passes > ceiling
     sends_back = (
         (
             isinstance(event, ReviewDone)
@@ -85,7 +85,7 @@ def check_attempt(
             assert isinstance(result, Refusal), "the work went on past an unjudged suspicion"
     if isinstance(result, Accepted):
         assert result.state.state in allowed
-        assert result.state.planning_passes <= context.ceiling
+        assert result.state.planning_passes <= context.ceiling + 1
         assert result.state.execution_passes <= context.ceiling + 1
 
 
@@ -173,7 +173,7 @@ class PlanMachine(RuleBasedStateMachine):
     @invariant()
     def the_counters_stay_within_the_ceiling(self) -> None:
         if self.state is not None:
-            assert 0 <= self.state.planning_passes <= self.ceiling
+            assert 0 <= self.state.planning_passes <= self.ceiling + 1
             assert 0 <= self.state.execution_passes <= self.ceiling + 1
 
     @invariant()

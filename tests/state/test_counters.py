@@ -181,13 +181,14 @@ class TestExecution:
 
 class TestCeiling:
     @pytest.mark.parametrize("ceiling", [1, 2, 3, 5])
-    def test_planning_refuses_a_pass_once_its_counter_reached_the_ceiling(
+    def test_planning_records_the_pass_past_the_ceiling_and_refuses_the_next(
         self, ceiling: int
     ) -> None:
-        state = state_in(State.DRAFTING, planning_passes=ceiling - 1)
-        reached = must_accept(state, check(1), context(ceiling))
-        assert reached.planning_passes == ceiling
-        assert must_refuse(reached, check(1), context(ceiling)).code is RefusalCode.CEILING
+        state = state_in(State.DRAFTING, planning_passes=ceiling)
+        over = must_accept(state, check(1), context(ceiling))
+        assert (over.state, over.planning_passes) == (State.DRAFTING, ceiling + 1)
+        assert must_refuse(over, check(1), context(ceiling)).code is RefusalCode.CEILING
+        assert must_accept(over, check(0), context(ceiling)).planning_passes == ceiling + 1
 
     @pytest.mark.parametrize("ceiling", [1, 2, 3, 5])
     def test_execution_records_the_pass_past_the_ceiling_and_refuses_the_next(
@@ -213,7 +214,7 @@ class TestCeiling:
     def test_every_kind_of_pass_is_refused_past_the_ceiling(
         self, state: State, event: Event
     ) -> None:
-        prev = state_in(state, planning_passes=3, execution_passes=4)
+        prev = state_in(state, planning_passes=4, execution_passes=4)
         assert must_refuse(prev, event, context(3)).code is RefusalCode.CEILING
 
     @pytest.mark.parametrize(
@@ -234,7 +235,7 @@ class TestCeiling:
     def test_what_is_not_a_pass_goes_through_past_the_ceiling(
         self, state: State, event: Event
     ) -> None:
-        prev = state_in(state, planning_passes=3, execution_passes=4)
+        prev = state_in(state, planning_passes=4, execution_passes=4)
         assert must_accept(prev, event, context(3))
 
     def test_a_relaunch_starts_a_new_count(self) -> None:
@@ -253,11 +254,72 @@ class TestCeiling:
         assert (resumed.state, resumed.execution_passes) == (State.FIXING, 0)
         assert must_accept(resumed, FAILED, context(3)).execution_passes == 1
 
+    def test_a_resumption_in_planning_starts_a_new_count(self) -> None:
+        """Past the ceiling the loop stops, `resumed` brings the planning counter to zero."""
+        state = replay(DRAFTING)
+        for _ in range(4):
+            state = must_accept(state, check(1), context(3))
+        assert state.planning_passes == 4
+        assert must_refuse(state, check(1), context(3)).code is RefusalCode.CEILING
+        blocked = must_accept(state, Blocked(why="ceiling reached"), context(3))
+        resumed = must_accept(blocked, Resumed(), context(3))
+        assert (resumed.state, resumed.planning_passes) == (State.DRAFTING, 0)
+        assert must_accept(resumed, check(1), context(3)).planning_passes == 1
+
     def test_the_developer_can_amend_from_the_blocked_state(self) -> None:
         blocked = state_in(State.BLOCKED, execution_passes=4, before_blocked=State.EXECUTING)
         drafting = must_accept(blocked, AmendmentReceived(), context(3))
         assert drafting.state is State.DRAFTING
         assert drafting.planning_passes == 0
+
+
+# The loop of `/surface-plan`, steps 7 to 9, driven from a closed interview.
+
+
+def plan_loop(ceiling: int, omissions: list[int]) -> tuple[int, PlanState]:
+    """Follow steps 8 and 9 until they stop; `omissions` stands for the checker's counts.
+
+    Return the reworks the loop sent, the extractor or the plan corrected, and where it stopped.
+    """
+    state = replay(DRAFTING)
+    for reworks, found in enumerate(omissions):  # each turn after the first is step 7 again
+        state = must_accept(state, check(found), context(ceiling))
+        if found == 0:
+            drafted = PlanDrafted(rev=1, overview=OV1, plan=PL1, slices=(1, 2))
+            return reworks, must_accept(state, drafted, context(ceiling))
+        if state.planning_passes > ceiling:
+            return reworks, must_accept(state, Blocked(why="ceiling"), context(ceiling))
+    message = "the checker ran out of answers"
+    raise AssertionError(message)
+
+
+class TestThePlanningLoop:
+    @pytest.mark.parametrize(
+        ("omissions", "reworks", "end"),
+        [
+            # Every check finds omissions: three reworks, and the fourth check hands back.
+            ([1, 2, 1, 3], 3, State.BLOCKED),
+            # The third rework converges: its clean check is recorded, then the draft.
+            ([1, 2, 1, 0], 3, State.AWAITING_APPROVAL),
+            # A first clean check costs nothing.
+            ([0], 0, State.AWAITING_APPROVAL),
+        ],
+    )
+    def test_a_ceiling_of_three_lets_the_overview_be_reworked_three_times(
+        self, omissions: list[int], reworks: int, end: State
+    ) -> None:
+        sent, state = plan_loop(3, omissions)
+        assert (sent, state.state) == (reworks, end)
+
+    @given(st.integers(1, 4), st.lists(st.integers(0, 3), min_size=5, max_size=5))
+    def test_at_most_ceiling_reworks_and_only_a_check_with_omissions_hands_back(
+        self, ceiling: int, omissions: list[int]
+    ) -> None:
+        sent, state = plan_loop(ceiling, omissions)
+        assert sent <= ceiling
+        assert state.planning_passes <= ceiling + 1
+        if state.state is State.BLOCKED:
+            assert (sent, state.planning_passes) == (ceiling, ceiling + 1)
 
 
 # The loop of `/surface-execute`, driven row by row from an approved plan of two slices.
