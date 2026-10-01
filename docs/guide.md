@@ -31,7 +31,7 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 ### 2. Read the overview, amend or approve
 
-`overview.md` is the only thing you have to read. It shows what will be built, in fixed sections, with diagrams where they help: the idea in one sentence, acceptance criteria, scope, data, boundaries, sequences, state machines, algorithms, and the sensitive zones, the points that touch your control, your work or your time and that you did not see go by. It does not show the order of construction: that stays in the plan.
+`overview.md` is the only thing you have to read. It shows what will be built, in fixed sections, with diagrams where they help: the idea in one sentence, acceptance criteria, scope, data, boundaries, sequences, state machines, algorithms, and the sensitive zones: first the critical zones you declared that the plan touches, by name, or that it touches none, then the points that touch your control, your work or your time and that you did not see go by. It does not show the order of construction: that stays in the plan.
 
 - To change something, say what in the conversation: `/surface-plan` keeps the hand after it hands over. It records your amendment, produces the next revision of the plan and of the overview, then asks again. A question is answered and changes nothing. In a new session, run `/surface-plan` with your amendment.
 - To approve, run `/surface-execute`. Launching it counts as approval, gates included: it names the plan, the revision and the gates it approves, then freezes the overview. No sentence of the conversation approves a revision.
@@ -62,7 +62,7 @@ The loop hands back in three cases, tells you in the terminal, and in the first 
 
 ### 5. Mark the PR ready, then merge
 
-Conform means the last review proved every acceptance criterion of the overview you approved: a criterion it cannot prove is a finding, and the loop goes on. Nothing is left for you to check. The proof stays in `conformity.md`, each criterion with a test, a file and line or a gate result, for whoever wants it.
+Conform means the last review proved every acceptance criterion of the overview you approved: a criterion it cannot prove is a finding, and the loop goes on. Nothing is left for you to check, except the code of the critical zones your `AGENTS.md` or `CLAUDE.md` declares: the PR description lists the files the branch changed there, for you to read yourself. The proof stays in `conformity.md`, each criterion with a test, a file and line or a gate result, for whoever wants it.
 
 The PR description lists, one line each and for information, the decisions the agents took within the contract that you did not see go by: the plan amendments that keep the overview true, and the suspected breaks a reviewer dismissed. It lists nothing when there is nothing to list.
 

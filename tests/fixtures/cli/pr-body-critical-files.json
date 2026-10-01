@@ -1,0 +1,25 @@
+{
+  "v": 1,
+  "branch": "feature",
+  "plans": [
+    {
+      "name": "2026-09-01-alpha",
+      "state": "conform",
+      "hand": "nobody",
+      "overview": "[overview.md](docs/plans/2026-09-01-alpha/overview.md)",
+      "plan": "[plan.md](docs/plans/2026-09-01-alpha/plan.md)",
+      "decisions": [],
+      "critical_files": [
+        {
+          "path": "billing/pay.py",
+          "link": "[billing/pay.py](billing/pay.py)"
+        },
+        {
+          "path": "billing/old.py",
+          "link": null
+        }
+      ]
+    }
+  ],
+  "body": "## Plans on this branch\n\n| Plan | State | Overview | Plan |\n|---|---|---|---|\n| `2026-09-01-alpha` | conform | [overview.md](docs/plans/2026-09-01-alpha/overview.md) | [plan.md](docs/plans/2026-09-01-alpha/plan.md) |\n\n### Code of the critical zones, for you to read yourself\n\nConform leaves nothing else to check: the branch changed these files inside the zones the project declares critical.\n\n- `2026-09-01-alpha`: [billing/pay.py](billing/pay.py)\n- `2026-09-01-alpha`: `billing/old.py` (no longer on the branch)\n\nRefreshed by `surface-status pr-body`; edit the plans, not this text.\n"
+}

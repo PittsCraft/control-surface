@@ -53,6 +53,15 @@ _commands = st.lists(st.text(min_size=1, max_size=12), max_size=3).map(tuple)
 # The gates block every plan of these tests names, unless a test says otherwise.
 GATES = ("true",)
 
+# What a reviewer may leave in `conformity.md`: no list of files to read, one the script can
+# read, and two it cannot, a path that leaves the repository and a block that is never closed.
+CONFORMITIES = (
+    "report\n",
+    "report\n```critical-files\nsrc/pay.py\n```\n",
+    "report\n```critical-files\n../pay.py\n```\n",
+    "report\n```critical-files\nsrc/pay.py\n",
+)
+
 EVENTS: dict[type[Event], SearchStrategy[Event]] = {
     PlanOpened: st.builds(PlanOpened, slug=_texts),
     InterviewClosed: st.builds(InterviewClosed),
@@ -209,7 +218,8 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
         case "resumed":
             return Resumed()
         case "conform":
-            return Conform(conformity=write(folder, "conformity.md"), overview=overview)
+            text = data.draw(st.sampled_from(CONFORMITIES))
+            return Conform(conformity=write(folder, "conformity.md", text), overview=overview)
         case "abandoned":
             return Abandoned(why="changed my mind")
         case _:

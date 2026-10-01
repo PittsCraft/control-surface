@@ -292,7 +292,10 @@ def _pr_body(run: _Run) -> int:
 def _record(run: _Run, folder: PlanFolder, name: str, values: Mapping[str, object]) -> int:
     view = report.read_plan(folder)
     built = build_event(name, values, folder, view.events, view.state)
-    result = built if isinstance(built, Refusal) else record(folder, built, run.settings, run.now)
+    if isinstance(built, Refusal):
+        result: Accepted | Refusal = built
+    else:
+        result = record(folder, built, run.settings, run.now, root=run.root)
     if isinstance(result, Accepted):
         payload: report.Payload = {
             "v": report.JSON_VERSION,

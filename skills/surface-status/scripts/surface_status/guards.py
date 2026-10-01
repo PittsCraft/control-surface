@@ -59,6 +59,9 @@ class RefusalCode(StrEnum):
     SLICES_STALE = "slices-stale"
     SUSPICION = "suspicion"  # a suspected break waits for a reviewer's judgment
     GATE_LIST = "gate-list"  # the gates block of `plan.md` is missing, malformed, or changed
+    # The critical-files block of `conformity.md` is malformed, or lists a file the branch did not
+    # change.
+    CRITICAL_FILES = "critical-files"
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,6 +88,8 @@ class RecordContext:
 class DiskFacts:
     """What the caller read from the plan folder for one event, as plain values.
 
+    For a `conform`, the caller also asked git what the branch changed.
+
     `None` means the file is missing or unreadable, which `missing_files` already reports.
     """
 
@@ -95,6 +100,8 @@ class DiskFacts:
     slices_problem: str | None = None  # why the markers could not be read, if they could not
     gates: tuple[str, ...] | None = None  # the gates block of `plan.md`, for the same events
     gates_problem: str | None = None  # why the gates block could not be read, if it could not
+    # Why the critical-files block of the `conformity.md` a `conform` cites cannot be taken.
+    critical_files_problem: str | None = None
 
 
 class InvalidJournalError(Exception):
@@ -337,6 +344,13 @@ def _check_gate_list(
     return None
 
 
+def _check_critical_files(event: Event, facts: DiskFacts) -> Refusal | None:
+    """Refuse a conformity whose list of code to read cannot be shown as the reviewer wrote it."""
+    if not isinstance(event, Conform) or facts.critical_files_problem is None:
+        return None
+    return _refuse(RefusalCode.CRITICAL_FILES, facts.critical_files_problem)
+
+
 def disk_guards(
     event: Event, facts: DiskFacts, approved_gates: tuple[str, ...] | None = None
 ) -> Refusal | None:
@@ -344,7 +358,9 @@ def disk_guards(
 
     The script computes hashes, slice lists and gates itself (ADR 0012); this refuses an event
     that carries a value read before the file changed. `approved_gates` are those of the approved
-    revision, which a `plan-amended` must leave as they are.
+    revision, which a `plan-amended` must leave as they are. A `conform` is refused when the
+    critical-files block of the `conformity.md` it cites is malformed or lists a file the branch
+    did not change: the description would show the developer a wrong list of code to read.
     """
     if facts.missing_files:
         return _refuse(
@@ -363,7 +379,7 @@ def disk_guards(
             return _refuse(RefusalCode.SLICES_STALE, facts.slices_problem)
         if facts.slices is not None and event.slices != facts.slices:
             return _refuse(RefusalCode.SLICES_STALE, "the slices are not those of plan.md")
-    return _check_gate_list(event, facts, approved_gates)
+    return _check_critical_files(event, facts) or _check_gate_list(event, facts, approved_gates)
 
 
 def admit(

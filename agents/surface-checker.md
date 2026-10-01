@@ -20,6 +20,8 @@ In the plan folder your mandate gives: `specs.md`, `exploration.md`, `interview.
 Count only what would change the decision of the person who validates the overview: the data schema, the boundaries, the visible behavior, the irreversible operations, and the zones the project declares critical. A point where the overview contradicts the plan counts. The order of the work, the slices, the distribution of tests, file layout and naming never count.
 <!-- /checker-rule -->
 
+Section 9 of the overview, the sensitive zones, names each critical zone the repository's agent instructions declare that the plan touches, or says that the plan touches none: the developer reads the code of those zones themselves, and learns there which ones. A critical zone the plan touches and section 9 does not name is an omission, even when another section shows the change. So is a section 9 that says nothing of the critical zones, or says none while the plan touches one.
+
 If you find nothing, say so: zero omissions is an answer.
 
 ## What you write

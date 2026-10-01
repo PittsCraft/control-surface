@@ -12,10 +12,16 @@ import pytest
 from chain_contract import (
     BREAK_QUESTION,
     CHAIN_REPORTS,
+    CRITICAL_FILES_OF_THE_BRANCH,
+    CRITICAL_ZONES_OF_THE_PLAN,
     DEFECT_QUESTION,
     DOCUMENTS_LANGUAGE,
     NO_FINDING_END,
+    REFUSED_LIST,
+    REVIEWER_MODES,
     REVIEWER_WRITES,
+    TOUCHES_NONE,
+    UNNAMED_ZONE,
     WORK_FROM_TRANSLATION,
 )
 from prompt_support import (
@@ -30,6 +36,7 @@ from prompt_support import (
 )
 
 from surface_status.cli import UsageError, build_parser
+from surface_status.plan_folder import CRITICAL_FILES_TAG, parse_critical_files
 
 # Subcommands a prompt may call before the script implements them. Once implemented their calls
 # parse, the strict xfail fails, and the entry must go: nothing stays pending silently.
@@ -108,6 +115,81 @@ def test_reviewer_reads_and_never_runs_a_command_of_its_own() -> None:
     others = body.replace(rule, "")
     assert "python3" not in others
     assert "pytest" not in others
+
+
+# The critical zones: named in section 9 of the overview, their changed files listed at conformity.
+
+
+def test_extractor_opens_section_nine_with_the_critical_zones_the_plan_touches() -> None:
+    _, body = read_agent("surface-extractor")
+    nine = next(line for line in body.splitlines() if line.startswith("9. Sensitive zones"))
+    assert f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it" in nine
+    assert f"or the statement that {TOUCHES_NONE}" in nine
+    assert "then what the developer would not see go by" in nine
+    assert "what the developer still reads themselves once the work is conform" in body
+
+
+def test_checker_counts_a_touched_critical_zone_missing_from_section_nine() -> None:
+    _, body = read_agent("surface-checker")
+    counting = section(body, "What counts as an omission")
+    assert f"names {CRITICAL_ZONES_OF_THE_PLAN}, or says that {TOUCHES_NONE}" in counting
+    assert f"{UNNAMED_ZONE}, even when another section shows the change" in counting
+    assert "says none while the plan touches one" in counting
+    # The rule shared with the reviewer's amendment check stays as it was.
+    assert "section 9" not in marked_block(counting, "checker-rule").lower()
+
+
+def test_reviewer_lists_the_changed_files_of_the_critical_zones_in_a_block() -> None:
+    _, body = read_agent("surface-reviewer")
+    writing = section(body, "What you write in a review")
+    assert f"When you write `conformity.md`, end it with {CRITICAL_FILES_OF_THE_BRANCH}" in writing
+    assert "the developer reads their code themselves" in writing
+    assert "the state script shows them in the pull request description" in writing
+    assert "Which files a zone covers is your reading" in writing
+    assert f"keeps its `{CRITICAL_FILES_TAG}` tag in any language" in writing
+    assert "one path per line from the root of the repository" in writing
+    assert "a file the branch deleted included" in writing
+    assert "Leave the block out when the branch changed no such file" in writing
+    assert "or when the repository declares no critical zone" in writing
+    refusal = "The script refuses `conform` on a second block, an unclosed one, or a path"
+    assert f"{refusal} the branch did not change" in writing
+
+
+def test_the_block_the_reviewer_is_shown_is_one_the_script_reads() -> None:
+    _, body = read_agent("surface-reviewer")
+    assert parse_critical_files(body) == ("<path>",)
+
+
+def test_reviewer_is_launched_for_three_things() -> None:
+    fields, body = read_agent("surface-reviewer")
+    first, second, third = REVIEWER_MODES
+    assert f"and the mode: {first}, {second}, or {third}." in body
+    assert "corrects a list of critical files the state script refused" in fields["description"]
+    returned = section(body, "What you return")
+    for mode in ("a review", "a suspected break", REFUSED_LIST):
+        assert f"- {mode}: " in returned
+
+
+def test_reviewer_corrects_a_refused_list_and_nothing_else() -> None:
+    _, body = read_agent("surface-reviewer")
+    correcting = section(body, f"What you correct on {REFUSED_LIST}")
+    assert "The state script refused `conform`" in correcting
+    assert f"the `{CRITICAL_FILES_TAG}` block of `conformity.md` is malformed" in correcting
+    assert "or names a file the branch did not change" in correcting
+    assert "The reason is the one your mandate gives" in correcting
+    assert "Correct that block and nothing else, in that file or anywhere" in correcting
+    assert "you judge nothing again, you write no report" in correcting
+    assert "every other line of `conformity.md` stays as it is" in correcting
+    assert f"The block lists {CRITICAL_FILES_OF_THE_BRANCH}" in correcting
+    assert "`<base>` being the base commit of your mandate" in correcting
+    assert "Remove the block when the branch changed no such file" in correcting
+    assert f"- {REFUSED_LIST}: `corrected`" in section(body, "What you return")
+
+
+def test_no_other_prompt_writes_or_takes_up_the_critical_files_block() -> None:
+    for path in prompt_files():
+        if path.stem != "surface-reviewer":
+            assert f"```{CRITICAL_FILES_TAG}" not in path.read_text(encoding="utf-8"), path
 
 
 # Every role: what it writes, what it never touches, and a bounded return.

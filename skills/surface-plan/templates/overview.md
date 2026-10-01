@@ -36,4 +36,6 @@ No change.
 
 ## 9. Sensitive zones
 
+Critical zones touched, among those the repository's agent instructions declare: none.
+
 No change.
