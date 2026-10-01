@@ -96,7 +96,7 @@ The chain needs no configuration. `.claude/surface.json` is optional and the dev
 
 ### Permissions and models left to the developer
 
-The loop stops at every command the developer's rules or mode do not allow, and the README leaves the choice of mode to the developer. A command's `allowed-tools` grant and a skill's model and effort hold for one turn only, and a session cannot read the rules in force. So the chain neither ships nor checks permission rules ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)), and pins only the agents' models, passed from `surface.json` on each Agent call, with `effort: high` on the three judgment roles ([ADR 0031](docs/adr/0031-session-model-left-to-the-developer.md)).
+The loop stops at every command the developer's rules or mode do not allow, and the guide (`docs/guide.md`) leaves the choice of mode to the developer. A command's `allowed-tools` grant and a skill's model and effort hold for one turn only, and a session cannot read the rules in force. So the chain neither ships nor checks permission rules ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)), and pins only the agents' models, passed from `surface.json` on each Agent call, with `effort: high` on the three judgment roles ([ADR 0031](docs/adr/0031-session-model-left-to-the-developer.md)).
 
 ### Tests
 
