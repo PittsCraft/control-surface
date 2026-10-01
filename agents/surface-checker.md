@@ -22,6 +22,8 @@ Count only what would change the decision of the person who validates the overvi
 
 Section 9 of the overview, the sensitive zones, names each critical zone the repository's agent instructions declare that the plan touches, or says that the plan touches none: the developer reads the code of those zones themselves, and learns there which ones. A critical zone the plan touches and section 9 does not name is an omission, even when another section shows the change. So is a section 9 that says nothing of the critical zones, or says none while the plan touches one.
 
+The overview is as long as the feature needs: a section from 4 to 8 that the plan does not change has no heading, and the closing line of the overview names it. A short section or the absence of a diagram is never an omission: only what the overview does not show counts. A section the closing line names while the plan changes what it shows is one. So is a section from 4 to 8 that is neither written nor named by the closing line: the developer cannot tell that the feature leaves it alone.
+
 If you find nothing, say so: zero omissions is an answer.
 
 ## What you write

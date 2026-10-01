@@ -4,8 +4,8 @@ The state script holds its own contract in code. The prompts hold theirs in pros
 state here what the chain promises a developer, and check that each prompt says it: how a review
 classifies a finding, which command acts on a plan in each state, which acts of the developer each
 command takes in the conversation, in which order planning records its events and the execution
-loop reads its rows, what the reviewer writes, the sections of an overview, the critical zones
-whose code the developer still reads, and the language of the plan documents.
+loop reads its rows, what the reviewer writes, the sections of an overview and its length, the
+critical zones whose code the developer still reads, and the language of the plan documents.
 """
 
 # A review classifies a finding by two closed questions, in this order. A yes to the first is a
@@ -125,6 +125,18 @@ OVERVIEW_SECTIONS = (
     "8. Algorithms",
     "9. Sensitive zones",
 )
+# An overview is as long as the feature needs: the developer reads all of it. These sections are
+# always written; one of the others is written only when the plan changes what it shows, under
+# its own number, and one closing line names those left out. A diagram is drawn only when it
+# shows what the prose does not. The cross-check never counts a short section or the absence of
+# a diagram as an omission, only what the overview does not show.
+ALWAYS_WRITTEN = (
+    "1. The idea in one sentence",
+    "2. Acceptance criteria",
+    "3. Scope and out of scope",
+    "9. Sensitive zones",
+)
+CLOSING_LINE = "No change:"
 
 # The plan documents are written in the repository's language, not the conversation's.
 # `/surface-plan` finds it once and writes it in `exploration.md`, where every agent and template

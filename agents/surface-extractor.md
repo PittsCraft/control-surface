@@ -30,7 +30,7 @@ And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root,
 
 `overview.md` in the plan folder, and nothing else. You never touch `plan.md`, `journal.jsonl` or the code.
 
-Write in the language `exploration.md` names in its repository rules. Nine sections, in this order, each filled in or stating explicitly that there is no change:
+Write in the language `exploration.md` names in its repository rules. The overview is as long as the feature needs, and no longer: the developer reads all of it, so a small change gets a short page. No section and no diagram is written for its own sake. Nine sections, in this order:
 
 1. The idea in one sentence
 2. Acceptance criteria, numbered, taken from the specs and the interview
@@ -40,14 +40,16 @@ Write in the language `exploration.md` names in its repository rules. Nine secti
 6. Sequences
 7. State machines
 8. Algorithms
-9. Sensitive zones: first each critical zone the repository's agent instructions declare that the plan touches, named as they name it, or the statement that the plan touches none; then what the developer would not see go by and that touches their control, their work or their time
+9. Sensitive zones: first each critical zone the repository's agent instructions declare that the plan touches, named as they name it, or the statement that the plan touches none; then what the developer would not see go by and that touches their control, their work or their time, when there is any
+
+Sections 1, 2, 3 and 9 are always written. A section from 4 to 8 is written only when the plan changes what it shows. One with no change gets no heading: the overview ends with one closing line that names every section left out, as the template shows, so the developer sees at a glance what the feature does not touch. There is no closing line when all nine are written. A written section keeps its number, whatever is left out before it: section 9 is always section 9.
 
 Section 9 opens with the critical zones because their code is what the developer still reads themselves once the work is conform: this is where they learn which zones that will be.
 
-One idea per section, short prose, and a mermaid diagram wherever one applies: schema, architecture, sequences, state machines, algorithms.
+One idea per section, short prose. A mermaid diagram only when it shows what the prose of its section does not: a schema that changes, a boundary crossed, an order that matters, states added. Never to fill a section.
 
 The overview never shows the slices nor the distribution of tests: they belong to the plan, which stays alive, and in the frozen contract any re-slicing would become a break. No identifiers that cross-reference the overview and the plan, nor the interview: no slice number, no question or amendment number such as Q3 or A1. Say what an amendment changed, not which one it was.
 
 ## What you return
 
-Two lines at most: the path of `overview.md`, and the sections that state no change.
+Two lines at most: the path of `overview.md`, and the sections its closing line names.

@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
+    ALWAYS_WRITTEN,
+    CLOSING_LINE,
     DOCUMENTS_LANGUAGE,
     FORMER_LANGUAGE_RULE,
     LANGUAGE_SOURCES,
@@ -519,8 +521,25 @@ def test_the_overview_template_holds_the_nine_sections_and_no_slice() -> None:
     for heading in headings:
         assert heading in extractor
         assert "slice" not in heading.lower()
-    assert template.count("No change.") == 9
     assert parse_slice_markers(template) == ()
+
+
+def test_the_overview_template_gathers_the_unchanged_sections_in_one_closing_line() -> None:
+    template = _template("overview.md")
+    opening = template.split("\n## ", 1)[0]
+    assert "As long as the feature needs, and no longer." in opening
+    always = [heading.split(".", 1)[0] for heading in ALWAYS_WRITTEN]
+    assert f"Sections {', '.join(always[:-1])} and {always[-1]} are always written." in opening
+    assert "A section from 4 to 8 is written only when the plan changes what it shows" in opening
+    assert "under its own number" in opening
+    assert "the closing line names the ones left out, and goes when none is" in opening
+    assert "A mermaid diagram only when it shows what the prose of its section does not" in opening
+    # One closing line, the last of the page, and no section that only says it has no change.
+    closing = [line for line in template.splitlines() if line.startswith(CLOSING_LINE)]
+    assert closing == [f"{CLOSING_LINE} <the sections from 4 to 8 left out, by name>."]
+    assert template.rstrip("\n").endswith(closing[0])
+    assert "No change." not in template
+    assert "mermaid diagram wherever" not in template
 
 
 def test_the_overview_template_says_which_critical_zones_the_plan_touches() -> None:
@@ -528,7 +547,7 @@ def test_the_overview_template_says_which_critical_zones_the_plan_touches() -> N
     nine = template[template.index("## 9. Sensitive zones") :]
     said = "Critical zones touched, among those the repository's agent instructions declare: none."
     assert said in nine
-    assert nine.index(said) < nine.index("No change.")
+    assert nine.index(said) < nine.index(CLOSING_LINE)
 
 
 # Git, pull request and CI.
@@ -635,6 +654,15 @@ def test_the_plan_template_has_the_sections_of_the_specs_and_readable_markers() 
     ]
     assert parse_slice_markers(template) == (1,)
     assert parse_gates(template) == ("<command>",)
+
+
+def test_no_section_of_the_plan_is_filled_for_its_own_sake() -> None:
+    steps = section(_body(), "First launch, with specs")
+    plan = next(line for line in steps.splitlines() if line.startswith("6. Plan."))
+    assert "Each section as long as the feature needs, one screen at most" in plan
+    assert "none filled for its own sake" in plan
+    opening = _template("plan.md").split("\n## ", 1)[0]
+    assert "Each section says what the feature needs and no more" in opening
 
 
 def test_the_interview_template_holds_every_heading_the_skill_writes_under() -> None:

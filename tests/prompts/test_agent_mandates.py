@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
+    ALWAYS_WRITTEN,
     BREAK_QUESTION,
     CHAIN_REPORTS,
     CRITICAL_FILES_OF_THE_BRANCH,
@@ -17,6 +18,7 @@ from chain_contract import (
     DEFECT_QUESTION,
     DOCUMENTS_LANGUAGE,
     NO_FINDING_END,
+    OVERVIEW_SECTIONS,
     REFUSED_LIST,
     REVIEWER_MODES,
     REVIEWER_WRITES,
@@ -115,6 +117,59 @@ def test_reviewer_reads_and_never_runs_a_command_of_its_own() -> None:
     others = body.replace(rule, "")
     assert "python3" not in others
     assert "pytest" not in others
+
+
+# The length of an overview: what the feature needs, no section or diagram for its own sake.
+
+
+def test_extractor_writes_an_overview_as_long_as_the_feature_needs() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    assert "The overview is as long as the feature needs, and no longer" in writing
+    assert "a small change gets a short page" in writing
+    assert "No section and no diagram is written for its own sake" in writing
+    assert "each filled in" not in writing
+    for heading in OVERVIEW_SECTIONS:
+        assert any(line.startswith(heading) for line in writing.splitlines()), heading
+
+
+def test_extractor_leaves_out_an_unchanged_section_and_names_it_in_the_closing_line() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    numbers = [heading.split(".", 1)[0] for heading in OVERVIEW_SECTIONS]
+    always = [heading.split(".", 1)[0] for heading in ALWAYS_WRITTEN]
+    others = [number for number in numbers if number not in always]
+    assert f"Sections {', '.join(always[:-1])} and {always[-1]} are always written." in writing
+    left_out = f"A section from {others[0]} to {others[-1]} is written only when the plan changes"
+    assert f"{left_out} what it shows" in writing
+    assert "One with no change gets no heading" in writing
+    assert "one closing line that names every section left out, as the template shows" in writing
+    assert "There is no closing line when all nine are written" in writing
+    assert "A written section keeps its number, whatever is left out before it" in writing
+    assert "the sections its closing line names" in section(body, "What you return")
+
+
+def test_extractor_draws_a_diagram_only_when_it_shows_what_the_prose_does_not() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    rule = "A mermaid diagram only when it shows what the prose of its section does not"
+    assert f"{rule}: a schema that changes, a boundary crossed, an order that matters" in writing
+    assert "Never to fill a section" in writing
+    assert "wherever one applies" not in body
+
+
+def test_checker_never_counts_a_short_section_or_the_absence_of_a_diagram() -> None:
+    _, body = read_agent("surface-checker")
+    counting = section(body, "What counts as an omission")
+    assert "A short section or the absence of a diagram is never an omission" in counting
+    assert "only what the overview does not show counts" in counting
+    named = "A section the closing line names while the plan changes what it shows is one"
+    assert named in counting
+    assert "neither written nor named by the closing line" in counting
+    # The rule shared with the reviewer's amendment check stays as it was.
+    rule = marked_block(counting, "checker-rule").lower()
+    assert "closing line" not in rule
+    assert "diagram" not in rule
 
 
 # The critical zones: named in section 9 of the overview, their changed files listed at conformity.

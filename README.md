@@ -34,7 +34,7 @@ With a strong enough harness, you can delegate the depth and keep to the surface
   <img alt="An overview page with its nine sections: the idea in one sentence, acceptance criteria, scope, data schema, architecture and boundaries, sequences, state machines, algorithms, sensitive zones, most of them with a diagram. You review it directly, and ask an agent to amend or approve it." src="docs/images/overview-light.svg">
 </picture>
 
-The overview is a short, rich document, with diagrams wherever they say more than prose. It shows what will be built, never the order of construction: that stays in the plan.
+The overview is a rich document, as long as the feature needs and no longer, with diagrams wherever they say more than prose. It shows what will be built, never the order of construction: that stays in the plan.
 
 You review it yourself. You never edit it by hand: you ask for a change in the conversation and an agent draws the next revision, and launching `/surface-execute` approves the one you read.
 
