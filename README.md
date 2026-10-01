@@ -9,6 +9,14 @@ Approve a short overview of your feature, then let agents build it and review th
   <img alt="Four layers. Product: you describe a need. Surface: an agent draws an overview from it, and you control it. Plan and codebase, below the line: agents draw a detailed plan and build the code, an agent ensures the three stay consistent, every agent wears your harness, and you review the critical code yourself." src="docs/images/layers-light.svg">
 </picture>
 
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/install.py | python3 -
+```
+
+Run it at the root of your project. It needs Claude Code, git and Python 3.11 or newer, installs the chain in `.claude/`, and needs no configuration.
+
 ## The thesis
 
 With a strong enough harness, you can delegate the depth and keep to the surface.
@@ -16,7 +24,7 @@ With a strong enough harness, you can delegate the depth and keep to the surface
 - **You describe a need and control an overview.** The overview is the only thing you have to read, and the contract the work is judged against. It is frozen when you approve it.
 - **Agents draw the detailed plan and build the code.** A fresh agent for each step, which reads files and never a conversation.
 - **Consistency is ensured, not hoped for.** A cross-check proves the overview hides nothing the plan does. Reviews go on until the code matches the overview, each criterion with its proof. A change that would make the overview false comes back to you.
-- **Your harness ensures discipline.** The harness is what holds every agent to the process: your project's own gates, its tests, lint and type checks, and a state script that is the only writer of each plan's journal and refuses every illegal step. Nothing is built before you approve, no review starts on red gates, and the loop hands back when it stops converging. The stronger your gates, the more you can delegate.
+- **Your harness ensures discipline.** The harness is your project's own gates: its tests, lint and type checks. The loop runs them before every review and after every fix, and nothing goes on while one is red. The stronger your gates, the more you can delegate.
 - **Where a mistake would cost you most, read the code yourself.** Declare your critical zones in your `AGENTS.md` or `CLAUDE.md`: the agents read them, and what touches one must show in the overview.
 
 ## What you control
@@ -38,14 +46,6 @@ You review it yourself. You never edit it by hand: you ask for a change in the c
 </picture>
 
 Two commands, and three moments when the hand comes back to you: the overview would have to change, the loop no longer converges, or the work is conform.
-
-## Install
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/PittsCraft/control-surface/main/install.py | python3 -
-```
-
-Run it at the root of your project. It needs Claude Code, git and Python 3.11 or newer, installs the chain in `.claude/`, and needs no configuration.
 
 ## Your gestures
 
