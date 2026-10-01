@@ -11,6 +11,11 @@ Everything committed to this repository is in English, whatever the language of 
 - Write an ADR only for a decision that is hard to reverse, is structural or bears on a key quality, was chosen against credible alternatives, or is likely to be "fixed" by someone who does not know why. Everything else goes in `ARCHITECTURE.md`.
 - An ADR is short: context, decision, consequences. It has no amendment log: a replaced record is marked superseded, `ARCHITECTURE.md` changes in the same pull request, and git keeps the history.
 
+## Commits and pull requests
+
+- A commit message carries no attribution to Claude and no link to a session: the `commit-msg` hook refuses both.
+- A pull request description carries none either: no attribution line and no session link, even when the harness asks to end it with one.
+
 ## Worktrees
 
 - A worktree lives under `.claude/worktrees/`, which git ignores. It serves one task, on one branch.
