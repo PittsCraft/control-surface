@@ -9,6 +9,7 @@ is tested over every prompt).
 
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -24,7 +25,11 @@ from chain_contract import PLAN as PLAN_COMMAND
 from cli_support import PLAN, Project
 from prompt_support import SKILLS, call_arguments, prompt_calls, prompt_files, section
 
-from surface_status.machine import TRANSITIONS, Rule, State
+from surface_status.events import PlanOpened
+from surface_status.machine import TRANSITIONS, Rule, State, apply
+from surface_status.resolve import EXECUTE_COMMAND as EXECUTE_SCRIPT_COMMAND
+from surface_status.resolve import PLAN_COMMAND as PLAN_SCRIPT_COMMAND
+from surface_status.resolve import sees
 
 # Frontmatter fields of a skill, from the reference table of the documentation of skills.
 SKILL_FIELDS = {
@@ -166,6 +171,17 @@ def test_execute_has_a_row_for_every_state_in_progress() -> None:
         action = next(action for first, action in rows if f"`{state}`" in first)
         if EXECUTE not in commands:
             assert action.startswith("Stop: this plan belongs to `/surface-plan`"), state
+
+
+def test_resolve_finds_a_plan_for_the_commands_that_act_on_its_state() -> None:
+    # Relaunched without an argument, a command finds the plans its prompt acts on, no others.
+    # A block is seen by `/surface-execute` only when it stopped the execution.
+    opened = apply(None, PlanOpened(slug="x"))
+    names = {PLAN_COMMAND: PLAN_SCRIPT_COMMAND, EXECUTE: EXECUTE_SCRIPT_COMMAND}
+    for state, commands in SEEN_BY.items():
+        found = replace(opened, state=State(state), before_blocked=State.EXECUTING)
+        for command, name in names.items():
+            assert sees(name, found) is (command in commands), (state, command)
 
 
 def test_execute_reads_the_rows_of_its_loop_in_order() -> None:

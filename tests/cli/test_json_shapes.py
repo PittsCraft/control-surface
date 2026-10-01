@@ -39,6 +39,11 @@ def test_golden_show_with_a_suspected_break(project: Project) -> None:
     assert_golden("show-suspected.json", project.run("show", PLAN).out)
 
 
+def test_golden_show_with_a_plan_change_proposed(project: Project) -> None:
+    project.reach("plan-change-proposed")
+    assert_golden("show-plan-change-proposed.json", project.run("show", PLAN).out)
+
+
 def test_golden_show_without_events(project: Project) -> None:
     (project.plan() / "journal.jsonl").write_text("", encoding="utf-8")
     assert_golden("show-empty.json", project.run("show", PLAN).out)

@@ -112,7 +112,10 @@ def next_step(state: PlanState | None) -> str:  # noqa: C901, PLR0911 (one arm p
         case State.FIXING:
             return "surface-execute: launch the fix"
         case State.PLAN_CHANGE_PROPOSED:
-            return "surface-plan: present the proposal, record the acceptance or the refusal"
+            return (
+                "the developer decides on the proposal: surface-plan or surface-execute "
+                "presents it and records the acceptance or the refusal"
+            )
         case State.BLOCKED:
             return (
                 "the developer decides: surface-plan takes an instruction or an amendment, "

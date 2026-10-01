@@ -33,7 +33,13 @@ _PLAN_STATES = frozenset(
     }
 )
 _EXECUTE_STATES = frozenset(
-    {State.AWAITING_APPROVAL, State.EXECUTING, State.REVIEWING, State.FIXING}
+    {
+        State.AWAITING_APPROVAL,
+        State.EXECUTING,
+        State.REVIEWING,
+        State.FIXING,
+        State.PLAN_CHANGE_PROPOSED,
+    }
 )
 _EXECUTION_STATES = frozenset({State.EXECUTING, State.REVIEWING, State.FIXING})
 
@@ -42,7 +48,8 @@ def sees(command: str | None, state: PlanState | None) -> bool:
     """Whether a plan in this state is one the command acts on; None asks for any plan in progress.
 
     A journal with no event yet is a plan still to open, which only `surface-plan` sees.
-    `surface-execute` sees `blocked` only when the loop stopped during the execution.
+    `surface-execute` sees `blocked` only when the loop stopped during the execution. Both see a
+    plan change proposal: either one puts it to the developer and records the decision.
     """
     if state is None:
         return command in {None, PLAN_COMMAND}

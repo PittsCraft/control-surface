@@ -1,0 +1,38 @@
+{
+  "v": 1,
+  "plan": "2026-09-29-feature",
+  "state": "plan-change-proposed",
+  "hand": "developer",
+  "next_step": "the developer decides on the proposal: surface-plan or surface-execute presents it and records the acceptance or the refusal",
+  "slices": {
+    "declared": [
+      1,
+      2
+    ],
+    "done": [],
+    "remaining": [
+      1,
+      2
+    ]
+  },
+  "passes": {
+    "planning": 0,
+    "execution": 0,
+    "ceiling": 3
+  },
+  "gates": [],
+  "pending_proposal": "plan-changes/01.md",
+  "pending_suspicion": null,
+  "last_event": "plan-change-proposed",
+  "alarms": [],
+  "settings": {
+    "plans_dir": "docs/plans",
+    "max_autonomous_passes": 3,
+    "models": {
+      "extractor": "opus",
+      "checker": "opus",
+      "executor": "sonnet",
+      "reviewer": "opus"
+    }
+  }
+}
