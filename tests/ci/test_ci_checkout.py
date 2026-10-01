@@ -1,4 +1,4 @@
-"""The conformity check in the checkout a CI makes (README, "the conformity check in your CI").
+"""The conformity check in the checkout a CI makes (the guide, step 5).
 
 A toy project gets the chain installed from this checkout, in clone mode, and its plans are built
 with the state script. The project is then fetched into a repository shaped like the one

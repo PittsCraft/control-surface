@@ -10,7 +10,7 @@ From the public repository, into the current directory:
 
     curl -fsSL <raw URL of install.py on main> | python3 - [--check] [--ref <tag or commit>]
 
-The exact one-line command sits at the top of the README.
+The exact one-line command is in the README, under "Install".
 
 Run this way, the installer downloads the archive of a version (`--ref`, `main` by default, a tag
 or a commit) and installs from it as from a clone. `--archive-url` overrides where the archive

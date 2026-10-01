@@ -1,6 +1,6 @@
 # Contributing
 
-For work on the chain itself. To use it in a project, see the [README](README.md).
+For work on the chain itself. To use it in a project, see the [README](README.md) and the [guide](docs/guide.md).
 
 ## Setup
 
@@ -26,6 +26,8 @@ The conformity check in a CI shaped checkout is `tests/ci/`: part of the gates, 
 - `install.py`: the installer and the drift check.
 - `ARCHITECTURE.md`: the architecture as it is now, with a codemap and the invariants. Read it first.
 - `docs/adr/`: the few decisions whose history matters.
+- `docs/guide.md`: the manual for the developer who uses the chain; the README keeps to the idea.
+- `docs/images/`: the README's diagrams, each an Excalidraw source (`.excalidraw`) and its two exports, light and dark, made from Excalidraw with the background off.
 
 ## Installer
 
