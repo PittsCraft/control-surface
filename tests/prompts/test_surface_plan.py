@@ -330,7 +330,11 @@ def test_extraction_and_cross_check_go_to_fresh_agents_on_the_models_of_the_sett
 
 def test_planning_stops_at_the_ceiling_and_asks_in_the_conversation() -> None:
     agents = section(_body(), "The agents")
-    assert "passes.planning" in section(_body(), "First launch, with specs")
+    first = section(_body(), "First launch, with specs")
+    # The script records the check past the ceiling, which hands back: the ceiling is passed.
+    assert "`passes.planning` of `show` is more than `passes.ceiling`" in first
+    assert "A pass is a cross-check with omissions" in first
+    assert "`passes.planning` is more than `passes.ceiling`" in agents
     assert "with the code `ceiling`" in agents
     assert "launch nothing more" in agents
     ceiling = next(line for line in agents.splitlines() if line.startswith("Stop at the ceiling"))

@@ -249,22 +249,23 @@ def journal_guards(prev: PlanState | None, event: Event) -> Refusal | None:  # n
 def _check_ceiling(prev: PlanState, event: Event, context: RecordContext) -> Refusal | None:
     """Refuse a pass the loop may no longer take on its own.
 
-    Planning: the check that brings its counter to the ceiling is the last one recorded, and hands
-    back. Execution: the loop sends work back `ceiling` times; the event that would send it once
-    more is still recorded, since it holds what does not converge, and hands back; none after it.
-    So a fixer whose own gate run fails is one pass, and the fixer sent after it the next.
+    A pass sends work back to an agent: in planning a check with omissions, which sends the
+    overview or the plan back for rework; in execution what `sends_work_back` names. Both loops
+    send work back `ceiling` times; the pass that would send it once more is still recorded,
+    since it holds what does not converge, and hands back; none after it. So a ceiling of 3 gives
+    three reworks in planning and three fixes in execution, a fixer whose own gate run fails
+    being one pass and the fixer sent after it the next.
     """
     if isinstance(event, CheckDone) and event.omissions > 0:
-        if prev.planning_passes >= context.ceiling:
-            return _refuse(
-                RefusalCode.CEILING,
-                f"{prev.planning_passes} autonomous passes reached the ceiling of"
-                f" {context.ceiling}",
-            )
-    elif sends_work_back(event) and prev.execution_passes > context.ceiling:
+        passes = prev.planning_passes
+    elif sends_work_back(event):
+        passes = prev.execution_passes
+    else:
+        return None
+    if passes > context.ceiling:
         return _refuse(
             RefusalCode.CEILING,
-            f"{prev.execution_passes} autonomous passes went past the ceiling of {context.ceiling}",
+            f"{passes} autonomous passes went past the ceiling of {context.ceiling}",
         )
     return None
 

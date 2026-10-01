@@ -329,14 +329,14 @@ def test_the_ceiling_comes_from_the_settings(tmp_path: Path) -> None:
     overview, plan = folder.overview_hash(), folder.plan_hash()
     assert overview is not None
     assert plan is not None
-    for _ in range(2):
+    for _ in range(3):  # two reworks, then the pass past the ceiling, recorded
         report = write(folder, folder.next_check(1))
         event = CheckDone(rev=1, report=report, omissions=1, overview=overview, plan=plan)
         _accept(folder, event, settings_with(2))
     report = write(folder, folder.next_check(1))
-    third = CheckDone(rev=1, report=report, omissions=1, overview=overview, plan=plan)
-    assert _refusal(folder, third, settings_with(2)).code is RefusalCode.CEILING
-    _accept(folder, third, settings_with(3))
+    fourth = CheckDone(rev=1, report=report, omissions=1, overview=overview, plan=plan)
+    assert _refusal(folder, fourth, settings_with(2)).code is RefusalCode.CEILING
+    _accept(folder, fourth, settings_with(3))
 
 
 # The gates block of the plan
