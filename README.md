@@ -6,7 +6,7 @@ Approve the blueprint of your feature: every decision that matters, in a form yo
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/layers-dark.svg">
-  <img alt="Four layers. Product: you describe a need. Surface: an agent draws an overview from it, and you control it. Plan and codebase, below the line: agents draw a detailed plan and build the code, an agent ensures the three stay consistent, every agent wears your harness, and you review the critical code yourself." src="docs/images/layers-light.svg">
+  <img alt="Four layers. Product: you describe a need. Design: an agent draws a blueprint from it, and you control it. Plan and codebase, below the line: agents draw a detailed plan and build the code, an agent ensures the three stay consistent, every agent wears your harness, and you review the critical code yourself." src="docs/images/layers-light.svg">
 </picture>
 
 ## Install
