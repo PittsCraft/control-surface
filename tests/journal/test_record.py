@@ -23,7 +23,7 @@ from surface_status.events import (
     EVENT_NAMES,
     Abandoned,
     CheckDone,
-    Conform,
+    Conformant,
     GateResult,
     GatesRun,
     InterviewClosed,
@@ -66,22 +66,22 @@ def _to_drafting(folder: PlanFolder) -> None:
 
 def _to_awaiting(folder: PlanFolder) -> None:
     _to_drafting(folder)
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     report = write(folder, folder.next_check(1))
-    _accept(folder, CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan))
-    _accept(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=GATES))
+    _accept(folder, CheckDone(rev=1, report=report, omissions=0, blueprint=blueprint, plan=plan))
+    _accept(folder, PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1, 2), gates=GATES))
 
 
 def _to_executing(folder: PlanFolder) -> None:
     _to_awaiting(folder)
-    overview = folder.overview_hash()
-    assert overview is not None
-    _accept(folder, PlanApproved(rev=1, overview=overview))
+    blueprint = folder.blueprint_hash()
+    assert blueprint is not None
+    _accept(folder, PlanApproved(rev=1, blueprint=blueprint))
 
 
-def test_a_plan_walks_from_opening_to_conform_through_record(tmp_path: Path) -> None:
+def test_a_plan_walks_from_opening_to_conformant_through_record(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     settings = settings_with(3)
     _to_executing(folder)
@@ -96,12 +96,14 @@ def test_a_plan_walks_from_opening_to_conform_through_record(tmp_path: Path) -> 
         ReviewDone(pass_=1, report=report, defects=0, deviations=0, breaks=0),
         settings,
     )
-    overview = folder.overview_hash()
-    assert overview is not None
-    _accept(folder, Conform(conformity=write(folder, "conformity.md"), overview=overview), settings)
+    blueprint = folder.blueprint_hash()
+    assert blueprint is not None
+    _accept(
+        folder, Conformant(conformity=write(folder, "conformity.md"), blueprint=blueprint), settings
+    )
     state = load_state(folder)
     assert state is not None
-    assert state.state is State.CONFORM
+    assert state.state is State.CONFORMANT
     assert len(read_events(folder.journal)) == 10
 
 
@@ -135,7 +137,7 @@ def test_a_refused_record_leaves_the_journal_unchanged_and_an_accepted_one_only_
             state = load_state(folder)
             edit = data.draw(st.integers(0, 14))
             if edit == 0:
-                folder.overview.write_text(f"overview {step}\n", encoding="utf-8")
+                folder.blueprint.write_text(f"blueprint {step}\n", encoding="utf-8")
             elif edit == 1:
                 marks = data.draw(st.lists(st.integers(1, 3), unique=True, min_size=1, max_size=3))
                 folder.plan.write_text(
@@ -184,12 +186,12 @@ def test_a_folder_that_does_not_exist_is_an_error_not_a_refusal(tmp_path: Path) 
 def test_a_cited_file_that_does_not_exist_is_refused(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     before = _bytes(folder)
     event = CheckDone(
-        rev=1, report="checks/rev-01-01.md", omissions=0, overview=overview, plan=plan
+        rev=1, report="checks/rev-01-01.md", omissions=0, blueprint=blueprint, plan=plan
     )
     refusal = _refusal(folder, event)
     assert refusal.code is RefusalCode.FILE_MISSING
@@ -207,10 +209,10 @@ def test_a_cited_name_that_is_not_a_file_of_the_folder_is_refused(
     _to_drafting(folder)
     (folder.root / "checks").mkdir()
     (tmp_path / "outside.md").write_text("x", encoding="utf-8")
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
-    event = CheckDone(rev=1, report=name, omissions=0, overview=overview, plan=plan)
+    event = CheckDone(rev=1, report=name, omissions=0, blueprint=blueprint, plan=plan)
     assert _refusal(folder, event).code is RefusalCode.FILE_MISSING
 
 
@@ -229,13 +231,13 @@ def test_a_gate_run_is_cited_by_its_number(tmp_path: Path) -> None:
 def test_plan_drafted_is_refused_when_the_last_check_found_omissions(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     report = write(folder, folder.next_check(1))
-    _accept(folder, CheckDone(rev=1, report=report, omissions=2, overview=overview, plan=plan))
+    _accept(folder, CheckDone(rev=1, report=report, omissions=2, blueprint=blueprint, plan=plan))
     before = _bytes(folder)
-    refusal = _refusal(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2)))
+    refusal = _refusal(folder, PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1, 2)))
     assert refusal.code is RefusalCode.CROSS_CHECK
     assert "2 omissions" in refusal.reason
     assert _bytes(folder) == before
@@ -244,18 +246,20 @@ def test_plan_drafted_is_refused_when_the_last_check_found_omissions(tmp_path: P
 def test_plan_drafted_is_refused_when_the_check_covered_other_hashes(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     report = write(folder, folder.next_check(1))
-    _accept(folder, CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan))
+    _accept(folder, CheckDone(rev=1, report=report, omissions=0, blueprint=blueprint, plan=plan))
     folder.plan.write_text(
         "<!-- slice:1 -->\n<!-- slice:2 -->\nedited after the check\n", encoding="utf-8"
     )
     new_plan = folder.plan_hash()
     assert new_plan is not None
     before = _bytes(folder)
-    refusal = _refusal(folder, PlanDrafted(rev=1, overview=overview, plan=new_plan, slices=(1, 2)))
+    refusal = _refusal(
+        folder, PlanDrafted(rev=1, blueprint=blueprint, plan=new_plan, slices=(1, 2))
+    )
     assert refusal.code is RefusalCode.CROSS_CHECK
     assert "did not cover" in refusal.reason
     assert _bytes(folder) == before
@@ -264,14 +268,14 @@ def test_plan_drafted_is_refused_when_the_check_covered_other_hashes(tmp_path: P
 def test_a_hash_read_before_the_file_changed_is_refused(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     report = write(folder, folder.next_check(1))
-    folder.overview.write_text("# Overview, edited\n", encoding="utf-8")
-    stale = CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan)
+    folder.blueprint.write_text("# Blueprint, edited\n", encoding="utf-8")
+    stale = CheckDone(rev=1, report=report, omissions=0, blueprint=blueprint, plan=plan)
     assert _refusal(folder, stale).code is RefusalCode.HASH_STALE
-    folder.overview.write_text("# Overview\n", encoding="utf-8")
+    folder.blueprint.write_text("# Blueprint\n", encoding="utf-8")
     folder.plan.write_text("<!-- slice:1 -->\nedited\n", encoding="utf-8")
     assert _refusal(folder, stale).code is RefusalCode.HASH_STALE
 
@@ -279,12 +283,12 @@ def test_a_hash_read_before_the_file_changed_is_refused(tmp_path: Path) -> None:
 def test_the_slices_of_a_draft_are_the_ones_the_plan_declares(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     report = write(folder, folder.next_check(1))
-    _accept(folder, CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan))
-    refusal = _refusal(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2, 3)))
+    _accept(folder, CheckDone(rev=1, report=report, omissions=0, blueprint=blueprint, plan=plan))
+    refusal = _refusal(folder, PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1, 2, 3)))
     assert refusal.code is RefusalCode.SLICES_STALE
 
 
@@ -292,24 +296,24 @@ def test_a_plan_with_a_duplicated_marker_cannot_be_drafted(tmp_path: Path) -> No
     folder = new_folder(tmp_path)
     _to_drafting(folder)
     folder.plan.write_text("<!-- slice:1 -->\n<!-- slice:1 -->\n", encoding="utf-8")
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     report = write(folder, folder.next_check(1))
-    _accept(folder, CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan))
-    refusal = _refusal(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1,)))
+    _accept(folder, CheckDone(rev=1, report=report, omissions=0, blueprint=blueprint, plan=plan))
+    refusal = _refusal(folder, PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1,)))
     assert refusal.code is RefusalCode.SLICES_STALE
     assert "declared twice" in refusal.reason
 
 
-def test_the_overview_edited_after_approval_blocks_the_next_record(tmp_path: Path) -> None:
+def test_the_blueprint_edited_after_approval_blocks_the_next_record(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_executing(folder)
-    folder.overview.write_text("# Overview, edited after approval\n", encoding="utf-8")
+    folder.blueprint.write_text("# Blueprint, edited after approval\n", encoding="utf-8")
     refusal = _refusal(folder, SliceDone(slice_=1, gates="lint"))
-    assert refusal.code is RefusalCode.OVERVIEW_CHANGED
-    folder.overview.unlink()
-    assert _refusal(folder, SliceDone(slice_=1, gates="lint")).code is RefusalCode.OVERVIEW_CHANGED
+    assert refusal.code is RefusalCode.BLUEPRINT_CHANGED
+    folder.blueprint.unlink()
+    assert _refusal(folder, SliceDone(slice_=1, gates="lint")).code is RefusalCode.BLUEPRINT_CHANGED
 
 
 def test_a_plan_amended_carries_the_current_plan_hash_and_slices(tmp_path: Path) -> None:
@@ -326,15 +330,15 @@ def test_a_plan_amended_carries_the_current_plan_hash_and_slices(tmp_path: Path)
 def test_the_ceiling_comes_from_the_settings(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     for _ in range(3):  # two reworks, then the pass past the ceiling, recorded
         report = write(folder, folder.next_check(1))
-        event = CheckDone(rev=1, report=report, omissions=1, overview=overview, plan=plan)
+        event = CheckDone(rev=1, report=report, omissions=1, blueprint=blueprint, plan=plan)
         _accept(folder, event, settings_with(2))
     report = write(folder, folder.next_check(1))
-    fourth = CheckDone(rev=1, report=report, omissions=1, overview=overview, plan=plan)
+    fourth = CheckDone(rev=1, report=report, omissions=1, blueprint=blueprint, plan=plan)
     assert _refusal(folder, fourth, settings_with(2)).code is RefusalCode.CEILING
     _accept(folder, fourth, settings_with(3))
 
@@ -344,21 +348,21 @@ def test_the_ceiling_comes_from_the_settings(tmp_path: Path) -> None:
 
 def _checked(folder: PlanFolder) -> tuple[str, str]:
     """Record a clean cross-check of the files as they are, and return their hashes."""
-    overview, plan = folder.overview_hash(), folder.plan_hash()
-    assert overview is not None
+    blueprint, plan = folder.blueprint_hash(), folder.plan_hash()
+    assert blueprint is not None
     assert plan is not None
     report = write(folder, folder.next_check(1))
-    _accept(folder, CheckDone(rev=1, report=report, omissions=0, overview=overview, plan=plan))
-    return overview, plan
+    _accept(folder, CheckDone(rev=1, report=report, omissions=0, blueprint=blueprint, plan=plan))
+    return blueprint, plan
 
 
 def test_a_plan_without_its_gates_block_cannot_be_drafted(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
     folder.plan.write_text(plan_text(gates=None), encoding="utf-8")
-    overview, plan = _checked(folder)
+    blueprint, plan = _checked(folder)
     before = _bytes(folder)
-    refusal = _refusal(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2)))
+    refusal = _refusal(folder, PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1, 2)))
     assert refusal.code is RefusalCode.GATE_LIST
     assert "no gates block" in refusal.reason
     assert _bytes(folder) == before
@@ -367,13 +371,13 @@ def test_a_plan_without_its_gates_block_cannot_be_drafted(tmp_path: Path) -> Non
 def test_the_gates_of_a_draft_are_the_ones_the_plan_names(tmp_path: Path) -> None:
     folder = new_folder(tmp_path, gates=("make test", "make lint"))
     _to_drafting(folder)
-    overview, plan = _checked(folder)
-    stale = PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=("make test",))
+    blueprint, plan = _checked(folder)
+    stale = PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1, 2), gates=("make test",))
     assert _refusal(folder, stale).code is RefusalCode.GATE_LIST
     _accept(
         folder,
         PlanDrafted(
-            rev=1, overview=overview, plan=plan, slices=(1, 2), gates=("make test", "make lint")
+            rev=1, blueprint=blueprint, plan=plan, slices=(1, 2), gates=("make test", "make lint")
         ),
     )
     state = load_state(folder)
@@ -385,9 +389,9 @@ def test_the_gates_of_a_draft_are_the_ones_the_plan_names(tmp_path: Path) -> Non
 def test_an_empty_gates_block_says_the_project_has_none(tmp_path: Path) -> None:
     folder = new_folder(tmp_path, gates=())
     _to_drafting(folder)
-    overview, plan = _checked(folder)
-    _accept(folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=()))
-    _accept(folder, PlanApproved(rev=1, overview=overview))
+    blueprint, plan = _checked(folder)
+    _accept(folder, PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1, 2), gates=()))
+    _accept(folder, PlanApproved(rev=1, blueprint=blueprint))
     state = load_state(folder)
     assert state is not None
     assert state.approved_gates == ()
@@ -397,9 +401,9 @@ def test_a_malformed_gates_block_cannot_be_drafted(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     _to_drafting(folder)
     folder.plan.write_text(plan_text(tail="```gates\nmake\n```\n"), encoding="utf-8")
-    overview, plan = _checked(folder)
+    blueprint, plan = _checked(folder)
     refusal = _refusal(
-        folder, PlanDrafted(rev=1, overview=overview, plan=plan, slices=(1, 2), gates=None)
+        folder, PlanDrafted(rev=1, blueprint=blueprint, plan=plan, slices=(1, 2), gates=None)
     )
     assert refusal.code is RefusalCode.GATE_LIST
     assert "a second gates block" in refusal.reason
@@ -409,9 +413,9 @@ def test_approval_takes_the_gates_of_the_drafted_revision(tmp_path: Path) -> Non
     folder = new_folder(tmp_path)
     _to_awaiting(folder)
     folder.plan.write_text(plan_text(gates=("edited after the draft",)), encoding="utf-8")
-    overview = folder.overview_hash()
-    assert overview is not None
-    _accept(folder, PlanApproved(rev=1, overview=overview))
+    blueprint = folder.blueprint_hash()
+    assert blueprint is not None
+    _accept(folder, PlanApproved(rev=1, blueprint=blueprint))
     state = load_state(folder)
     assert state is not None
     assert state.approved_gates == GATES
@@ -437,15 +441,15 @@ def test_an_amendment_during_execution_keeps_the_approved_gates(tmp_path: Path) 
 def test_a_plan_approved_before_plans_named_their_gates_amends_freely(tmp_path: Path) -> None:
     folder = new_folder(tmp_path, gates=())
     _to_drafting(folder)
-    overview, plan = _checked(folder)
+    blueprint, plan = _checked(folder)
     # A journal written before this version: its plan-drafted carries no gates.
     at = timestamp(NOW)
-    old = f'"overview": "{overview}", "plan": "{plan}", "slices": [1, 2]'
+    old = f'"blueprint": "{blueprint}", "plan": "{plan}", "slices": [1, 2]'
     with folder.journal.open("a", encoding="utf-8") as journal:
         journal.write(f'{{"v": 1, "at": "{at}", "event": "plan-drafted", "rev": 1, {old}}}\n')
         journal.write(
             f'{{"v": 1, "at": "{at}", "event": "plan-approved", "rev": 1, '
-            f'"overview": "{overview}"}}\n'
+            f'"blueprint": "{blueprint}"}}\n'
         )
     state = load_state(folder)
     assert state is not None
@@ -460,7 +464,7 @@ def test_a_plan_approved_before_plans_named_their_gates_amends_freely(tmp_path: 
 
 
 def _to_clean_review(folder: PlanFolder) -> str:
-    """Drive a plan to a clean review, and return the hash of its overview."""
+    """Drive a plan to a clean review, and return the hash of its blueprint."""
     _to_executing(folder)
     _accept(folder, SliceDone(slice_=1, gates="lint"))
     _accept(folder, SliceDone(slice_=2, gates="lint"))
@@ -469,9 +473,9 @@ def _to_clean_review(folder: PlanFolder) -> str:
     _accept(folder, GatesRun(run=run, result=GateResult.PASS))
     report = write(folder, folder.next_review())
     _accept(folder, ReviewDone(pass_=1, report=report, defects=0, deviations=0, breaks=0))
-    overview = folder.overview_hash()
-    assert overview is not None
-    return overview
+    blueprint = folder.blueprint_hash()
+    assert blueprint is not None
+    return blueprint
 
 
 @pytest.mark.parametrize(
@@ -495,17 +499,17 @@ def test_a_conformity_whose_critical_files_block_is_malformed_is_refused(
     tmp_path: Path, block: str, reason: str
 ) -> None:
     folder = new_folder(tmp_path)
-    overview = _to_clean_review(folder)
-    conform = Conform(
-        conformity=write(folder, "conformity.md", "proof\n" + block), overview=overview
+    blueprint = _to_clean_review(folder)
+    conformant = Conformant(
+        conformity=write(folder, "conformity.md", "proof\n" + block), blueprint=blueprint
     )
     before = _bytes(folder)
-    refusal = _refusal(folder, conform)
+    refusal = _refusal(folder, conformant)
     assert refusal.code is RefusalCode.CRITICAL_FILES
     assert refusal.reason.startswith(reason)
     assert _bytes(folder) == before
     write(folder, "conformity.md", "proof\n```critical-files\nsrc/pay.py\n```\n")
-    _accept(folder, conform)
+    _accept(folder, conformant)
 
 
 @pytest.mark.parametrize("text", ["proof\n", "proof\n```critical-files\n```\n"])
@@ -513,24 +517,26 @@ def test_a_conformity_that_lists_no_critical_file_is_recorded_as_before(
     tmp_path: Path, text: str
 ) -> None:
     folder = new_folder(tmp_path)
-    overview = _to_clean_review(folder)
+    blueprint = _to_clean_review(folder)
     assert not parse_critical_files(text)
-    _accept(folder, Conform(conformity=write(folder, "conformity.md", text), overview=overview))
+    _accept(
+        folder, Conformant(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
+    )
 
 
 def test_a_missing_conformity_is_refused_as_a_missing_file_before_its_block_is_read(
     tmp_path: Path,
 ) -> None:
     folder = new_folder(tmp_path)
-    overview = _to_clean_review(folder)
-    refusal = _refusal(folder, Conform(conformity="conformity.md", overview=overview))
+    blueprint = _to_clean_review(folder)
+    refusal = _refusal(folder, Conformant(conformity="conformity.md", blueprint=blueprint))
     assert refusal.code is RefusalCode.FILE_MISSING
 
 
 def test_outside_a_git_work_tree_only_the_form_of_the_block_is_checked(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
-    overview = _to_clean_review(folder)
+    blueprint = _to_clean_review(folder)
     text = "proof\n```critical-files\nsrc/pay.py\n```\n"
-    conform = Conform(conformity=write(folder, "conformity.md", text), overview=overview)
-    result = record(folder, conform, DEFAULTS, NOW, root=tmp_path)
+    conformant = Conformant(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
+    result = record(folder, conformant, DEFAULTS, NOW, root=tmp_path)
     assert isinstance(result, Accepted), result

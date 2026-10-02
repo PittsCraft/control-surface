@@ -20,7 +20,7 @@ STATES = [
     "executing",
     "reviewing",
     "plan-change-proposed",
-    "conform",
+    "conformant",
 ]
 NAMES = [f"2026-09-{day:02d}-plan" for day in range(1, 9)]
 

@@ -1,4 +1,4 @@
-# <Feature>: overview
+# <Feature>: blueprint
 
 Revision <N>, drawn from `plan.md`. The page the developer reads to approve the work, then the contract the work is judged against: frozen at approval. Written in the language `exploration.md` names in its repository rules: translate the headings. As long as the feature needs, and no longer. Sections 1, 2, 3 and 9 are always written. A section from 4 to 8 is written only when the plan changes what it shows, under its own number; the closing line names the ones left out, and goes when none is. A mermaid diagram only when it shows what the prose of its section does not. Neither the order of construction nor the distribution of tests: they belong to the plan.
 

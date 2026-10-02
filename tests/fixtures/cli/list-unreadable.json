@@ -4,12 +4,12 @@
     {
       "name": "2026-09-01-good",
       "state": "executing",
-      "hand": "agents"
+      "turn": "agents"
     },
     {
       "name": "2026-09-02-bad",
       "state": null,
-      "hand": null,
+      "turn": null,
       "error": "2026-09-02-bad: journal line 1: not valid JSON: Expecting value (column 1)"
     }
   ]

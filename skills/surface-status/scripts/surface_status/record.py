@@ -2,7 +2,7 @@
 
 This is the only code that appends to a journal. Every step before the append only reads, so a
 refusal leaves the journal byte for byte as it was, and an acceptance adds exactly one line. A
-`conform` is the one event checked against git too: the files its `conformity.md` leaves the
+`conformant` is the one event checked against git too: the files its `conformity.md` leaves the
 developer to read must be files the branch changed.
 """
 
@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from surface_status import gitops
-from surface_status.events import Conform, Event, PlanAmended, PlanDrafted
+from surface_status.events import Conformant, Event, PlanAmended, PlanDrafted
 from surface_status.guards import (
     Accepted,
     DiskFacts,
@@ -43,7 +43,7 @@ def timestamp(now: datetime) -> str:
     return now.astimezone(UTC).strftime(TIMESTAMP_FORMAT)
 
 
-def _critical_files_problem(folder: PlanFolder, event: Conform, root: Path | None) -> str | None:
+def _critical_files_problem(folder: PlanFolder, event: Conformant, root: Path | None) -> str | None:
     """Say why the critical-files block of the cited `conformity.md` cannot be taken, if so.
 
     Which files a critical zone covers is the reviewer's reading; that the branch changed a file
@@ -70,7 +70,7 @@ def _critical_files_problem(folder: PlanFolder, event: Conform, root: Path | Non
 def _disk_facts(folder: PlanFolder, event: Event, root: Path | None) -> DiskFacts:
     facts = DiskFacts(
         missing_files=tuple(name for name in cited_files(event) if not folder.is_file(name)),
-        overview_hash=folder.overview_hash(),
+        blueprint_hash=folder.blueprint_hash(),
         plan_hash=folder.plan_hash(),
         slices=None,
     )
@@ -83,7 +83,7 @@ def _disk_facts(folder: PlanFolder, event: Event, root: Path | None) -> DiskFact
             facts = replace(facts, gates=folder.declared_gates())
         except PlanFolderError as error:
             facts = replace(facts, gates_problem=str(error))
-    if isinstance(event, Conform) and not facts.missing_files:
+    if isinstance(event, Conformant) and not facts.missing_files:
         problem = _critical_files_problem(folder, event, root)
         facts = replace(facts, critical_files_problem=problem)
     return facts
@@ -96,7 +96,7 @@ def record_context(
     return RecordContext(
         ceiling=settings.max_autonomous_passes,
         gates_declared=state is not None and bool(state.approved_gates),
-        overview_hash=folder.overview_hash(),
+        blueprint_hash=folder.blueprint_hash(),
     )
 
 
@@ -110,7 +110,7 @@ def record(
 ) -> Accepted | Refusal:
     """Append the event to the journal if the machine and the disk allow it.
 
-    `root` is the project root, where git says what the branch changed: a `conform` needs it to
+    `root` is the project root, where git says what the branch changed: a `conformant` needs it to
     have the files of its critical-files block checked against the branch. Raises `GitError` when
     that block lists files and the main branch or the merge base cannot be found.
     """

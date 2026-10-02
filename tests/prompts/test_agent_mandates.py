@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from chain_contract import (
     ALWAYS_WRITTEN,
+    BLUEPRINT_SECTIONS,
     BREAK_QUESTION,
     CHAIN_REPORTS,
     CRITICAL_FILES_OF_THE_BRANCH,
@@ -18,7 +19,6 @@ from chain_contract import (
     DEFECT_QUESTION,
     DOCUMENTS_LANGUAGE,
     NO_FINDING_END,
-    OVERVIEW_SECTIONS,
     REFUSED_LIST,
     REVIEWER_MODES,
     REVIEWER_WRITES,
@@ -76,7 +76,7 @@ def test_reviewer_holds_the_classification_of_a_finding() -> None:
     assert "file and line" in classifying
 
 
-def test_reviewer_leads_a_review_with_no_finding_to_the_conform_state() -> None:
+def test_reviewer_leads_a_review_with_no_finding_to_the_conformant_state() -> None:
     _, body = read_agent("surface-reviewer")
     writing = section(body, "What you write in a review")
     no_finding = next(line for line in writing.splitlines() if line.startswith("- No finding"))
@@ -94,7 +94,7 @@ def test_reviewer_runs_the_amendment_check_with_the_checker_rule() -> None:
     _, reviewer = read_agent("surface-reviewer")
     _, checker = read_agent("surface-checker")
     check = section(reviewer, "The amendment check")
-    assert "since the last approval must leave `overview.md` true" in check
+    assert "since the last approval must leave `blueprint.md` true" in check
     assert marked_block(check, "checker-rule") == marked_block(checker, "checker-rule")
 
 
@@ -119,24 +119,24 @@ def test_reviewer_reads_and_never_runs_a_command_of_its_own() -> None:
     assert "pytest" not in others
 
 
-# The length of an overview: what the feature needs, no section or diagram for its own sake.
+# The length of a blueprint: what the feature needs, no section or diagram for its own sake.
 
 
-def test_extractor_writes_an_overview_as_long_as_the_feature_needs() -> None:
+def test_extractor_writes_an_blueprint_as_long_as_the_feature_needs() -> None:
     _, body = read_agent("surface-extractor")
     writing = section(body, "What you write")
-    assert "The overview is as long as the feature needs, and no longer" in writing
+    assert "The blueprint is as long as the feature needs, and no longer" in writing
     assert "a small change gets a short page" in writing
     assert "No section and no diagram is written for its own sake" in writing
     assert "each filled in" not in writing
-    for heading in OVERVIEW_SECTIONS:
+    for heading in BLUEPRINT_SECTIONS:
         assert any(line.startswith(heading) for line in writing.splitlines()), heading
 
 
 def test_extractor_leaves_out_an_unchanged_section_and_names_it_in_the_closing_line() -> None:
     _, body = read_agent("surface-extractor")
     writing = section(body, "What you write")
-    numbers = [heading.split(".", 1)[0] for heading in OVERVIEW_SECTIONS]
+    numbers = [heading.split(".", 1)[0] for heading in BLUEPRINT_SECTIONS]
     always = [heading.split(".", 1)[0] for heading in ALWAYS_WRITTEN]
     others = [number for number in numbers if number not in always]
     assert f"Sections {', '.join(always[:-1])} and {always[-1]} are always written." in writing
@@ -162,7 +162,7 @@ def test_checker_never_counts_a_short_section_or_the_absence_of_a_diagram() -> N
     _, body = read_agent("surface-checker")
     counting = section(body, "What counts as an omission")
     assert "A short section or the absence of a diagram is never an omission" in counting
-    assert "only what the overview does not show counts" in counting
+    assert "only what the blueprint does not show counts" in counting
     named = "A section the closing line names while the plan changes what it shows is one"
     assert named in counting
     assert "neither written nor named by the closing line" in counting
@@ -172,7 +172,7 @@ def test_checker_never_counts_a_short_section_or_the_absence_of_a_diagram() -> N
     assert "diagram" not in rule
 
 
-# The critical zones: named in section 9 of the overview, their changed files listed at conformity.
+# The critical zones: named in section 9 of the blueprint, their changed files listed at conformity.
 
 
 def test_extractor_opens_section_nine_with_the_critical_zones_the_plan_touches() -> None:
@@ -181,7 +181,7 @@ def test_extractor_opens_section_nine_with_the_critical_zones_the_plan_touches()
     assert f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it" in nine
     assert f"or the statement that {TOUCHES_NONE}" in nine
     assert "then what the developer would not see go by" in nine
-    assert "what the developer still reads themselves once the work is conform" in body
+    assert "what the developer still reads themselves once the work is conformant" in body
 
 
 def test_checker_counts_a_touched_critical_zone_missing_from_section_nine() -> None:
@@ -206,7 +206,7 @@ def test_reviewer_lists_the_changed_files_of_the_critical_zones_in_a_block() -> 
     assert "a file the branch deleted included" in writing
     assert "Leave the block out when the branch changed no such file" in writing
     assert "or when the repository declares no critical zone" in writing
-    refusal = "The script refuses `conform` on a second block, an unclosed one, or a path"
+    refusal = "The script refuses `conformant` on a second block, an unclosed one, or a path"
     assert f"{refusal} the branch did not change" in writing
 
 
@@ -228,7 +228,7 @@ def test_reviewer_is_launched_for_three_things() -> None:
 def test_reviewer_corrects_a_refused_list_and_nothing_else() -> None:
     _, body = read_agent("surface-reviewer")
     correcting = section(body, f"What you correct on {REFUSED_LIST}")
-    assert "The state script refused `conform`" in correcting
+    assert "The state script refused `conformant`" in correcting
     assert f"the `{CRITICAL_FILES_TAG}` block of `conformity.md` is malformed" in correcting
     assert "or names a file the branch did not change" in correcting
     assert "The reason is the one your mandate gives" in correcting
@@ -261,7 +261,7 @@ def test_every_role_starts_from_files_and_returns_a_few_lines(name: str) -> None
 @pytest.mark.parametrize(
     ("name", "writes"),
     [
-        ("surface-extractor", "`overview.md` in the plan folder, and nothing else"),
+        ("surface-extractor", "`blueprint.md` in the plan folder, and nothing else"),
         ("surface-checker", "One report, and nothing else"),
         ("surface-reviewer", "you write your reports"),
     ],
@@ -302,10 +302,10 @@ def test_reviewer_reads_the_language_in_exploration() -> None:
     assert "`exploration.md`, in its repository rules" in section(body, "What you read")
 
 
-def test_executor_never_modifies_the_overview() -> None:
+def test_executor_never_modifies_the_blueprint() -> None:
     _, body = read_agent("surface-executor")
     never = section(body, "What you never do")
-    assert "Modify `overview.md`" in never
+    assert "Modify `blueprint.md`" in never
     assert "in the foreground, with a timeout" in never
 
 
@@ -393,7 +393,7 @@ def test_reviewer_reads_the_alarm_of_the_script_instead_of_hashing() -> None:
 
 def test_extractor_names_no_identifier_of_the_plan_or_the_interview() -> None:
     _, body = read_agent("surface-extractor")
-    assert "cross-reference the overview and the plan, nor the interview" in body
+    assert "cross-reference the blueprint and the plan, nor the interview" in body
 
 
 # Calls of the state script, by the agents and the skills: only subcommands, events and fields

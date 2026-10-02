@@ -32,7 +32,7 @@ REVIEW = (
     "--breaks",
     "0",
 )
-CONFORM = ("conform", "--conformity", "conformity.md")
+CONFORMANT = ("conformant", "--conformity", "conformity.md")
 FOOTER = "Refreshed by `surface-status pr-body`; edit the plans, not this text."
 
 
@@ -45,24 +45,24 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Repo:
 def test_the_description_lists_every_plan_of_the_branch_with_state_and_links(
     repo: Repo,
 ) -> None:
-    repo.plan("conform", "2026-08-01-old")
+    repo.plan("conformant", "2026-08-01-old")
     repo.commit("kept on main")
     repo.branch("feature/x")
     repo.plan("executing", A)
-    repo.plan("conform", B)
+    repo.plan("conformant", B)
     payload = repo.run("pr-body").json()
     assert payload["v"] == 1
     assert payload["branch"] == "feature/x"
     assert [(row["name"], row["state"]) for row in payload["plans"]] == [
         (A, "executing"),
-        (B, "conform"),
+        (B, "conformant"),
     ]
     body = payload["body"]
     assert body.startswith("## Plans on this branch")
     assert "old" not in body
-    for name, state in ((A, "executing"), (B, "conform")):
+    for name, state in ((A, "executing"), (B, "conformant")):
         assert f"| `{name}` | {state} |" in body
-        assert f"[overview.md](docs/plans/{name}/overview.md)" in body
+        assert f"[blueprint.md](docs/plans/{name}/blueprint.md)" in body
         assert f"[plan.md](docs/plans/{name}/plan.md)" in body
 
 
@@ -79,7 +79,7 @@ def test_links_are_absolute_when_origin_is_on_github(repo: Repo) -> None:
     repo.plan("executing", A)
     (row,) = repo.run("pr-body").json()["plans"]
     base = "https://github.com/owner/host/blob/feature/my%23plan"
-    assert row["overview"] == f"[overview.md]({base}/docs/plans/{A}/overview.md)"
+    assert row["blueprint"] == f"[blueprint.md]({base}/docs/plans/{A}/blueprint.md)"
     assert row["plan"] == f"[plan.md]({base}/docs/plans/{A}/plan.md)"
 
 
@@ -102,9 +102,9 @@ def test_every_github_form_of_the_remote_gives_the_same_links(repo: Repo, remote
 def test_a_file_the_plan_does_not_have_is_said_missing(repo: Repo) -> None:
     repo.branch("feature")
     folder = repo.plan("executing", A)
-    (folder / "overview.md").rename(folder / "overview.old")
+    (folder / "blueprint.md").rename(folder / "blueprint.old")
     payload = repo.run("pr-body").json()
-    assert payload["plans"][0]["overview"] is None
+    assert payload["plans"][0]["blueprint"] is None
     assert payload["plans"][0]["plan"] is not None
     assert "| missing |" in payload["body"]
 
@@ -198,7 +198,7 @@ def test_the_decisions_of_every_plan_are_listed_under_its_name(repo: Repo) -> No
 
 def test_nothing_is_listed_when_no_agent_decided_anything(repo: Repo) -> None:
     repo.branch("feature")
-    repo.plan("conform", A)
+    repo.plan("conformant", A)
     payload = repo.run("pr-body").json()
     assert payload["plans"][0]["decisions"] == []
     assert DECISIONS_TITLE not in payload["body"]
@@ -249,13 +249,13 @@ def _block(*paths: str) -> str:
     return "1. Proved.\n\n```critical-files\n" + "".join(f"{path}\n" for path in paths) + "```\n"
 
 
-def _conform(repo: Repo, name: str, conformity: str) -> Path:
-    """Finish a plan in `reviewing`: a clean review, its proof, a commit, then `conform`."""
+def _conformant(repo: Repo, name: str, conformity: str) -> Path:
+    """Finish a plan in `reviewing`: a clean review, its proof, a commit, then `conformant`."""
     folder = repo.project.plans / name
     assert repo.run("record", name, *REVIEW).code == 0
     (folder / "conformity.md").write_text(conformity, encoding="utf-8")
     repo.commit(f"the work and the review of {name}")
-    assert repo.run("record", name, *CONFORM).code == 0
+    assert repo.run("record", name, *CONFORMANT).code == 0
     return folder
 
 
@@ -266,7 +266,7 @@ def test_the_changed_files_of_the_critical_zones_are_listed_for_the_developer_to
     repo.write("billing/pay.py")
     repo.write("billing/tax rules.py")
     repo.plan("reviewing", A)
-    _conform(repo, A, _block("billing/pay.py", "billing/tax rules.py"))
+    _conformant(repo, A, _block("billing/pay.py", "billing/tax rules.py"))
     payload = repo.run("pr-body").json()
     assert payload["plans"][0]["critical_files"] == [
         {"path": "billing/pay.py", "link": "[billing/pay.py](billing/pay.py)"},
@@ -276,7 +276,7 @@ def test_the_changed_files_of_the_critical_zones_are_listed_for_the_developer_to
     assert "for you to read yourself" in CRITICAL_TITLE
     assert body.index("| Plan | State |") < body.index(CRITICAL_TITLE)
     section = body[body.index(CRITICAL_TITLE) :]
-    assert "Conform leaves nothing else to check" in section
+    assert "A conformant plan leaves nothing else to check" in section
     assert f"- `{A}`: [billing/pay.py](billing/pay.py)\n" in section
     assert f"- `{A}`: [billing/tax rules.py](billing/tax%20rules.py)\n" in section
     assert section.rstrip().endswith(FOOTER)
@@ -287,13 +287,13 @@ def test_the_files_to_read_are_linked_like_the_other_files_of_the_description(re
     repo.branch("feature/my#plan")
     repo.write("billing/pay.py")
     repo.plan("reviewing", A)
-    _conform(repo, A, _block("billing/pay.py"))
+    _conformant(repo, A, _block("billing/pay.py"))
     (row,) = repo.run("pr-body").json()["plans"]
     base = "https://github.com/owner/host/blob/feature/my%23plan"
     assert row["critical_files"] == [
         {"path": "billing/pay.py", "link": f"[billing/pay.py]({base}/billing/pay.py)"}
     ]
-    assert row["overview"] == f"[overview.md]({base}/docs/plans/{A}/overview.md)"
+    assert row["blueprint"] == f"[blueprint.md]({base}/docs/plans/{A}/blueprint.md)"
 
 
 def test_the_files_to_read_come_before_the_decisions_given_for_information(repo: Repo) -> None:
@@ -301,7 +301,7 @@ def test_the_files_to_read_come_before_the_decisions_given_for_information(repo:
     repo.write("billing/pay.py")
     _decide(repo, A)
     assert repo.run("record", A, "slice-done", "--slice", "2", "--gates", "lint").code == 0
-    _conform(repo, A, _block("billing/pay.py"))
+    _conformant(repo, A, _block("billing/pay.py"))
     body = repo.run("pr-body").json()["body"]
     table, critical, decided = (
         body.index("| Plan | State |"),
@@ -318,7 +318,7 @@ def test_a_file_the_branch_deleted_is_named_without_a_link(repo: Repo) -> None:
     repo.branch("feature")
     repo.git("rm", "-q", "billing/old.py")
     repo.plan("reviewing", A)
-    _conform(repo, A, _block("billing/old.py"))
+    _conformant(repo, A, _block("billing/old.py"))
     payload = repo.run("pr-body").json()
     assert payload["plans"][0]["critical_files"] == [{"path": "billing/old.py", "link": None}]
     assert f"- `{A}`: `billing/old.py` (no longer on the branch)\n" in payload["body"]
@@ -331,22 +331,22 @@ def test_without_a_block_or_with_an_empty_one_the_body_is_what_it_was(
     repo.branch("feature")
     repo.write("billing/pay.py")
     repo.plan("reviewing", A)
-    _conform(repo, A, conformity)
+    _conformant(repo, A, conformity)
     payload = repo.run("pr-body").json()
     assert payload["plans"][0]["critical_files"] == []
     assert payload["body"] == (
         "## Plans on this branch\n"
         "\n"
-        "| Plan | State | Overview | Plan |\n"
+        "| Plan | State | Blueprint | Plan |\n"
         "|---|---|---|---|\n"
-        f"| `{A}` | conform | [overview.md](docs/plans/{A}/overview.md)"
+        f"| `{A}` | conformant | [blueprint.md](docs/plans/{A}/blueprint.md)"
         f" | [plan.md](docs/plans/{A}/plan.md) |\n"
         "\n"
         f"{FOOTER}\n"
     )
 
 
-def test_a_plan_that_is_not_conform_yet_lists_no_file(repo: Repo) -> None:
+def test_a_plan_that_is_not_conformant_yet_lists_no_file(repo: Repo) -> None:
     repo.branch("feature")
     repo.write("billing/pay.py")
     folder = repo.plan("reviewing", A)
@@ -359,14 +359,14 @@ def test_a_plan_that_is_not_conform_yet_lists_no_file(repo: Repo) -> None:
     assert CRITICAL_TITLE not in payload["body"]
 
 
-def test_the_files_of_every_conform_plan_are_listed_under_its_name(repo: Repo) -> None:
+def test_the_files_of_every_conformant_plan_are_listed_under_its_name(repo: Repo) -> None:
     repo.branch("feature")
     repo.write("billing/pay.py")
     repo.write("auth/token.py")
     repo.plan("reviewing", A)
-    _conform(repo, A, _block("billing/pay.py"))
+    _conformant(repo, A, _block("billing/pay.py"))
     repo.plan("reviewing", B)
-    _conform(repo, B, _block("auth/token.py", "billing/pay.py"))
+    _conformant(repo, B, _block("auth/token.py", "billing/pay.py"))
     repo.plan("executing", "2026-09-03-gamma")
     body = repo.run("pr-body").json()["body"]
     lines = [line for line in body.splitlines() if line.startswith("- `")]
@@ -390,7 +390,7 @@ def test_a_conformity_broken_after_the_record_stops_the_description(
     repo.branch("feature")
     repo.write("billing/pay.py")
     repo.plan("reviewing", A)
-    folder = _conform(repo, A, _block("billing/pay.py"))
+    folder = _conformant(repo, A, _block("billing/pay.py"))
     if broken is None:
         (folder / "conformity.md").unlink()
     else:

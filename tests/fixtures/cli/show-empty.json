@@ -2,7 +2,7 @@
   "v": 1,
   "plan": "2026-09-29-feature",
   "state": null,
-  "hand": "agents",
+  "turn": "agents",
   "next_step": "surface-plan: open the plan (plan-opened)",
   "slices": {
     "declared": [],

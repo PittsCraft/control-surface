@@ -17,7 +17,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     InterviewClosed,
@@ -35,7 +35,7 @@ from surface_status.events import (
 )
 from surface_status.guards import Refusal, RefusalCode
 from surface_status.machine import PlanState
-from surface_status.plan_folder import OVERVIEW, PLAN, PlanFolder, PlanFolderError
+from surface_status.plan_folder import BLUEPRINT, PLAN, PlanFolder, PlanFolderError
 
 _DATE_PREFIX = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}-")
 
@@ -113,7 +113,7 @@ PARAMS: Mapping[str, tuple[Param, ...]] = {
     "plan-change-refused": (Param("why", Kind.LINE, "the reason, on one line"),),
     "blocked": (Param("why", Kind.LINE, "the reason, on one line"),),
     "resumed": (),
-    "conform": (Param("conformity", Kind.PATH, "the proof of conformity, conformity.md"),),
+    "conformant": (Param("conformity", Kind.PATH, "the proof of conformity, conformity.md"),),
     "abandoned": (Param("why", Kind.LINE, "the reason, on one line"),),
 }
 
@@ -164,7 +164,7 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
     `values` holds the parameters of `PARAMS[name]` that the caller gave. A file a derived hash
     needs and that does not exist is refused the way the disk guards refuse it.
     """
-    overview = folder.overview_hash()
+    blueprint = folder.blueprint_hash()
     plan = folder.plan_hash()
     match name:
         case "plan-opened":
@@ -174,18 +174,22 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
         case "interview-closed":
             return InterviewClosed()
         case "check-done":
-            if overview is None or plan is None:
-                return _missing(*(n for n, h in ((OVERVIEW, overview), (PLAN, plan)) if h is None))
+            if blueprint is None or plan is None:
+                return _missing(
+                    *(n for n, h in ((BLUEPRINT, blueprint), (PLAN, plan)) if h is None)
+                )
             return CheckDone(
                 rev=current_revision(events),
                 report=_text(values, "report"),
                 omissions=_number(values, "omissions"),
-                overview=overview,
+                blueprint=blueprint,
                 plan=plan,
             )
         case "plan-drafted":
-            if overview is None or plan is None:
-                return _missing(*(n for n, h in ((OVERVIEW, overview), (PLAN, plan)) if h is None))
+            if blueprint is None or plan is None:
+                return _missing(
+                    *(n for n, h in ((BLUEPRINT, blueprint), (PLAN, plan)) if h is None)
+                )
             try:
                 slices = folder.declared_slices()
             except PlanFolderError:
@@ -196,7 +200,7 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
                 gates = None  # the disk guards refuse it, with the reason
             return PlanDrafted(
                 rev=current_revision(events),
-                overview=overview,
+                blueprint=blueprint,
                 plan=plan,
                 slices=slices,
                 gates=gates,
@@ -204,9 +208,9 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
         case "amendment-received":
             return AmendmentReceived()
         case "plan-approved":
-            if overview is None:
-                return _missing(OVERVIEW)
-            return PlanApproved(rev=current_revision(events), overview=overview)
+            if blueprint is None:
+                return _missing(BLUEPRINT)
+            return PlanApproved(rev=current_revision(events), blueprint=blueprint)
         case "slice-done":
             return SliceDone(slice_=_number(values, "slice"), gates=_text(values, "gates"))
         case "plan-amended":
@@ -255,10 +259,10 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
             return Blocked(why=_text(values, "why"))
         case "resumed":
             return Resumed()
-        case "conform":
-            if overview is None:
-                return _missing(OVERVIEW)
-            return Conform(conformity=_text(values, "conformity"), overview=overview)
+        case "conformant":
+            if blueprint is None:
+                return _missing(BLUEPRINT)
+            return Conformant(conformity=_text(values, "conformity"), blueprint=blueprint)
         case "abandoned":
             return Abandoned(why=_text(values, "why"))
         case _:

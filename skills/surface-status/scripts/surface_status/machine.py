@@ -16,7 +16,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -45,11 +45,11 @@ class State(StrEnum):
     FIXING = "fixing"
     PLAN_CHANGE_PROPOSED = "plan-change-proposed"
     BLOCKED = "blocked"
-    CONFORM = "conform"
+    CONFORMANT = "conformant"
     ABANDONED = "abandoned"
 
 
-TERMINAL = frozenset({State.CONFORM, State.ABANDONED})
+TERMINAL = frozenset({State.CONFORMANT, State.ABANDONED})
 NON_TERMINAL = tuple(state for state in State if state not in TERMINAL)
 
 
@@ -101,7 +101,7 @@ TRANSITIONS: Mapping[str, Mapping[State | None, Arrival]] = {
         State.FIXING: State.BLOCKED,
     },
     "resumed": {State.BLOCKED: Rule.BEFORE_BLOCKED},
-    "conform": {State.REVIEWING: State.CONFORM},
+    "conformant": {State.REVIEWING: State.CONFORMANT},
     "abandoned": dict.fromkeys(NON_TERMINAL, State.ABANDONED),
 }
 
@@ -112,7 +112,7 @@ class CheckSummary:
 
     rev: int
     omissions: int
-    overview: str
+    blueprint: str
     plan: str
 
 
@@ -144,10 +144,10 @@ class PlanState:
     done: frozenset[int]
     planning_passes: int  # counted since the last act of the developer
     execution_passes: int  # likewise, counting the events `sends_work_back` names
-    drafted_overview: str | None
+    drafted_blueprint: str | None
     drafted_plan: str | None
     drafted_gates: tuple[str, ...] | None  # gates of the last `plan-drafted`
-    approved_overview: str | None  # hash of the last `plan-approved`
+    approved_blueprint: str | None  # hash of the last `plan-approved`
     approved_gates: tuple[str, ...] | None  # the drafted gates the last `plan-approved` took
     last_check: CheckSummary | None  # cleared when a new revision starts
     last_review: ReviewSummary | None  # cleared by any change of the work since that review
@@ -193,10 +193,10 @@ def _opened(event: PlanOpened) -> PlanState:
         done=frozenset(),
         planning_passes=0,
         execution_passes=0,
-        drafted_overview=None,
+        drafted_blueprint=None,
         drafted_plan=None,
         drafted_gates=None,
-        approved_overview=None,
+        approved_blueprint=None,
         approved_gates=None,
         last_check=None,
         last_review=None,
@@ -221,13 +221,13 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
         case InterviewClosed():
             return replace(prev, planning_passes=0)
         case CheckDone():
-            check = CheckSummary(event.rev, event.omissions, event.overview, event.plan)
+            check = CheckSummary(event.rev, event.omissions, event.blueprint, event.plan)
             passes = prev.planning_passes + (1 if event.omissions > 0 else 0)
             return replace(prev, last_check=check, planning_passes=passes)
         case PlanDrafted():
             return replace(
                 prev,
-                drafted_overview=event.overview,
+                drafted_blueprint=event.blueprint,
                 drafted_plan=event.plan,
                 drafted_gates=event.gates,
                 declared=frozenset(event.slices),
@@ -244,7 +244,7 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
         case PlanApproved():
             return replace(
                 prev,
-                approved_overview=event.overview,
+                approved_blueprint=event.blueprint,
                 approved_gates=prev.drafted_gates,
                 execution_passes=0,
                 last_review=None,
@@ -298,7 +298,7 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
             return replace(prev, before_blocked=prev.state)
         case Resumed():
             return replace(prev, planning_passes=0, execution_passes=0)
-        case Conform() | Abandoned():
+        case Conformant() | Abandoned():
             return prev
         case _:
             assert_never(event)

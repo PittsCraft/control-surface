@@ -48,7 +48,7 @@ def test_only_plan_opened_starts_a_journal(name: str) -> None:
         assert result.code is RefusalCode.TRANSITION
 
 
-@pytest.mark.parametrize("state", [State.CONFORM, State.ABANDONED])
+@pytest.mark.parametrize("state", [State.CONFORMANT, State.ABANDONED])
 @pytest.mark.parametrize("name", EVENT_NAMES)
 def test_terminal_states_accept_nothing(name: str, state: State) -> None:
     assert not isinstance(admit(state_in(state), valid_event(name), CONTEXT), Accepted)

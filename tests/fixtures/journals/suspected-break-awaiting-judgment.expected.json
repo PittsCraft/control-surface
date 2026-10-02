@@ -12,6 +12,6 @@
   "proposal_origin": null,
   "suspicion": {
     "slice": 2,
-    "why": "the export needs a column the overview does not show"
+    "why": "the export needs a column the blueprint does not show"
   }
 }

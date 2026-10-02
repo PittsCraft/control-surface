@@ -2,7 +2,7 @@
   "v": 1,
   "plan": "2026-09-29-feature",
   "state": "executing",
-  "hand": "agents",
+  "turn": "agents",
   "next_step": "surface-execute: a reviewer judges the break suspected during slice 1",
   "slices": {
     "declared": [
@@ -24,7 +24,7 @@
   "pending_proposal": null,
   "pending_suspicion": {
     "slice": 1,
-    "why": "the overview names no id"
+    "why": "the blueprint names no id"
   },
   "last_event": "break-suspected",
   "alarms": [],

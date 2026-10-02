@@ -1,14 +1,14 @@
 {"v": 1, "at": "2026-09-29T09:00:00Z", "event": "plan-opened", "slug": "feature"}
 {"v": 1, "at": "2026-09-29T09:01:00Z", "event": "interview-closed"}
-{"v": 1, "at": "2026-09-29T09:02:00Z", "event": "check-done", "rev": 1, "report": "checks/rev-01-01.md", "omissions": 1, "overview": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5", "plan": "sha256:b3267ab308863b90dc9a351830872916d6c5f5bd639f558a738b12188e215680"}
-{"v": 1, "at": "2026-09-29T09:03:00Z", "event": "check-done", "rev": 1, "report": "checks/rev-01-02.md", "omissions": 0, "overview": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5", "plan": "sha256:b3267ab308863b90dc9a351830872916d6c5f5bd639f558a738b12188e215680"}
-{"v": 1, "at": "2026-09-29T09:04:00Z", "event": "plan-drafted", "rev": 1, "overview": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5", "plan": "sha256:b3267ab308863b90dc9a351830872916d6c5f5bd639f558a738b12188e215680", "slices": [1, 2, 3]}
-{"v": 1, "at": "2026-09-29T09:05:00Z", "event": "plan-approved", "rev": 1, "overview": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5"}
+{"v": 1, "at": "2026-09-29T09:02:00Z", "event": "check-done", "rev": 1, "report": "checks/rev-01-01.md", "omissions": 1, "blueprint": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5", "plan": "sha256:b3267ab308863b90dc9a351830872916d6c5f5bd639f558a738b12188e215680"}
+{"v": 1, "at": "2026-09-29T09:03:00Z", "event": "check-done", "rev": 1, "report": "checks/rev-01-02.md", "omissions": 0, "blueprint": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5", "plan": "sha256:b3267ab308863b90dc9a351830872916d6c5f5bd639f558a738b12188e215680"}
+{"v": 1, "at": "2026-09-29T09:04:00Z", "event": "plan-drafted", "rev": 1, "blueprint": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5", "plan": "sha256:b3267ab308863b90dc9a351830872916d6c5f5bd639f558a738b12188e215680", "slices": [1, 2, 3]}
+{"v": 1, "at": "2026-09-29T09:05:00Z", "event": "plan-approved", "rev": 1, "blueprint": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5"}
 {"v": 1, "at": "2026-09-29T09:06:00Z", "event": "slice-done", "slice": 1, "gates": "lint"}
 {"v": 1, "at": "2026-09-29T09:07:00Z", "event": "slice-done", "slice": 2, "gates": "lint"}
 {"v": 1, "at": "2026-09-29T09:08:00Z", "event": "plan-change-proposed", "proposal": "plan-changes/01.md", "slice": 3}
 {"v": 1, "at": "2026-09-29T09:09:00Z", "event": "plan-change-accepted", "proposal": "plan-changes/01.md"}
-{"v": 1, "at": "2026-09-29T09:10:00Z", "event": "check-done", "rev": 2, "report": "checks/rev-02-01.md", "omissions": 0, "overview": "sha256:789eadf48be698ad32bd372e61bd60f78901a442e544dccb56223d99ba21166a", "plan": "sha256:6aba216a9cfad9614bd162394bdc5c09693a2112f5c2dbe8035b4de643eba8d1"}
-{"v": 1, "at": "2026-09-29T09:11:00Z", "event": "plan-drafted", "rev": 2, "overview": "sha256:789eadf48be698ad32bd372e61bd60f78901a442e544dccb56223d99ba21166a", "plan": "sha256:6aba216a9cfad9614bd162394bdc5c09693a2112f5c2dbe8035b4de643eba8d1", "slices": [1, 2, 3, 4]}
-{"v": 1, "at": "2026-09-29T09:12:00Z", "event": "plan-approved", "rev": 2, "overview": "sha256:789eadf48be698ad32bd372e61bd60f78901a442e544dccb56223d99ba21166a"}
+{"v": 1, "at": "2026-09-29T09:10:00Z", "event": "check-done", "rev": 2, "report": "checks/rev-02-01.md", "omissions": 0, "blueprint": "sha256:789eadf48be698ad32bd372e61bd60f78901a442e544dccb56223d99ba21166a", "plan": "sha256:6aba216a9cfad9614bd162394bdc5c09693a2112f5c2dbe8035b4de643eba8d1"}
+{"v": 1, "at": "2026-09-29T09:11:00Z", "event": "plan-drafted", "rev": 2, "blueprint": "sha256:789eadf48be698ad32bd372e61bd60f78901a442e544dccb56223d99ba21166a", "plan": "sha256:6aba216a9cfad9614bd162394bdc5c09693a2112f5c2dbe8035b4de643eba8d1", "slices": [1, 2, 3, 4]}
+{"v": 1, "at": "2026-09-29T09:12:00Z", "event": "plan-approved", "rev": 2, "blueprint": "sha256:789eadf48be698ad32bd372e61bd60f78901a442e544dccb56223d99ba21166a"}
 {"v": 1, "at": "2026-09-29T09:13:00Z", "event": "slice-done", "slice": 3, "gates": "lint"}

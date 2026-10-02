@@ -5,7 +5,7 @@ from typing import Any
 
 from hypothesis import strategies as st
 from hypothesis.strategies import DrawFn, SearchStrategy
-from state_support import EXPECTED, OV1, OV2, PL1, PL2
+from state_support import BP1, BP2, EXPECTED, PL1, PL2
 
 from surface_status.events import (
     EVENT_NAMES,
@@ -14,7 +14,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -35,7 +35,7 @@ from surface_status.events import (
 from surface_status.guards import Accepted, RecordContext, admit
 from surface_status.machine import PlanState, State
 
-OVERVIEWS = [OV1, OV2]
+BLUEPRINTS = [BP1, BP2]
 PLANS = [PL1, PL2]
 WORDS = ["a", "b", "c"]
 
@@ -70,14 +70,14 @@ def _onward(prev: PlanState | None) -> str | None:  # noqa: C901, PLR0911 (one a
                 return "gates-run"
             if prev.last_review is None:
                 return "review-done"
-            return "conform" if prev.last_review.clean else "review-done"
+            return "conformant" if prev.last_review.clean else "review-done"
         case State.FIXING:
             return "fix-done" if prev.gates is GateResult.PASS else "gates-run"
         case State.BLOCKED:
             return "resumed"
         case State.PLAN_CHANGE_PROPOSED:
             return "plan-change-refused"
-        case State.CONFORM | State.ABANDONED:
+        case State.CONFORMANT | State.ABANDONED:
             return None
 
 
@@ -110,14 +110,14 @@ def events(draw: DrawFn, prev: PlanState | None) -> Event:  # noqa: C901, PLR091
                 rev=draw(st.integers(1, 2)),
                 report=draw(word),
                 omissions=draw(st.sampled_from([0, 0, 0, 0, 0, 1, 2])),
-                overview=draw(st.sampled_from(OVERVIEWS)),
+                blueprint=draw(st.sampled_from(BLUEPRINTS)),
                 plan=draw(st.sampled_from(PLANS)),
             )
         case "plan-drafted":
             return PlanDrafted(
                 rev=_mostly(draw, 1 if check is None else check.rev, st.integers(1, 3)),
-                overview=_mostly(
-                    draw, OV1 if check is None else check.overview, st.sampled_from(OVERVIEWS)
+                blueprint=_mostly(
+                    draw, BP1 if check is None else check.blueprint, st.sampled_from(BLUEPRINTS)
                 ),
                 plan=_mostly(draw, PL1 if check is None else check.plan, st.sampled_from(PLANS)),
                 slices=_slices(draw, prev),
@@ -125,10 +125,10 @@ def events(draw: DrawFn, prev: PlanState | None) -> Event:  # noqa: C901, PLR091
         case "amendment-received":
             return AmendmentReceived()
         case "plan-approved":
-            drafted = None if prev is None else prev.drafted_overview
+            drafted = None if prev is None else prev.drafted_blueprint
             return PlanApproved(
                 rev=draw(st.integers(1, 3)),
-                overview=_mostly(draw, drafted or OV1, st.sampled_from(OVERVIEWS)),
+                blueprint=_mostly(draw, drafted or BP1, st.sampled_from(BLUEPRINTS)),
             )
         case "slice-done":
             remaining = () if prev is None else prev.remaining
@@ -175,11 +175,11 @@ def events(draw: DrawFn, prev: PlanState | None) -> Event:  # noqa: C901, PLR091
             return Blocked(why=draw(word))
         case "resumed":
             return Resumed()
-        case "conform":
-            approved = None if prev is None else prev.approved_overview
-            return Conform(
+        case "conformant":
+            approved = None if prev is None else prev.approved_blueprint
+            return Conformant(
                 conformity="conformity.md",
-                overview=_mostly(draw, approved or OV1, st.sampled_from(OVERVIEWS)),
+                blueprint=_mostly(draw, approved or BP1, st.sampled_from(BLUEPRINTS)),
             )
         case "abandoned":
             return Abandoned(why=draw(word))
@@ -191,12 +191,12 @@ def events(draw: DrawFn, prev: PlanState | None) -> Event:  # noqa: C901, PLR091
 @st.composite
 def contexts(draw: DrawFn, prev: PlanState | None, ceiling: int) -> RecordContext:
     """Draw what the caller read outside the journal, usually consistent with the journal."""
-    approved = None if prev is None else prev.approved_overview
-    seen = [OV1, OV2, None]
+    approved = None if prev is None else prev.approved_blueprint
+    seen = [BP1, BP2, None]
     return RecordContext(
         ceiling=ceiling,
         gates_declared=_mostly(draw, True, st.booleans()),  # noqa: FBT003
-        overview_hash=_mostly(draw, approved or OV1, st.sampled_from(seen)),
+        blueprint_hash=_mostly(draw, approved or BP1, st.sampled_from(seen)),
     )
 
 

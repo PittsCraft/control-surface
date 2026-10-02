@@ -73,7 +73,7 @@ def test_resolve_says_when_no_plan_matches_and_shows_the_others(repo: Repo) -> N
         ("executing", False, True),
         ("reviewing", False, True),
         ("plan-change-proposed", True, True),
-        ("conform", False, False),
+        ("conformant", False, False),
     ],
 )
 def test_each_command_sees_the_states_it_accepts(
@@ -113,7 +113,7 @@ def test_a_plan_change_proposal_is_found_by_either_command_without_an_argument(
 
 
 def test_an_explicit_argument_wins_whatever_the_state_and_the_branch(repo: Repo) -> None:
-    repo.plan("conform", A)
+    repo.plan("conformant", A)
     repo.commit("a plan kept on main")
     repo.branch("feature")
     repo.plan("executing", B)
@@ -127,7 +127,7 @@ def test_an_explicit_argument_wins_whatever_the_state_and_the_branch(repo: Repo)
 
 
 def test_terminal_plan_folders_kept_on_main_are_neither_resolved_nor_listed(repo: Repo) -> None:
-    repo.plan("conform", A)
+    repo.plan("conformant", A)
     repo.plan("executing", B)  # not terminal, but already on main: not this branch's plan
     repo.commit("plans kept on main after earlier merges")
     repo.branch("feature")
@@ -137,13 +137,13 @@ def test_terminal_plan_folders_kept_on_main_are_neither_resolved_nor_listed(repo
         assert result.code == 1
         assert result.json()["outcome"] == "none"
         assert result.json()["other_plans"] == []
-    assert repo.run("check", "--require", "conform").code == 0
+    assert repo.run("check", "--require", "conformant").code == 0
     assert repo.run("show").code == 2
     assert repo.run("abandon", "--why", "nothing to abandon").code == 2
 
 
 def test_the_plans_of_a_branch_are_those_it_adds_and_only_those(repo: Repo) -> None:
-    repo.plan("conform", A)
+    repo.plan("conformant", A)
     repo.commit("kept on main")
     repo.branch("feature")
     repo.plan("executing", B)
@@ -188,13 +188,13 @@ def test_the_list_and_the_check_work_on_the_plans_of_the_branch(repo: Repo) -> N
     repo.plan("executing", A)  # in progress on main
     repo.commit("kept on main")
     repo.branch("feature")
-    repo.plan("conform", B)
+    repo.plan("conformant", B)
     assert repo.names() == [B]
-    checked = repo.run("check", "--require", "conform")
+    checked = repo.run("check", "--require", "conformant")
     assert checked.code == 0
     assert [plan["name"] for plan in checked.json()["plans"]] == [B]
     repo.plan("executing", C)
-    failed = repo.run("check", "--require", "conform")
+    failed = repo.run("check", "--require", "conformant")
     assert failed.code == 1
     assert [plan["name"] for plan in failed.json()["plans"] if not plan["ok"]] == [C]
 
@@ -209,7 +209,7 @@ def test_from_main_the_unmerged_branches_are_scanned_and_their_plans_listed(repo
     repo.commit("plan B")
     repo.switch("main")
     repo.branch("feature-done")
-    repo.plan("conform", C)
+    repo.plan("conformant", C)
     repo.commit("plan C")
     repo.switch("main")
     repo.merge("feature-done")
@@ -262,7 +262,7 @@ def test_the_main_branch_is_master_when_there_is_no_main(
 ) -> None:
     isolate_git(monkeypatch)
     repo = Repo(tmp_path, main="master")
-    repo.plan("conform", A)
+    repo.plan("conformant", A)
     repo.commit("kept on master")
     repo.branch("feature")
     repo.plan("executing", B)
@@ -276,7 +276,7 @@ def test_the_main_branch_is_origin_head_even_when_the_local_main_is_behind(
     (tmp_path / "origin").mkdir()
     origin = Repo(tmp_path / "origin")
     host = Repo(tmp_path / "clone", origin=origin)
-    origin.plan("conform", A)
+    origin.plan("conformant", A)
     origin.commit("merged on origin, not pulled")
     host.git("fetch", "-q", "origin")
     host.git("switch", "-q", "-c", "feature", "origin/main")  # local main stays behind
@@ -290,7 +290,7 @@ def ci_checkout(tmp_path: Path, main: str, *, detached: bool) -> Repo:
     """Clone as a CI checkout of a pull request leaves it: no local main, no `origin/HEAD`."""
     (tmp_path / "origin").mkdir()
     origin = Repo(tmp_path / "origin", main=main)
-    origin.plan("conform", A)
+    origin.plan("conformant", A)
     origin.commit("merged earlier")
     host = Repo(tmp_path / "clone", origin=origin)
     host.git("switch", "-q", "-c", "feature")
@@ -323,8 +323,8 @@ def test_check_does_not_fail_on_usage_in_a_checkout_without_a_local_main(
     isolate_git(monkeypatch)
     host = ci_checkout(tmp_path, "main", detached=True)
     assert host.run("check").code == 0
-    required = host.run("check", "--require", "conform")
-    assert required.code == 1  # the plan is not conform: a verdict, not exit 2
+    required = host.run("check", "--require", "conformant")
+    assert required.code == 1  # the plan is not conformant: a verdict, not exit 2
 
 
 def test_a_repository_without_a_main_branch_is_a_usage_error(
@@ -342,6 +342,6 @@ def test_without_git_every_plan_that_holds_a_journal_counts(tmp_path: Path) -> N
 
     project = Project(tmp_path)
     project.reach("executing", A)
-    project.reach("conform", B)
+    project.reach("conformant", B)
     assert project.run("resolve", "--for", "execute").json()["plan"] == A
     assert [row["name"] for row in project.run().json()["plans"]] == [A, B]

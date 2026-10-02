@@ -6,7 +6,7 @@ Two families of guards (ADR 0011):
   is replayed and when an event is recorded, so a hand edited journal cannot slip through replay.
 - Record-time guards need a fact that lives outside the journal or is worked out before the
   record: the ceiling from the settings, whether the approved plan names gates, the current hash
-  of `overview.md`. `RecordContext` carries them in as plain values, so this module still reads
+  of `blueprint.md`. `RecordContext` carries them in as plain values, so this module still reads
   no file. Replay has no context and skips them, since a setting that changed since the event was
   recorded must not make the old journal invalid.
 """
@@ -22,7 +22,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -47,7 +47,7 @@ class RefusalCode(StrEnum):
     TRANSITION = "transition"  # the pair (event, state) is not in the table
     CROSS_CHECK = "cross-check"
     DRAFT_HASH = "draft-hash"
-    OVERVIEW_CHANGED = "overview-changed"
+    BLUEPRINT_CHANGED = "blueprint-changed"
     SLICE = "slice"
     SLICE_LIST = "slice-list"
     PROPOSAL = "proposal"
@@ -81,26 +81,26 @@ class RecordContext:
 
     ceiling: int  # `max_autonomous_passes`
     gates_declared: bool  # the approved revision of the plan names at least one gate command
-    overview_hash: str | None  # current hash of `overview.md`, None when the file is missing
+    blueprint_hash: str | None  # current hash of `blueprint.md`, None when the file is missing
 
 
 @dataclass(frozen=True, slots=True)
 class DiskFacts:
     """What the caller read from the plan folder for one event, as plain values.
 
-    For a `conform`, the caller also asked git what the branch changed.
+    For a `conformant`, the caller also asked git what the branch changed.
 
     `None` means the file is missing or unreadable, which `missing_files` already reports.
     """
 
     missing_files: tuple[str, ...]  # cited files that are not regular files of the folder
-    overview_hash: str | None
+    blueprint_hash: str | None
     plan_hash: str | None
     slices: tuple[int, ...] | None  # markers of `plan.md`, read only for events that carry slices
     slices_problem: str | None = None  # why the markers could not be read, if they could not
     gates: tuple[str, ...] | None = None  # the gates block of `plan.md`, for the same events
     gates_problem: str | None = None  # why the gates block could not be read, if it could not
-    # Why the critical-files block of the `conformity.md` a `conform` cites cannot be taken.
+    # Why the critical-files block of the `conformity.md` a `conformant` cites cannot be taken.
     critical_files_problem: str | None = None
 
 
@@ -129,19 +129,19 @@ def _check_drafted(prev: PlanState, event: PlanDrafted) -> Refusal | None:
             RefusalCode.CROSS_CHECK,
             f"the last cross-check of revision {event.rev} counts {check.omissions} omissions",
         )
-    if check.overview != event.overview or check.plan != event.plan:
+    if check.blueprint != event.blueprint or check.plan != event.plan:
         return _refuse(
             RefusalCode.CROSS_CHECK,
-            "the last cross-check did not cover the current hashes of the overview and the plan",
+            "the last cross-check did not cover the current hashes of the blueprint and the plan",
         )
     return None
 
 
 def _check_approved(prev: PlanState, event: PlanApproved) -> Refusal | None:
-    if event.overview != prev.drafted_overview:
+    if event.blueprint != prev.drafted_blueprint:
         return _refuse(
             RefusalCode.DRAFT_HASH,
-            "the overview differs from the one of the last plan-drafted",
+            "the blueprint differs from the one of the last plan-drafted",
         )
     return None
 
@@ -198,11 +198,11 @@ def _check_review(event: ReviewDone) -> Refusal | None:
     return None
 
 
-def _check_conform(prev: PlanState, event: Conform) -> Refusal | None:
-    if event.overview != prev.approved_overview:
+def _check_conformant(prev: PlanState, event: Conformant) -> Refusal | None:
+    if event.blueprint != prev.approved_blueprint:
         return _refuse(
-            RefusalCode.OVERVIEW_CHANGED,
-            "the overview differs from the one of the last plan-approved",
+            RefusalCode.BLUEPRINT_CHANGED,
+            "the blueprint differs from the one of the last plan-approved",
         )
     review = prev.last_review
     if review is None:
@@ -233,8 +233,8 @@ def journal_guards(prev: PlanState | None, event: Event) -> Refusal | None:  # n
             return _check_judged(prev, event)
         case ReviewDone():
             return _check_review(event)
-        case Conform():
-            return _check_conform(prev, event)
+        case Conformant():
+            return _check_conformant(prev, event)
         case (
             PlanOpened()
             | InterviewClosed()
@@ -257,7 +257,7 @@ def _check_ceiling(prev: PlanState, event: Event, context: RecordContext) -> Ref
     """Refuse a pass the loop may no longer take on its own.
 
     A pass sends work back to an agent: in planning a check with omissions, which sends the
-    overview or the plan back for rework; in execution what `sends_work_back` names. Both loops
+    blueprint or the plan back for rework; in execution what `sends_work_back` names. Both loops
     send work back `ceiling` times; the pass that would send it once more is still recorded,
     since it holds what does not converge, and hands back; none after it. So a ceiling of 3 gives
     three reworks in planning and three fixes in execution, a fixer whose own gate run fails
@@ -277,13 +277,15 @@ def _check_ceiling(prev: PlanState, event: Event, context: RecordContext) -> Ref
     return None
 
 
-def _check_overview_frozen(prev: PlanState, event: Event, context: RecordContext) -> Refusal | None:
-    if not isinstance(event, SliceDone | PlanAmended | FixDone | Conform):
+def _check_blueprint_frozen(
+    prev: PlanState, event: Event, context: RecordContext
+) -> Refusal | None:
+    if not isinstance(event, SliceDone | PlanAmended | FixDone | Conformant):
         return None
-    if context.overview_hash is None or context.overview_hash != prev.approved_overview:
+    if context.blueprint_hash is None or context.blueprint_hash != prev.approved_blueprint:
         return _refuse(
-            RefusalCode.OVERVIEW_CHANGED,
-            "the overview differs from the one of the last plan-approved",
+            RefusalCode.BLUEPRINT_CHANGED,
+            "the blueprint differs from the one of the last plan-approved",
         )
     return None
 
@@ -307,7 +309,7 @@ def record_guards(prev: PlanState | None, event: Event, context: RecordContext) 
     if prev is None:
         return None
     return (
-        _check_overview_frozen(prev, event, context)
+        _check_blueprint_frozen(prev, event, context)
         or _check_ceiling(prev, event, context)
         or _check_gates(prev, event, context)
     )
@@ -346,7 +348,7 @@ def _check_gate_list(
 
 def _check_critical_files(event: Event, facts: DiskFacts) -> Refusal | None:
     """Refuse a conformity whose list of code to read cannot be shown as the reviewer wrote it."""
-    if not isinstance(event, Conform) or facts.critical_files_problem is None:
+    if not isinstance(event, Conformant) or facts.critical_files_problem is None:
         return None
     return _refuse(RefusalCode.CRITICAL_FILES, facts.critical_files_problem)
 
@@ -358,7 +360,7 @@ def disk_guards(
 
     The script computes hashes, slice lists and gates itself (ADR 0012); this refuses an event
     that carries a value read before the file changed. `approved_gates` are those of the approved
-    revision, which a `plan-amended` must leave as they are. A `conform` is refused when the
+    revision, which a `plan-amended` must leave as they are. A `conformant` is refused when the
     critical-files block of the `conformity.md` it cites is malformed or lists a file the branch
     did not change: the description would show the developer a wrong list of code to read.
     """
@@ -366,8 +368,8 @@ def disk_guards(
         return _refuse(
             RefusalCode.FILE_MISSING, "cited file missing: " + ", ".join(facts.missing_files)
         )
-    if isinstance(event, CheckDone | PlanDrafted | PlanApproved | Conform):
-        stale = _stale("overview", event.overview, facts.overview_hash)
+    if isinstance(event, CheckDone | PlanDrafted | PlanApproved | Conformant):
+        stale = _stale("blueprint", event.blueprint, facts.blueprint_hash)
         if stale is not None:
             return stale
     if isinstance(event, CheckDone | PlanDrafted | PlanAmended):

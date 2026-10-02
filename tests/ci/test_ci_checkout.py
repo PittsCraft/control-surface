@@ -27,7 +27,7 @@ ENV = {
 # The events that lead a plan of two files to each state, with the reports they point at.
 REPORTS = ("checks/rev-01-01.md", "reviews/pass-01.md", "conformity.md")
 IN_PROGRESS = (("plan-opened", ()), ("interview-closed", ()))
-CONFORM = (
+CONFORMANT = (
     *IN_PROGRESS,
     ("check-done", ("--report", "checks/rev-01-01.md", "--omissions", "0")),
     ("plan-drafted", ()),
@@ -37,7 +37,7 @@ CONFORM = (
         "review-done",
         ("--report", "reviews/pass-01.md", "--defects", "0", "--deviations", "0", "--breaks", "0"),
     ),
-    ("conform", ("--conformity", "conformity.md")),
+    ("conformant", ("--conformity", "conformity.md")),
 )
 
 
@@ -57,7 +57,7 @@ def build_plan(toy: Path, name: str, events: tuple[tuple[str, tuple[str, ...]], 
     for report in REPORTS:
         (folder / report).parent.mkdir(parents=True, exist_ok=True)
         (folder / report).write_text("report\n", encoding="utf-8")
-    (folder / "overview.md").write_text("# Overview\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\n", encoding="utf-8")
     (folder / "plan.md").write_text("<!-- slice:1 -->\n```gates\n```\n", encoding="utf-8")
     for event, arguments in events:
         ok(toy, SCRIPT, "record", f"docs/plans/{name}", event, *arguments)
@@ -75,14 +75,14 @@ def remote(tmp_path_factory: pytest.TempPathFactory) -> Path:
     ok(toy, sys.executable, str(ROOT / "install.py"), ".")  # from a clone: the file is in ROOT
     ok(toy, "git", "add", "-A")
     ok(toy, "git", "commit", "-q", "-m", "install the chain")
-    for branch, events in (("conform", CONFORM), ("in-progress", IN_PROGRESS)):
+    for branch, events in (("conformant", CONFORMANT), ("in-progress", IN_PROGRESS)):
         ok(toy, "git", "switch", "-q", "-c", branch, "main")
         build_plan(toy, "2026-09-29-feature", events)
         ok(toy, "git", "add", "-A")
         ok(toy, "git", "commit", "-q", "-m", f"plan: {branch}")
     bare = base / "remote.git"
     ok(base, "git", "init", "-q", "--bare", str(bare))
-    ok(toy, "git", "push", "-q", bare.as_uri(), "main", "conform", "in-progress")
+    ok(toy, "git", "push", "-q", bare.as_uri(), "main", "conformant", "in-progress")
     return bare
 
 
@@ -103,10 +103,10 @@ def checkout(remote: Path, branch: str, destination: Path, *, depth: int | None)
     return destination
 
 
-def test_a_conform_plan_passes_in_a_ci_checkout(remote: Path, tmp_path: Path) -> None:
-    ci = checkout(remote, "conform", tmp_path / "ci", depth=None)
+def test_a_conformant_plan_passes_in_a_ci_checkout(remote: Path, tmp_path: Path) -> None:
+    ci = checkout(remote, "conformant", tmp_path / "ci", depth=None)
 
-    done = run(ci, SCRIPT, "check", "--require", "conform")
+    done = run(ci, SCRIPT, "check", "--require", "conformant")
 
     assert done.returncode == 0, done.stderr
     assert "check passed" in done.stdout
@@ -115,28 +115,28 @@ def test_a_conform_plan_passes_in_a_ci_checkout(remote: Path, tmp_path: Path) ->
 def test_a_plan_in_progress_fails_in_a_ci_checkout(remote: Path, tmp_path: Path) -> None:
     ci = checkout(remote, "in-progress", tmp_path / "ci", depth=None)
 
-    done = run(ci, SCRIPT, "check", "--require", "conform")
+    done = run(ci, SCRIPT, "check", "--require", "conformant")
 
     assert done.returncode == 1, done.stderr
     assert "FAIL 2026-09-29-feature" in done.stderr
-    assert "neither conform nor abandoned" in done.stderr
+    assert "neither conformant nor abandoned" in done.stderr
 
 
 def test_the_installation_is_intact_in_a_ci_checkout(remote: Path, tmp_path: Path) -> None:
-    ci = checkout(remote, "conform", tmp_path / "ci", depth=None)
+    ci = checkout(remote, "conformant", tmp_path / "ci", depth=None)
 
     done = run(ci, sys.executable, str(ROOT / "install.py"), "--check", ".")
 
     assert done.returncode == 0, done.stdout + done.stderr
 
 
-@pytest.mark.parametrize("branch", ["conform", "in-progress"])
+@pytest.mark.parametrize("branch", ["conformant", "in-progress"])
 def test_a_depth_one_checkout_is_refused_and_says_why(
     remote: Path, tmp_path: Path, branch: str
 ) -> None:
     ci = checkout(remote, branch, tmp_path / "ci", depth=1)
 
-    done = run(ci, SCRIPT, "check", "--require", "conform")
+    done = run(ci, SCRIPT, "check", "--require", "conformant")
 
     assert done.returncode == 2
     assert "fetch-depth: 0" in done.stderr

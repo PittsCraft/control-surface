@@ -82,4 +82,4 @@ def test_a_command_completes_with_the_sockets_blocked(tmp_path: Path) -> None:
     project = Project(tmp_path)
     project.reach("interview")
     assert project.run().code == 0
-    assert project.run("check", "--require", "conform").code == 1
+    assert project.run("check", "--require", "conformant").code == 1

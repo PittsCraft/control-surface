@@ -2,7 +2,7 @@
   "v": 1,
   "plan": "2026-09-29-feature",
   "state": "plan-change-proposed",
-  "hand": "developer",
+  "turn": "developer",
   "next_step": "the developer decides on the proposal: surface-plan or surface-execute presents it and records the acceptance or the refusal",
   "slices": {
     "declared": [

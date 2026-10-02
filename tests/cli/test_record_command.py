@@ -69,7 +69,7 @@ def test_the_hashes_and_the_slices_are_the_ones_of_the_files(project: Project) -
     folder = project.reach("awaiting-approval")
     drafted = [line for line in project.journal().splitlines() if b"plan-drafted" in line]
     fields = json.loads(drafted[0])
-    assert fields["overview"] == content_hash((folder / "overview.md").read_bytes())
+    assert fields["blueprint"] == content_hash((folder / "blueprint.md").read_bytes())
     assert fields["plan"] == content_hash((folder / "plan.md").read_bytes())
     assert fields["slices"] == [1, 2]
     assert fields["rev"] == 1
@@ -78,7 +78,7 @@ def test_the_hashes_and_the_slices_are_the_ones_of_the_files(project: Project) -
 def test_the_revision_follows_the_restarts_of_the_draft(project: Project) -> None:
     folder = project.reach("awaiting-approval")
     assert project.record(PLAN, "amendment-received").code == 0
-    (folder / "overview.md").write_text("# Overview\nrevised\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nrevised\n", encoding="utf-8")
     (folder / "checks").joinpath("rev-02-01.md").write_text("report\n", encoding="utf-8")
     assert (
         project.record(
@@ -157,22 +157,22 @@ def test_a_refusal_exits_1_names_the_reason_and_leaves_the_journal_alone(project
     assert text.out == ""
 
 
-def test_an_overview_edited_after_approval_refuses_the_next_slice(project: Project) -> None:
+def test_an_blueprint_edited_after_approval_refuses_the_next_slice(project: Project) -> None:
     folder = project.reach("executing")
-    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     result = project.record(PLAN, "slice-done", "--slice", "1", "--gates", "lint")
     assert result.code == 1
-    assert result.json()["refused"]["code"] == "overview-changed"
+    assert result.json()["refused"]["code"] == "blueprint-changed"
 
 
-def test_a_missing_overview_is_refused_as_a_missing_file(project: Project) -> None:
+def test_a_missing_blueprint_is_refused_as_a_missing_file(project: Project) -> None:
     folder = project.reach("awaiting-approval")
-    (folder / "overview.md").unlink()
+    (folder / "blueprint.md").unlink()
     result = project.record(PLAN, "plan-approved")
     assert result.code == 1
     assert result.json()["refused"] == {
         "code": "file-missing",
-        "reason": "cited file missing: overview.md",
+        "reason": "cited file missing: blueprint.md",
     }
 
 
@@ -202,7 +202,7 @@ def test_a_conformity_whose_list_of_files_to_read_is_malformed_is_refused(
     proof = folder / "conformity.md"
     proof.write_text("proof\n```critical-files\n../secret.py\n```\n", encoding="utf-8")
     before = project.journal()
-    result = project.record(PLAN, "conform", "--conformity", "conformity.md")
+    result = project.record(PLAN, "conformant", "--conformity", "conformity.md")
     assert result.code == 1
     assert result.json()["refused"] == {
         "code": "critical-files",
@@ -213,12 +213,12 @@ def test_a_conformity_whose_list_of_files_to_read_is_malformed_is_refused(
     assert project.journal() == before
     # Outside a git work tree there is no branch to ask: the form of the block is all that counts.
     proof.write_text("proof\n```critical-files\nbilling/pay.py\n```\n", encoding="utf-8")
-    assert project.record(PLAN, "conform", "--conformity", "conformity.md").code == 0
+    assert project.record(PLAN, "conformant", "--conformity", "conformity.md").code == 0
 
 
 def test_a_derived_field_cannot_be_passed(project: Project) -> None:
     project.plan()
-    for extra in (["--rev", "1"], ["--overview", "sha256:" + "0" * 64], ["--at", "2020-01-01"]):
+    for extra in (["--rev", "1"], ["--blueprint", "sha256:" + "0" * 64], ["--at", "2020-01-01"]):
         result = project.record(PLAN, "plan-approved", *extra)
         assert result.code == 2
         assert "unrecognized arguments" in result.out
@@ -291,7 +291,7 @@ def test_abandon_needs_a_reason(project: Project) -> None:
 
 
 def test_a_plan_over_cannot_be_abandoned_again(project: Project) -> None:
-    project.reach("conform")
+    project.reach("conformant")
     before = project.journal()
     result = project.run("abandon", PLAN, "--why", "too late")
     assert result.code == 1
@@ -300,7 +300,7 @@ def test_a_plan_over_cannot_be_abandoned_again(project: Project) -> None:
 
 
 def test_without_a_plan_abandon_takes_the_only_plan_in_progress(project: Project) -> None:
-    project.reach("conform", "2026-09-01-done")
+    project.reach("conformant", "2026-09-01-done")
     project.reach("executing")
     assert project.run("abandon", "--why", "stop").code == 0
     assert project.run("show", PLAN).json()["state"] == "abandoned"
@@ -316,7 +316,7 @@ def test_without_a_plan_several_in_progress_make_the_caller_name_one(project: Pr
 
 
 def test_without_a_plan_none_in_progress_is_a_usage_error(project: Project) -> None:
-    project.reach("conform")
+    project.reach("conformant")
     assert project.run("show").code == 2
 
 

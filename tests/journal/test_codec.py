@@ -107,7 +107,7 @@ def test_a_line_that_is_not_exactly_a_journal_line_is_refused(text: str, fragmen
             {
                 "event": "plan-drafted",
                 "rev": 1,
-                "overview": "abc",
+                "blueprint": "abc",
                 "plan": DIGEST,
                 "slices": [1],
                 "slug": ...,
@@ -118,7 +118,7 @@ def test_a_line_that_is_not_exactly_a_journal_line_is_refused(text: str, fragmen
             {
                 "event": "plan-drafted",
                 "rev": 1,
-                "overview": DIGEST.upper(),
+                "blueprint": DIGEST.upper(),
                 "plan": DIGEST,
                 "slices": [1],
                 "slug": ...,
@@ -129,7 +129,7 @@ def test_a_line_that_is_not_exactly_a_journal_line_is_refused(text: str, fragmen
             {
                 "event": "plan-drafted",
                 "rev": 1,
-                "overview": DIGEST,
+                "blueprint": DIGEST,
                 "plan": DIGEST,
                 "slices": [1, 1],
                 "slug": ...,
@@ -140,7 +140,7 @@ def test_a_line_that_is_not_exactly_a_journal_line_is_refused(text: str, fragmen
             {
                 "event": "plan-drafted",
                 "rev": 1,
-                "overview": DIGEST,
+                "blueprint": DIGEST,
                 "plan": DIGEST,
                 "slices": "1",
                 "slug": ...,
@@ -151,7 +151,7 @@ def test_a_line_that_is_not_exactly_a_journal_line_is_refused(text: str, fragmen
             {
                 "event": "plan-drafted",
                 "rev": 1,
-                "overview": DIGEST,
+                "blueprint": DIGEST,
                 "plan": DIGEST,
                 "slices": [0],
                 "slug": ...,

@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
-    CONFORM_EXCEPTION,
-    CONFORM_HAND_BACK,
+    CONFORMANT_EXCEPTION,
+    CONFORMANT_HAND_BACK,
     CORRECTIONS_CEILING,
     DOCUMENTS_LANGUAGE,
     EXECUTE,
@@ -148,7 +148,7 @@ def test_both_skills_are_read_by_the_host_neutrality_test() -> None:
 
 def test_the_skill_calls_are_found() -> None:
     called = {(name, *call_arguments(call)[:3:2]) for name, call in prompt_calls()}
-    for event in ("plan-approved", "resumed", "review-done", "conform", "blocked"):
+    for event in ("plan-approved", "resumed", "review-done", "conformant", "blocked"):
         assert ("surface-execute", "record", event) in called
     for event in (
         "plan-change-proposed",
@@ -211,7 +211,7 @@ def test_execute_writes_neither_code_nor_plan() -> None:
     assert "You write neither code nor plan" in body
     rules = section(body, "Ground rules")
     assert "You edit one file only: `interview.md` of the plan folder" in rules
-    assert "Never code, never `plan.md`, never `overview.md`" in rules
+    assert "Never code, never `plan.md`, never `blueprint.md`" in rules
     assert "`interview.md` for a decision of the developer" in rules
     assert "Only the script writes the journal" in rules
 
@@ -278,14 +278,14 @@ def test_the_ceiling_blocks_and_hands_back_to_the_developer() -> None:
     body = _execute()
     ceiling = section(body, "At the ceiling")
     assert "`surface-status record <plan> blocked" in ceiling
-    assert "the developer takes the hand back" in ceiling
+    assert "it is the developer's turn again" in ceiling
     assert "Launch no fix" in ceiling
     blocked, stopped, asked = _positions(
         ceiling,
         [
             "record <plan> blocked",
             'Do the steps of "When the loop stops"',
-            "Keep the hand and ask: resume, or amend the plan, with your recommendation",
+            "Stay in the conversation and ask: resume, or amend the plan, with your recommendation",
         ],
     )
     assert blocked < stopped < asked
@@ -304,7 +304,7 @@ def test_the_ceiling_blocks_and_hands_back_to_the_developer() -> None:
     rows = _loop_rows()
     # Checked before any row that launches an agent; conformity is the one step it lets through.
     assert _row_index(rows, "Ceiling reached") < _row_index(rows, "`executing`")
-    assert "recording `conform` is the one step the ceiling lets through" in body
+    assert "recording `conformant` is the one step the ceiling lets through" in body
     # The script records the pass after the ceiling, which hands back: the ceiling is passed.
     assert "`passes.execution` of `show --json` is more than `passes.ceiling`" in body
 
@@ -342,7 +342,7 @@ def test_a_proposal_is_put_to_the_developer_in_the_conversation() -> None:
         proposal,
         [
             'first do the steps of "When the loop stops"',
-            "present the proposal yourself, at the level of the overview",
+            "present the proposal yourself, at the level of the blueprint",
             "Ask: accept or decline, with your recommendation",
         ],
     )
@@ -482,19 +482,19 @@ def test_every_stop_pushes_and_refreshes_the_pr_description() -> None:
     assert "Nothing else is written on the pull request" in stopping
 
 
-def test_conform_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_developer() -> None:
+def test_conformant_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_developer() -> None:
     body = _execute()
     conformity = section(body, "Conformity")
-    assert f"hand back in one line: {CONFORM_HAND_BACK}" in conformity
+    assert f"hand back in one line: {CONFORMANT_HAND_BACK}" in conformity
     assert "one it cannot prove is a finding" in conformity
     assert "nothing asks the developer to read it" in conformity
     stopping = section(body, "When the loop stops")
     assert "Never mark the pull request ready, since that triggers the CI" in stopping
 
 
-def test_conform_says_the_one_exception_the_code_of_the_critical_zones() -> None:
+def test_conformant_says_the_one_exception_the_code_of_the_critical_zones() -> None:
     conformity = section(_execute(), "Conformity")
-    assert f"Say the one exception in one sentence: {CONFORM_EXCEPTION}" in conformity
+    assert f"Say the one exception in one sentence: {CONFORMANT_EXCEPTION}" in conformity
     assert (
         "whose changed files the pull request description lists, when there are any" in conformity
     )
@@ -513,7 +513,7 @@ def test_a_refused_list_of_critical_files_goes_to_a_fresh_reviewer() -> None:
     assert f"{mandate} (`base` of `surface-status commits <plan> --json`)" in conformity
     assert f"and the mode, {REFUSED_LIST}, with the refusal's reason" in conformity
     assert "It corrects that list and nothing else, and records nothing" in conformity
-    assert "when it returns, record `conform` again, as above" in conformity
+    assert "when it returns, record `conformant` again, as above" in conformity
     assert "with `conformity.md` when its content is not committed yet" in conformity
     assert f"every suspected break and every {REFUSED_LIST.removeprefix('a ')}" in section(
         body, "Ground rules"
@@ -528,7 +528,7 @@ def test_the_corrections_of_a_refused_list_are_bounded_by_the_ceiling_of_passes(
     # No number of its own: the ceiling is the one `show` gives.
     assert re.search(r"\b(once|twice|three|\d+) (times?|reviewers?)\b", conformity) is None
     assert "Keep that count yourself" in conformity
-    assert "a refused `conform` leaves no line in the journal" in conformity
+    assert "a refused `conformant` leaves no line in the journal" in conformity
     assert "these attempts do not raise `passes.execution`" in conformity
     after = "Still refused after them: stop and report the reason to the developer."
     assert conformity.rstrip().endswith(after)

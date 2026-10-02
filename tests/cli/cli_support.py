@@ -32,13 +32,13 @@ _TO_PLAN_CHANGE_PROPOSED = (
     *_TO_EXECUTING,
     ("plan-change-proposed", ("--proposal", "plan-changes/01.md", "--slice", "1")),
 )
-_TO_CONFORM = (
+_TO_CONFORMANT = (
     *_TO_REVIEWING,
     (
         "review-done",
         ("--report", "reviews/pass-01.md", "--defects", "0", "--deviations", "0", "--breaks", "0"),
     ),
-    ("conform", ("--conformity", "conformity.md")),
+    ("conformant", ("--conformity", "conformity.md")),
 )
 WAYS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "interview": _TO_INTERVIEW,
@@ -47,7 +47,7 @@ WAYS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "executing": _TO_EXECUTING,
     "reviewing": _TO_REVIEWING,
     "plan-change-proposed": _TO_PLAN_CHANGE_PROPOSED,
-    "conform": _TO_CONFORM,
+    "conformant": _TO_CONFORMANT,
 }
 REPORTS = ("checks/rev-01-01.md", "reviews/pass-01.md", "plan-changes/01.md", "conformity.md")
 
@@ -84,13 +84,13 @@ class Project:
         return Result(code, out.getvalue(), err.getvalue())
 
     def plan(self, name: str = PLAN, gates: tuple[str, ...] = ()) -> Path:
-        """Make a plan folder holding the developer's files: an overview, a plan of two slices.
+        """Make a plan folder holding the developer's files: a blueprint, a plan of two slices.
 
         The plan names `gates` in its gates block; none by default, so the gate guards are lifted.
         """
         folder = self.plans / name
         folder.mkdir()
-        (folder / "overview.md").write_text("# Overview\n", encoding="utf-8")
+        (folder / "blueprint.md").write_text("# Blueprint\n", encoding="utf-8")
         (folder / "plan.md").write_text(plan_text(gates), encoding="utf-8")
         return folder
 

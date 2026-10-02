@@ -1,7 +1,7 @@
-"""Properties of the command line over random walks of a plan: replay, frozen overview, check.
+"""Properties of the command line over random walks of a plan: replay, frozen blueprint, check.
 
 A walk mixes guided steps (the event that moves the plan on), random steps (most of them refused)
-and edits of `overview.md`. Every step goes through `main`, as a skill would.
+and edits of `blueprint.md`. Every step goes through `main`, as a skill would.
 """
 
 import json
@@ -16,7 +16,7 @@ from hypothesis import event as note
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from surface_status.events import Abandoned, Conform, Event, PlanApproved
+from surface_status.events import Abandoned, Conformant, Event, PlanApproved
 from surface_status.journal import read_events
 from surface_status.plan_folder import PlanFolder
 
@@ -35,7 +35,7 @@ CALLS: tuple[Call, ...] = (
     ("slice-done", ("--slice", "1", "--gates", "lint")),
     ("slice-done", ("--slice", "2", "--gates", "lint")),
     ("plan-amended", ("--slice", "1", "--why", "renamed")),
-    ("break-suspected", ("--slice", "2", "--why", "the overview names no such field")),
+    ("break-suspected", ("--slice", "2", "--why", "the blueprint names no such field")),
     ("suspicion-dismissed", ("--slice", "1", "--report", "reviews/suspicion-01.md")),
     ("plan-change-proposed", ("--proposal", "plan-changes/01.md", "--slice", "1")),
     ("review-done", ("--report", "reviews/pass-01.md", *_REVIEW)),
@@ -49,7 +49,7 @@ CALLS: tuple[Call, ...] = (
     ("plan-change-refused", ("--why", "not needed")),
     ("blocked", ("--why", "does not converge")),
     ("resumed", ()),
-    ("conform", ("--conformity", "conformity.md")),
+    ("conformant", ("--conformity", "conformity.md")),
     ("abandoned", ("--why", "changed course")),
 )
 # What moves a plan on, by state: the guided steps.
@@ -68,7 +68,7 @@ FILES = (
     "plan-changes/01.md",
     "conformity.md",
 )
-OVERVIEWS = ("# Overview\n", "# Overview\nedited\n")
+BLUEPRINTS = ("# Blueprint\n", "# Blueprint\nedited\n")
 
 
 @contextmanager
@@ -119,7 +119,7 @@ def _choose(project: Project, step: tuple[str, Call | int]) -> Call | None:  # n
     if state == "drafting":
         return CALLS[2]
     if state == "reviewing" and last == "review-done":
-        return CALLS[21]  # conform, once a review came back clean
+        return CALLS[21]  # conformant, once a review came back clean
     if state == "executing" and shown["pending_suspicion"] is not None:
         suspected = str(shown["pending_suspicion"]["slice"])  # a reviewer judged it: no break
         return ("suspicion-dismissed", ("--slice", suspected, "--report", FILES[2]))
@@ -133,7 +133,7 @@ def _apply(project: Project, folder: Path, step: tuple[str, Call | int]) -> None
     """Run one step, and check what every step must keep true."""
     kind, payload = step
     if kind == "edit":
-        (folder / "overview.md").write_text(OVERVIEWS[int(payload)], encoding="utf-8")  # type: ignore[arg-type]
+        (folder / "blueprint.md").write_text(BLUEPRINTS[int(payload)], encoding="utf-8")  # type: ignore[arg-type]
         return
     call = _choose(project, step)
     if call is None:
@@ -175,12 +175,12 @@ def test_a_refused_record_leaves_the_journal_unchanged_and_an_accepted_one_appen
         _walk(project, folder, steps)
 
 
-def _oracle(events: list[Event], overview: str | None) -> bool:
-    """Whether `check --require conform` must pass, worked out from the raw events."""
+def _oracle(events: list[Event], blueprint: str | None) -> bool:
+    """Whether `check --require conformant` must pass, worked out from the raw events."""
     approvals = [event for event in events if isinstance(event, PlanApproved)]
     match events[-1] if events else None:
-        case Conform():
-            return bool(approvals) and overview == approvals[-1].overview
+        case Conformant():
+            return bool(approvals) and blueprint == approvals[-1].blueprint
         case Abandoned():
             return not approvals
         case _:
@@ -189,17 +189,17 @@ def _oracle(events: list[Event], overview: str | None) -> bool:
 
 @_SUBPROCESS_BUDGET
 @given(steps=_steps())
-def test_the_check_passes_exactly_when_the_plan_is_conform_and_untouched_or_dropped_early(
+def test_the_check_passes_exactly_when_the_plan_is_conformant_and_untouched_or_dropped_early(
     steps: list[tuple[str, Call | int]],
 ) -> None:
     with _project() as (project, folder):
         _walk(project, folder, steps)
         journal = folder / "journal.jsonl"
         expected = not journal.exists() or _oracle(
-            read_events(journal), PlanFolder(folder).overview_hash()
+            read_events(journal), PlanFolder(folder).blueprint_hash()
         )
         note(f"expected {expected}, final {_state(project) if journal.exists() else 'no journal'}")
-        result = project.run("check", "--require", "conform")
+        result = project.run("check", "--require", "conformant")
         assert result.code == (0 if expected else 1), (steps, result.out)
         assert result.json()["ok"] is expected
 
@@ -220,7 +220,7 @@ def test_the_list_and_show_agree_with_the_journal_on_every_walk(
             return
         shown = project.run("show", folder.name).json()
         assert rows == [
-            {"name": folder.name, "state": shown["state"], "hand": shown["hand"]},
+            {"name": folder.name, "state": shown["state"], "turn": shown["turn"]},
         ]
         events = read_events(journal)
         assert shown["last_event"] == (events[-1].name if events else None)

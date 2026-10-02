@@ -5,7 +5,7 @@ Date: 2026-09-29
 
 ## Context
 
-The chain is made of prompts. The unit tests hold the state script, the installer and the prompts' contract, but none shows that a session driven by those prompts does what the README promises: resuming a killed session, stopping on a modified overview, handing back at the ceiling. Only a real session shows it, and it costs money and minutes, and its path varies from run to run. A first harness allowed only the commands a developer's rules would grant; the runs then failed on the commands agents chose to explore with, not on the chain.
+The chain is made of prompts. The unit tests hold the state script, the installer and the prompts' contract, but none shows that a session driven by those prompts does what the README promises: resuming a killed session, stopping on a modified blueprint, handing back at the ceiling. Only a real session shows it, and it costs money and minutes, and its path varies from run to run. A first harness allowed only the commands a developer's rules would grant; the runs then failed on the commands agents chose to explore with, not on the chain.
 
 ## Decision
 

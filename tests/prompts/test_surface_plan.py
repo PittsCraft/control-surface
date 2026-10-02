@@ -2,7 +2,7 @@
 
 Prompt behavior is judged end to end. These tests hold what can be read: the frontmatter against
 the fields the Claude Code documentation of skills defines, the state injected at load, the
-planning sequence and the states this command resumes, the hand it keeps in the conversation, the
+planning sequence and the states this command resumes, its staying in the conversation, the
 sensitive zones it carries, and templates the script and the agents can read.
 """
 
@@ -13,11 +13,11 @@ from pathlib import Path
 import pytest
 from chain_contract import (
     ALWAYS_WRITTEN,
+    BLUEPRINT_SECTIONS,
     CLOSING_LINE,
     DOCUMENTS_LANGUAGE,
     FORMER_LANGUAGE_RULE,
     LANGUAGE_SOURCES,
-    OVERVIEW_SECTIONS,
     PLAN,
     PLANNING_EVENTS,
     SEEN_BY,
@@ -248,7 +248,7 @@ def test_first_launch_follows_the_planning_sequence() -> None:
         "check-done",
         "plan-drafted",
         '"Commit, push and pull request"',
-        "Tell the developer where to read the overview",
+        "Tell the developer where to read the blueprint",
     ]
     assert [step for step in order if step in PLANNING_EVENTS] == list(PLANNING_EVENTS)
     positions = _positions(steps, order)
@@ -344,7 +344,7 @@ def test_planning_stops_at_the_ceiling_and_asks_in_the_conversation() -> None:
         ceiling,
         [
             "record <plan> blocked --why",
-            "keep the hand: present what does not converge",
+            "stay in the conversation: present what does not converge",
             "ask the developer's instruction in the conversation",
             '"After a block"',
         ],
@@ -353,7 +353,8 @@ def test_planning_stops_at_the_ceiling_and_asks_in_the_conversation() -> None:
     assert "`/surface-plan`" not in ceiling
 
 
-# The hand-over: the command keeps the hand, and only the launch of `/surface-execute` approves.
+# The hand-over: the command stays in the conversation, and only the launch of `/surface-execute`
+# approves.
 
 
 def _hand_over() -> str:
@@ -367,8 +368,8 @@ def test_the_hand_over_keeps_the_hand_and_asks_amend_or_approve() -> None:
     hand_over = _hand_over()
     assert "Then stop" not in hand_over
     assert (
-        "keep the hand and ask: amend, or approve by launching `/surface-execute`, whose launch"
-        " alone approves this revision" in hand_over
+        "stay in the conversation and ask: amend, or approve by launching `/surface-execute`, whose"
+        " launch alone approves this revision" in hand_over
     )
 
 
@@ -420,7 +421,7 @@ def test_the_resume_table_covers_every_state_in_progress() -> None:
 
 def test_the_terminal_states_are_said_over() -> None:
     actions = _skill_table()
-    assert "The plan is over" in actions["conform"]
+    assert "The plan is over" in actions["conformant"]
     assert "The plan is over" in actions["abandoned"]
 
 
@@ -501,8 +502,8 @@ def test_the_branch_is_found_with_plain_commands_and_no_setting() -> None:
 
 def test_an_amendment_outside_the_hand_is_explained_and_refused() -> None:
     body = _body()
-    outside = section(body, "Outside your hand")
-    assert "only when they have the hand: awaiting approval, or blocked" in outside
+    outside = section(body, "Not your turn")
+    assert "only when it is their turn: awaiting approval, or blocked" in outside
     for state in ("executing", "reviewing", "fixing"):
         assert f"`{state}`" in outside
     assert "record nothing" in outside
@@ -513,10 +514,10 @@ def test_an_amendment_outside_the_hand_is_explained_and_refused() -> None:
     )
 
 
-def test_the_overview_template_holds_the_nine_sections_and_no_slice() -> None:
-    template = _template("overview.md")
+def test_the_blueprint_template_holds_the_nine_sections_and_no_slice() -> None:
+    template = _template("blueprint.md")
     headings = _headings(template)
-    assert headings == list(OVERVIEW_SECTIONS)
+    assert headings == list(BLUEPRINT_SECTIONS)
     _, extractor = (AGENTS / "surface-extractor.md").read_text(encoding="utf-8").split("\n---\n", 1)
     for heading in headings:
         assert heading in extractor
@@ -524,8 +525,8 @@ def test_the_overview_template_holds_the_nine_sections_and_no_slice() -> None:
     assert parse_slice_markers(template) == ()
 
 
-def test_the_overview_template_gathers_the_unchanged_sections_in_one_closing_line() -> None:
-    template = _template("overview.md")
+def test_the_blueprint_template_gathers_the_unchanged_sections_in_one_closing_line() -> None:
+    template = _template("blueprint.md")
     opening = template.split("\n## ", 1)[0]
     assert "As long as the feature needs, and no longer." in opening
     always = [heading.split(".", 1)[0] for heading in ALWAYS_WRITTEN]
@@ -542,8 +543,8 @@ def test_the_overview_template_gathers_the_unchanged_sections_in_one_closing_lin
     assert "mermaid diagram wherever" not in template
 
 
-def test_the_overview_template_says_which_critical_zones_the_plan_touches() -> None:
-    template = _template("overview.md")
+def test_the_blueprint_template_says_which_critical_zones_the_plan_touches() -> None:
+    template = _template("blueprint.md")
     nine = template[template.index("## 9. Sensitive zones") :]
     said = "Critical zones touched, among those the repository's agent instructions declare: none."
     assert said in nine
@@ -589,25 +590,25 @@ def test_commits_hold_only_the_plan_folder_with_its_journal_lines() -> None:
     assert "Each journal line goes in the commit of the files it describes" in commit
 
 
-# Boundaries: this command writes neither code, nor the overview, nor the journal.
+# Boundaries: this command writes neither code, nor the blueprint, nor the journal.
 
 
 def test_the_command_writes_only_in_the_plan_folder() -> None:
     opening = _body().split("\n## ", 1)[0]
     assert "You write only in the plan folder" in opening
-    assert "never the code, never `overview.md`" in opening
+    assert "never the code, never `blueprint.md`" in opening
     assert "never `journal.jsonl` (the state script alone writes it)" in opening
 
 
 # Templates.
 
 
-@pytest.mark.parametrize("name", ["plan.md", "overview.md", "interview.md", "exploration.md"])
+@pytest.mark.parametrize("name", ["plan.md", "blueprint.md", "interview.md", "exploration.md"])
 def test_every_template_is_cited(name: str) -> None:
     assert f"${{CLAUDE_SKILL_DIR}}/templates/{name}" in _body()
 
 
-@pytest.mark.parametrize("name", ["plan.md", "overview.md", "interview.md"])
+@pytest.mark.parametrize("name", ["plan.md", "blueprint.md", "interview.md"])
 def test_every_template_is_written_in_the_language_exploration_names(name: str) -> None:
     assert f"Written in {DOCUMENTS_LANGUAGE}: translate the headings" in _template(name)
 
@@ -630,8 +631,8 @@ def test_no_prompt_follows_the_language_of_the_specs(path: Path) -> None:
     assert FORMER_LANGUAGE_RULE not in path.read_text(encoding="utf-8")
 
 
-def test_the_extractor_is_given_the_overview_template() -> None:
-    assert "`${CLAUDE_SKILL_DIR}/templates/overview.md`" in section(_body(), "The agents")
+def test_the_extractor_is_given_the_blueprint_template() -> None:
+    assert "`${CLAUDE_SKILL_DIR}/templates/blueprint.md`" in section(_body(), "The agents")
 
 
 def test_the_cited_templates_exist() -> None:

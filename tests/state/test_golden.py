@@ -48,8 +48,8 @@ REQUIRED = {
     "refusal-from-slice",
     "refusal-from-review",
     "fix-done-at-ceiling-then-blocked",
-    "fix-without-review-then-conform",
-    "conform-after-three-fixes",
+    "fix-without-review-then-conformant",
+    "conformant-after-three-fixes",
 }
 
 
@@ -83,12 +83,12 @@ def test_a_golden_journal_replays_to_its_expected_state(path: Path) -> None:
 
 @pytest.mark.parametrize("path", JOURNALS, ids=lambda path: path.stem)
 def test_a_golden_journal_is_one_the_script_records_at_the_default_ceiling(path: Path) -> None:
-    """Record-time guards included: the default ceiling, and the approved overview left as is."""
+    """Record-time guards included: the default ceiling, and the approved blueprint left as is."""
     state: PlanState | None = None
     for event in load_journal(path):
-        approved = None if state is None else state.approved_overview
+        approved = None if state is None else state.approved_blueprint
         context = RecordContext(
-            ceiling=Settings().max_autonomous_passes, gates_declared=True, overview_hash=approved
+            ceiling=Settings().max_autonomous_passes, gates_declared=True, blueprint_hash=approved
         )
         result = admit(state, event, context)
         assert isinstance(result, Accepted), result

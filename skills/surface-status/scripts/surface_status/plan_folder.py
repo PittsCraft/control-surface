@@ -19,7 +19,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GatesRun,
@@ -38,7 +38,7 @@ from surface_status.events import (
 )
 from surface_status.journal import read_events
 
-OVERVIEW = "overview.md"
+BLUEPRINT = "blueprint.md"
 PLAN = "plan.md"
 JOURNAL = "journal.jsonl"
 
@@ -194,15 +194,15 @@ def plan_change_name(n: int) -> str:
 def cited_files(event: Event) -> tuple[str, ...]:  # noqa: C901, PLR0911 (one arm per event)
     """List the files of the plan folder an event points at, relative to it (ADR 0012).
 
-    `overview.md` and `plan.md` count when the event carries their hash.
+    `blueprint.md` and `plan.md` count when the event carries their hash.
     """
     match event:
         case CheckDone():
-            return (event.report, OVERVIEW, PLAN)
+            return (event.report, BLUEPRINT, PLAN)
         case PlanDrafted():
-            return (OVERVIEW, PLAN)
+            return (BLUEPRINT, PLAN)
         case PlanApproved():
-            return (OVERVIEW,)
+            return (BLUEPRINT,)
         case PlanAmended():
             return (PLAN,)
         case SuspicionDismissed():
@@ -213,8 +213,8 @@ def cited_files(event: Event) -> tuple[str, ...]:  # noqa: C901, PLR0911 (one ar
             return (gate_run_name(event.run),)
         case ReviewDone():
             return (event.report,) if event.proposal is None else (event.report, event.proposal)
-        case Conform():
-            return (event.conformity, OVERVIEW)
+        case Conformant():
+            return (event.conformity, BLUEPRINT)
         case (
             PlanOpened()
             | InterviewClosed()
@@ -244,8 +244,8 @@ class PlanFolder:
         return self.root / JOURNAL
 
     @property
-    def overview(self) -> Path:
-        return self.root / OVERVIEW
+    def blueprint(self) -> Path:
+        return self.root / BLUEPRINT
 
     @property
     def plan(self) -> Path:
@@ -273,8 +273,8 @@ class PlanFolder:
         except (FileNotFoundError, IsADirectoryError):
             return None
 
-    def overview_hash(self) -> str | None:
-        return self.file_hash(OVERVIEW)
+    def blueprint_hash(self) -> str | None:
+        return self.file_hash(BLUEPRINT)
 
     def plan_hash(self) -> str | None:
         return self.file_hash(PLAN)
@@ -297,7 +297,7 @@ class PlanFolder:
     def critical_files(self, relative: str) -> tuple[str, ...]:
         """Read the files the `critical-files` block of a `conformity.md` lists; none without one.
 
-        `relative` is the proof of conformity a `conform` event cites. Raises `PlanFolderError`
+        `relative` is the proof of conformity a `conformant` event cites. Raises `PlanFolderError`
         when the file cannot be read or its block is malformed, naming the file.
         """
         try:

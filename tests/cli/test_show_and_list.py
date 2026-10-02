@@ -1,4 +1,4 @@
-"""The plan list and `show`: state, who has the hand, next step, slices, passes, settings."""
+"""The plan list and `show`: state, whose turn it is, next step, slices, passes, settings."""
 
 import json
 from dataclasses import replace
@@ -9,7 +9,7 @@ from cli_support import PLAN, Project, plan_text
 
 from surface_status.events import PlanOpened
 from surface_status.machine import State, apply
-from surface_status.report import hand_of
+from surface_status.report import turn_of
 
 
 @pytest.fixture
@@ -20,11 +20,11 @@ def project(tmp_path: Path) -> Project:
 def test_no_argument_lists_the_plans_with_state_and_hand(project: Project) -> None:
     project.reach("interview", "2026-09-01-a")
     project.reach("executing", "2026-09-02-b")
-    project.reach("conform", "2026-09-03-c")
+    project.reach("conformant", "2026-09-03-c")
     assert project.run().json()["plans"] == [
-        {"name": "2026-09-01-a", "state": "interview", "hand": "developer"},
-        {"name": "2026-09-02-b", "state": "executing", "hand": "agents"},
-        {"name": "2026-09-03-c", "state": "conform", "hand": "nobody"},
+        {"name": "2026-09-01-a", "state": "interview", "turn": "developer"},
+        {"name": "2026-09-02-b", "state": "executing", "turn": "agents"},
+        {"name": "2026-09-03-c", "state": "conformant", "turn": "nobody"},
     ]
 
 
@@ -32,7 +32,7 @@ def test_the_text_list_has_one_row_per_plan(project: Project) -> None:
     project.reach("awaiting-approval")
     text = project.run(as_json=False).out
     assert [row.split() for row in text.splitlines()] == [
-        [PLAN, "awaiting-approval", "hand:", "developer"]
+        [PLAN, "awaiting-approval", "turn:", "developer"]
     ]
 
 
@@ -61,7 +61,7 @@ def test_the_hand_follows_the_table_of_the_specs() -> None:
         State.BLOCKED,
     }
     for state in State:
-        if state in {State.CONFORM, State.ABANDONED}:
+        if state in {State.CONFORMANT, State.ABANDONED}:
             expected = "nobody"
         else:
             expected = "developer" if state in developer else "agents"
@@ -70,7 +70,7 @@ def test_the_hand_follows_the_table_of_the_specs() -> None:
 
 def _hand(state: State) -> str:
     opened = apply(None, PlanOpened(slug="x"))
-    return hand_of(replace(opened, state=state))
+    return turn_of(replace(opened, state=state))
 
 
 def test_show_reports_the_slices_and_the_counters(project: Project) -> None:
@@ -163,7 +163,7 @@ def test_the_plans_dir_setting_moves_the_search(project: Project) -> None:
     )
     other = project.root / "work" / "plans" / "2026-09-05-elsewhere"
     other.mkdir(parents=True)
-    (other / "overview.md").write_text("# Overview\n", encoding="utf-8")
+    (other / "blueprint.md").write_text("# Blueprint\n", encoding="utf-8")
     (other / "plan.md").write_text("<!-- slice:1 -->\n", encoding="utf-8")
     assert project.run("record", "2026-09-05-elsewhere", "plan-opened").code == 0
     assert [plan["name"] for plan in project.run().json()["plans"]] == ["2026-09-05-elsewhere"]
@@ -214,14 +214,14 @@ BOUND = {
     "executing": ("executing", None),
     "reviewing": ("reviewing", None),
     "fixing": ("reviewing", _defect),
-    "conform": ("conform", None),
+    "conformant": ("conformant", None),
     "blocked during execution": ("executing", _block),
     "plan-change-proposed": ("plan-change-proposed", None),
 }
 
 
 @pytest.mark.parametrize("bound", list(BOUND))
-def test_show_raises_an_alarm_on_an_overview_edited_since_its_approval(
+def test_show_raises_an_alarm_on_an_blueprint_edited_since_its_approval(
     project: Project, bound: str
 ) -> None:
     reached, then = BOUND[bound]
@@ -229,18 +229,18 @@ def test_show_raises_an_alarm_on_an_overview_edited_since_its_approval(
     if then is not None:
         then(project)
     assert project.run("show", PLAN).json()["alarms"] == []
-    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     alarms = project.run("show", PLAN).json()["alarms"]
-    assert [alarm["code"] for alarm in alarms] == ["overview-changed"]
+    assert [alarm["code"] for alarm in alarms] == ["blueprint-changed"]
     text = project.run("show", PLAN, as_json=False).out
-    assert "ALARM overview-changed: overview.md differs" in text
+    assert "ALARM blueprint-changed: blueprint.md differs" in text
 
 
-def test_show_raises_an_alarm_on_an_approved_overview_deleted(project: Project) -> None:
+def test_show_raises_an_alarm_on_an_approved_blueprint_deleted(project: Project) -> None:
     folder = project.reach("reviewing")
-    (folder / "overview.md").unlink()
+    (folder / "blueprint.md").unlink()
     alarms = project.run("show", PLAN).json()["alarms"]
-    assert [alarm["code"] for alarm in alarms] == ["overview-missing"]
+    assert [alarm["code"] for alarm in alarms] == ["blueprint-missing"]
 
 
 @pytest.mark.parametrize("unbound", ["drafting", "awaiting-approval", "blocked during planning"])
@@ -248,16 +248,16 @@ def test_show_raises_no_alarm_while_no_approval_binds(project: Project, unbound:
     folder = project.reach("drafting" if unbound == "blocked during planning" else unbound)
     if unbound == "blocked during planning":
         _block(project)
-    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     assert project.run("show", PLAN).json()["alarms"] == []
     assert "ALARM" not in project.run("show", PLAN, as_json=False).out
 
 
-def test_an_amendment_releases_the_overview_from_the_last_approval(project: Project) -> None:
+def test_an_amendment_releases_the_blueprint_from_the_last_approval(project: Project) -> None:
     folder = project.reach("executing")
     _block(project)
     assert project.record(PLAN, "amendment-received").code == 0
-    (folder / "overview.md").write_text("# Overview\nrevision 2\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nrevision 2\n", encoding="utf-8")
     assert project.run("show", PLAN).json()["alarms"] == []
 
 
@@ -265,14 +265,14 @@ def test_the_text_of_show_holds_what_the_json_holds(project: Project) -> None:
     project.reach("reviewing")
     text = project.run("show", PLAN, as_json=False).out
     assert f"plan: {PLAN}" in text
-    assert "state: reviewing (hand: agents)" in text
+    assert "state: reviewing (turn: agents)" in text
     assert "slices: done 1, 2; remaining none" in text
     assert "passes: planning 0, execution 0, ceiling 3" in text
     assert "gates: none" in text
     assert "max_autonomous_passes: 3" in text
 
 
-REASON = "the export needs a column the overview does not show"
+REASON = "the export needs a column the blueprint does not show"
 
 
 def test_a_suspected_break_waits_in_the_journal_for_a_later_session(project: Project) -> None:

@@ -17,8 +17,8 @@ Every scenario is billed and takes minutes: run them on demand, before a release
 |---|---|
 | `specs` | the main branch, the chain installed, no plan |
 | `awaiting-approval` | the branch `feat/csv-export`, a plan drafted at revision 1 (two slices), pushed |
-| `overview-modified` | revision 1 approved, slice 1 done, then a commit of the developer that edits `overview.md` |
-| `developer-break` | both slices done, then a commit of the developer that adds an `isbn` column the overview leaves out |
+| `blueprint-modified` | revision 1 approved, slice 1 done, then a commit of the developer that edits `blueprint.md` |
+| `developer-break` | both slices done, then a commit of the developer that adds an `isbn` column the blueprint leaves out |
 | `ceiling` | both slices done with a defect the tests do not see (lines sorted by title only), a first review that found it, then a fix that missed it, `max_autonomous_passes: 1` |
 
 `toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
@@ -36,9 +36,9 @@ The gate builds the image, mounts this clone read-only at `/clone` and the outpu
 
 | Test | Start | Session | What must hold |
 |---|---|---|---|
-| `test_the_nominal_path_reaches_conform` | `awaiting-approval` | `/surface-execute` | `conform`, one approval, each slice done once, `conformity.md`, and `shelf/export.py` among the files of the critical zone the description lists |
-| `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conform` |
-| `test_a_modified_overview_stops_the_loop` | `overview-modified` | `/surface-execute` | nothing recorded, still `executing`, the final message names the overview |
+| `test_the_nominal_path_reaches_conformant` | `awaiting-approval` | `/surface-execute` | `conformant`, one approval, each slice done once, `conformity.md`, and `shelf/export.py` among the files of the critical zone the description lists |
+| `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conformant` |
+| `test_a_modified_blueprint_stops_the_loop` | `blueprint-modified` | `/surface-execute` | nothing recorded, still `executing`, the final message names the blueprint |
 | `test_the_ceiling_hands_back_to_the_developer` | `ceiling` | `/surface-execute` | `blocked` after a second review with findings, and no second fix |
 
 `test_a_prepared_state_is_the_one_named` builds each state, and `test_a_session_bypasses_permissions_in_the_container_only` checks the command line of a session and its refusal outside the container: both cost nothing, and run without a token (`scripts/gate.sh e2e -k "prepared or bypasses"`).
@@ -74,7 +74,7 @@ python3 $toy run $p $work/plan-1.jsonl "/surface-plan Export the shelf as CSV fo
 The toy shows no branch practice, no pull request and no merge commit, so the session first asks how to name the branch, recommending `feature/<slug>`, and stops. Answer it with `--resume`: it creates the branch, explores and writes `exploration.md`, then opens `interview.md` with the branch question and its answer under "Git", asks its first interview question and stops. Answer it with `--resume` too. Kill the session that takes the answer as soon as the answer is in `interview.md`. Then relaunch without `--resume`, with `/surface-plan` alone:
 
 - it must not explore again, nor ask again a question that has an answer: it asks the next open one;
-- answered to the end, it writes the plan, has the overview drawn and cross-checked, records `plan-drafted`, commits and pushes to the bare remote. `gh` cannot open a pull request on a local remote: the session says so and gives the description.
+- answered to the end, it writes the plan, has the blueprint drawn and cross-checked, records `plan-drafted`, commits and pushes to the bare remote. `gh` cannot open a pull request on a local remote: the session says so and gives the description.
 
 ### An amendment, killed right after it was recorded
 
@@ -83,7 +83,7 @@ p=$(python3 $toy build awaiting-approval $work/amend)
 python3 $toy run $p $work/amend-1.jsonl "/surface-plan Put the year first: year, title, author."
 ```
 
-Run it in the background and kill it as soon as `journal.jsonl` holds `amendment-received`. Then relaunch with `/surface-plan` alone. The amendment must be under "Amendments" in `interview.md` and in the journal, and revision 2 of `plan.md` and `overview.md` must carry it.
+Run it in the background and kill it as soon as `journal.jsonl` holds `amendment-received`. Then relaunch with `/surface-plan` alone. The amendment must be under "Amendments" in `interview.md` and in the journal, and revision 2 of `plan.md` and `blueprint.md` must carry it.
 
 ### An amendment in the conversation
 
@@ -92,7 +92,7 @@ p=$(python3 $toy build specs $work/converse)
 python3 $toy run $p $work/converse-1.jsonl "/surface-plan Export the shelf as CSV for the bookshop: title, author and year, sorted by author then title."
 ```
 
-Answer the questions with `--resume` until the session hands over the overview and asks: amend, or approve with `/surface-execute`. Answer with `--resume` a question, "why this order?": it is answered and the journal does not move. Then answer "put the year first": it goes under "Amendments" in `interview.md`, the journal holds `amendment-received`, revision 2 is drawn, cross-checked and pushed, and the same question comes back. Answer "fine, go": the journal must hold no `plan-approved`, and the session says that the launch of `/surface-execute` approves.
+Answer the questions with `--resume` until the session hands over the blueprint and asks: amend, or approve with `/surface-execute`. Answer with `--resume` a question, "why this order?": it is answered and the journal does not move. Then answer "put the year first": it goes under "Amendments" in `interview.md`, the journal holds `amendment-received`, revision 2 is drawn, cross-checked and pushed, and the same question comes back. Answer "fine, go": the journal must hold no `plan-approved`, and the session says that the launch of `/surface-execute` approves.
 
 ### A break raised on a commit of the developer, then refused
 
@@ -101,7 +101,7 @@ p=$(python3 $toy build developer-break $work/break)
 python3 $toy run $p $work/break-1.jsonl /surface-execute
 ```
 
-The review must raise a contract break on the `isbn` column, with a proposal under `plan-changes/`, and the loop hands back in `plan-change-proposed`: the session pushes, presents the proposal and asks accept or decline. Answer with `--resume` that you decline it, and why: the reason goes under "Plan change decisions" in `interview.md`, the journal holds `plan-change-refused`, and the same session goes on: the fix brings the code back to the overview, and no later review raises the same break again. Played again with an acceptance instead, the journal holds `plan-change-accepted`, the plan is in `drafting`, and the session tells you to run `/surface-plan`.
+The review must raise a contract break on the `isbn` column, with a proposal under `plan-changes/`, and the loop hands back in `plan-change-proposed`: the session pushes, presents the proposal and asks accept or decline. Answer with `--resume` that you decline it, and why: the reason goes under "Plan change decisions" in `interview.md`, the journal holds `plan-change-refused`, and the same session goes on: the fix brings the code back to the blueprint, and no later review raises the same break again. Played again with an acceptance instead, the journal holds `plan-change-accepted`, the plan is in `drafting`, and the session tells you to run `/surface-plan`.
 
 ### The ceiling, then both ways on
 

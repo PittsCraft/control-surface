@@ -47,7 +47,7 @@ def run_to_end(project: Path, prompt: str, log: Path) -> int:
     ("prepared", "expected"),
     [
         (toy.State.AWAITING, "awaiting-approval"),
-        (toy.State.OVERVIEW_MODIFIED, "executing"),
+        (toy.State.BLUEPRINT_MODIFIED, "executing"),
         (toy.State.DEVELOPER_BREAK, "reviewing"),
         (toy.State.CEILING, "reviewing"),
     ],
@@ -73,10 +73,10 @@ def test_a_session_bypasses_permissions_in_the_container_only(
         toy.claude_command("/surface-execute")
 
 
-def test_the_nominal_path_reaches_conform(tmp_path: Path) -> None:
+def test_the_nominal_path_reaches_conformant(tmp_path: Path) -> None:
     project = toy.build(toy.State.AWAITING, tmp_path)
     assert run_to_end(project, "/surface-execute", tmp_path / "logs" / "execute.jsonl") == 0
-    assert state(project) == "conform"
+    assert state(project) == "conformant"
     seen = events(project)
     assert seen.count("plan-approved") == 1
     assert seen.count("slice-done") == 2
@@ -109,17 +109,17 @@ def test_a_session_killed_in_a_slice_resumes_it(tmp_path: Path) -> None:
     assert seen[: len(at_kill)] == at_kill
     assert seen.count("plan-approved") == 1
     assert seen.count("slice-done") == 2
-    assert state(project) == "conform"
+    assert state(project) == "conformant"
 
 
-def test_a_modified_overview_stops_the_loop(tmp_path: Path) -> None:
-    project = toy.build(toy.State.OVERVIEW_MODIFIED, tmp_path)
+def test_a_modified_blueprint_stops_the_loop(tmp_path: Path) -> None:
+    project = toy.build(toy.State.BLUEPRINT_MODIFIED, tmp_path)
     before = events(project)
     log = tmp_path / "logs" / "execute.jsonl"
     assert run_to_end(project, "/surface-execute", log) == 0
     assert events(project) == before
     assert state(project) == "executing"
-    assert "overview" in str(toy.session_result(log).get("result", "")).lower()
+    assert "blueprint" in str(toy.session_result(log).get("result", "")).lower()
 
 
 def test_the_ceiling_hands_back_to_the_developer(tmp_path: Path) -> None:

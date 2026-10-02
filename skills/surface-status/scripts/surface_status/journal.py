@@ -25,7 +25,7 @@ TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 _TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
 _HASH = re.compile(r"sha256:[0-9a-f]{64}")
-_HASH_KEYS = frozenset({"overview", "plan"})
+_HASH_KEYS = frozenset({"blueprint", "plan"})
 _SLICE_KEYS = frozenset({"slice", "slices"})
 _KINDS = {kind.name: kind for kind in EVENT_TYPES}
 
