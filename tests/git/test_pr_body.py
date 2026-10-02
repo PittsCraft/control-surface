@@ -62,7 +62,7 @@ def test_the_description_lists_every_plan_of_the_branch_with_state_and_links(
     assert "old" not in body
     for name, state in ((A, "executing"), (B, "conform")):
         assert f"| `{name}` | {state} |" in body
-        assert f"[overview.md](docs/plans/{name}/overview.md)" in body
+        assert f"[blueprint.md](docs/plans/{name}/blueprint.md)" in body
         assert f"[plan.md](docs/plans/{name}/plan.md)" in body
 
 
@@ -79,7 +79,7 @@ def test_links_are_absolute_when_origin_is_on_github(repo: Repo) -> None:
     repo.plan("executing", A)
     (row,) = repo.run("pr-body").json()["plans"]
     base = "https://github.com/owner/host/blob/feature/my%23plan"
-    assert row["overview"] == f"[overview.md]({base}/docs/plans/{A}/overview.md)"
+    assert row["blueprint"] == f"[blueprint.md]({base}/docs/plans/{A}/blueprint.md)"
     assert row["plan"] == f"[plan.md]({base}/docs/plans/{A}/plan.md)"
 
 
@@ -102,9 +102,9 @@ def test_every_github_form_of_the_remote_gives_the_same_links(repo: Repo, remote
 def test_a_file_the_plan_does_not_have_is_said_missing(repo: Repo) -> None:
     repo.branch("feature")
     folder = repo.plan("executing", A)
-    (folder / "overview.md").rename(folder / "overview.old")
+    (folder / "blueprint.md").rename(folder / "blueprint.old")
     payload = repo.run("pr-body").json()
-    assert payload["plans"][0]["overview"] is None
+    assert payload["plans"][0]["blueprint"] is None
     assert payload["plans"][0]["plan"] is not None
     assert "| missing |" in payload["body"]
 
@@ -293,7 +293,7 @@ def test_the_files_to_read_are_linked_like_the_other_files_of_the_description(re
     assert row["critical_files"] == [
         {"path": "billing/pay.py", "link": f"[billing/pay.py]({base}/billing/pay.py)"}
     ]
-    assert row["overview"] == f"[overview.md]({base}/docs/plans/{A}/overview.md)"
+    assert row["blueprint"] == f"[blueprint.md]({base}/docs/plans/{A}/blueprint.md)"
 
 
 def test_the_files_to_read_come_before_the_decisions_given_for_information(repo: Repo) -> None:
@@ -337,9 +337,9 @@ def test_without_a_block_or_with_an_empty_one_the_body_is_what_it_was(
     assert payload["body"] == (
         "## Plans on this branch\n"
         "\n"
-        "| Plan | State | Overview | Plan |\n"
+        "| Plan | State | Blueprint | Plan |\n"
         "|---|---|---|---|\n"
-        f"| `{A}` | conform | [overview.md](docs/plans/{A}/overview.md)"
+        f"| `{A}` | conform | [blueprint.md](docs/plans/{A}/blueprint.md)"
         f" | [plan.md](docs/plans/{A}/plan.md) |\n"
         "\n"
         f"{FOOTER}\n"

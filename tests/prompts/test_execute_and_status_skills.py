@@ -211,7 +211,7 @@ def test_execute_writes_neither_code_nor_plan() -> None:
     assert "You write neither code nor plan" in body
     rules = section(body, "Ground rules")
     assert "You edit one file only: `interview.md` of the plan folder" in rules
-    assert "Never code, never `plan.md`, never `overview.md`" in rules
+    assert "Never code, never `plan.md`, never `blueprint.md`" in rules
     assert "`interview.md` for a decision of the developer" in rules
     assert "Only the script writes the journal" in rules
 
@@ -342,7 +342,7 @@ def test_a_proposal_is_put_to_the_developer_in_the_conversation() -> None:
         proposal,
         [
             'first do the steps of "When the loop stops"',
-            "present the proposal yourself, at the level of the overview",
+            "present the proposal yourself, at the level of the blueprint",
             "Ask: accept or decline, with your recommendation",
         ],
     )

@@ -63,7 +63,7 @@ class State(StrEnum):
 
     SPECS = "specs"  # the main branch, the chain installed, no plan yet
     AWAITING = "awaiting-approval"  # a plan drafted at revision 1, pushed
-    OVERVIEW_MODIFIED = "overview-modified"  # approved, slice 1 done, then the overview edited
+    BLUEPRINT_MODIFIED = "blueprint-modified"  # approved, slice 1 done, then the blueprint edited
     DEVELOPER_BREAK = "developer-break"  # every slice done, then a commit against the schema
     CEILING = "ceiling"  # a defect, its review, a fix that missed it, a ceiling of one pass
 
@@ -361,8 +361,8 @@ python3 -m unittest discover -s tests -q
 ```
 """
 
-OVERVIEW = """\
-# Export the shelf as CSV: overview
+BLUEPRINT = """\
+# Export the shelf as CSV: blueprint
 
 Revision 1, drawn from `plan.md`.
 
@@ -424,7 +424,7 @@ Sort the books by author, then by title; write the header, then one row per book
 ## 9. Sensitive zones
 
 Critical zone touched: the CSV export (`AGENTS.md`). Its columns are a contract with the
-bookshop: their names and their order are fixed by this overview.
+bookshop: their names and their order are fixed by this blueprint.
 
 No change: state machines.
 """
@@ -432,7 +432,7 @@ No change: state machines.
 CHECK = """\
 omissions: 0
 
-The overview shows what the plan does: the command, the three columns and their order, the
+The blueprint shows what the plan does: the command, the three columns and their order, the
 order of the lines, the quoting, the empty shelf, and the ISBN left out.
 """
 
@@ -571,7 +571,7 @@ TEST_CLI_WITH_ISBN = TEST_CLI_AFTER.replace(
     '            "Dune,Herbert,1965,9780441013593\\n"\n        )',
 )
 
-OVERVIEW_EDITED = OVERVIEW.replace(
+BLUEPRINT_EDITED = BLUEPRINT.replace(
     "3. One line per book: its title, author and year, in that order. The ISBN is not exported.",
     "3. One line per book: its title, author, year and ISBN, in that order.",
 )
@@ -721,7 +721,7 @@ def _awaiting(project: Path) -> str:
             f"{plan}/exploration.md": EXPLORATION,
             f"{plan}/interview.md": INTERVIEW,
             f"{plan}/plan.md": PLAN,
-            f"{plan}/overview.md": OVERVIEW,
+            f"{plan}/blueprint.md": BLUEPRINT,
             f"{plan}/checks/rev-01-01.md": CHECK,
         },
     )
@@ -788,9 +788,9 @@ def build(state: State, dest: Path) -> Path:
     _approve(project, plan)
     defect = state is State.CEILING
     _slice_one(project, plan, defect=defect)
-    if state is State.OVERVIEW_MODIFIED:
-        write(project, {f"{plan}/overview.md": OVERVIEW_EDITED})
-        commit(project, "overview: export the isbn too", [f"{plan}/overview.md"])
+    if state is State.BLUEPRINT_MODIFIED:
+        write(project, {f"{plan}/blueprint.md": BLUEPRINT_EDITED})
+        commit(project, "blueprint: export the isbn too", [f"{plan}/blueprint.md"])
     else:
         _slice_two(project, plan, defect=defect)
     if state is State.DEVELOPER_BREAK:

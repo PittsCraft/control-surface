@@ -55,7 +55,7 @@ def test_the_pr_body_answer_has_its_documented_fields(repo: Repo) -> None:
         "name",
         "state",
         "hand",
-        "overview",
+        "blueprint",
         "plan",
         "decisions",
         "critical_files",

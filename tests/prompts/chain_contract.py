@@ -4,14 +4,14 @@ The state script holds its own contract in code. The prompts hold theirs in pros
 state here what the chain promises a developer, and check that each prompt says it: how a review
 classifies a finding, which command acts on a plan in each state, which acts of the developer each
 command takes in the conversation, in which order planning records its events and the execution
-loop reads its rows, what the reviewer writes, the sections of an overview and its length, the
+loop reads its rows, what the reviewer writes, the sections of a blueprint and its length, the
 critical zones whose code the developer still reads, and the language of the plan documents.
 """
 
 # A review classifies a finding by two closed questions, in this order. A yes to the first is a
 # contract break; otherwise a yes to the second is a defect, the code is fixed, and a no a
 # deviation, the plan is amended.
-BREAK_QUESTION = "Must the overview be modified for it to stay true?"
+BREAK_QUESTION = "Must the blueprint be modified for it to stay true?"
 DEFECT_QUESTION = "Must the code be fixed?"
 # A review with no finding ends the loop in this state.
 NO_FINDING_END = "conform state"
@@ -25,7 +25,7 @@ CONFORM_HAND_BACK = (
 # in the zones the host's agent instructions declare critical, the developer reads the code
 # themselves, from the list of changed files the pull request description gives.
 CONFORM_EXCEPTION = "conform leaves nothing to check, except the code of the critical zones"
-# So the developer learns at approval which zones those will be: section 9 of the overview names
+# So the developer learns at approval which zones those will be: section 9 of the blueprint names
 # each declared critical zone the plan touches, or says the plan touches none, and the cross-check
 # counts a touched zone that section 9 does not name as an omission.
 CRITICAL_ZONES_OF_THE_PLAN = (
@@ -112,9 +112,9 @@ REVIEWER_WRITES = (
 # edits one: when one fails a gate, the loop stops instead of the report being reworded.
 CHAIN_REPORTS = ("gates/", "reviews/", "checks/", "plan-changes/", "conformity.md")
 
-# The sections of an overview, in order. None of them holds the slices: the plan stays alive,
+# The sections of a blueprint, in order. None of them holds the slices: the plan stays alive,
 # and in the frozen contract any re-slicing would become a break.
-OVERVIEW_SECTIONS = (
+BLUEPRINT_SECTIONS = (
     "1. The idea in one sentence",
     "2. Acceptance criteria",
     "3. Scope and out of scope",
@@ -125,11 +125,11 @@ OVERVIEW_SECTIONS = (
     "8. Algorithms",
     "9. Sensitive zones",
 )
-# An overview is as long as the feature needs: the developer reads all of it. These sections are
+# A blueprint is as long as the feature needs: the developer reads all of it. These sections are
 # always written; one of the others is written only when the plan changes what it shows, under
 # its own number, and one closing line names those left out. A diagram is drawn only when it
 # shows what the prose does not. The cross-check never counts a short section or the absence of
-# a diagram as an omission, only what the overview does not show.
+# a diagram as an omission, only what the blueprint does not show.
 ALWAYS_WRITTEN = (
     "1. The idea in one sentence",
     "2. Acceptance criteria",

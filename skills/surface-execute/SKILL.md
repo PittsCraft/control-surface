@@ -17,7 +17,7 @@ You dispatch the execution of a plan. Launched on a plan awaiting approval, you 
 - Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval, nor `git -C`, which the permission rules do not read as the git command it runs. Plain commands only, which the developer's permission rules can read: no variable or function standing for a command, no command run by another such as `find -exec`, no expansion such as `$?` or `$(...)`, no here-document; the exit code comes back with the result, never echo it.
 - A fresh agent for every slice, every review, every fix, every suspected break and every refused list of critical files: one Agent call with `subagent_type` set to the role, `surface-executor` or `surface-reviewer`, and `model` set to that role's model under `settings.models` of `show --json`. Its prompt gives the plan folder, file paths and the facts its mandate lists below, never a summary of this conversation. Never resume an agent that already returned.
 - One agent at a time. Ask for the foreground, `run_in_background` false, when the Agent tool offers it: the loop then stays in the turn the developer launched, with the grants of this command. Wait for the result before the next step, even when it arrives in a later turn, and start nothing meanwhile.
-- You edit one file only: `interview.md` of the plan folder, where you write the developer's decisions on a plan change proposal, quoted in their words, then translated when theirs is not the documents' language. Never code, never `plan.md`, never `overview.md`. You commit through git, by pathspec, following the repository's commit conventions. A journal line goes in the same commit as the files it describes: the reports it cites, `plan.md` for a `plan-amended`, `interview.md` for a decision of the developer. You push only when the loop stops or hands back to the developer.
+- You edit one file only: `interview.md` of the plan folder, where you write the developer's decisions on a plan change proposal, quoted in their words, then translated when theirs is not the documents' language. Never code, never `plan.md`, never `blueprint.md`. You commit through git, by pathspec, following the repository's commit conventions. A journal line goes in the same commit as the files it describes: the reports it cites, `plan.md` for a `plan-amended`, `interview.md` for a decision of the developer. You push only when the loop stops or hands back to the developer.
 - You speak to the developer in the language they write in: what you say in the terminal is not repository content. What you write in the plan folder is in the documents' language, the language `exploration.md` names in its repository rules.
 
 ## Finding the plan
@@ -42,7 +42,7 @@ Read the state, apply the first row that holds, read the state again, and so on 
 
 | State found | What you do |
 |---|---|
-| `alarms` of `show --json` not empty | Stop, and name each alarm. `overview-changed`: see "When the loop stops". |
+| `alarms` of `show --json` not empty | Stop, and name each alarm. `blueprint-changed`: see "When the loop stops". |
 | `awaiting-approval`, at launch | Say in one line the plan and the revision you approve, the `rev` of the last `plan-drafted`, and the gates it names, `gates` of `show --json`. Then `surface-status record <plan> plan-approved` and commit the journal. |
 | `blocked` during execution, at launch | `surface-status record <plan> resumed`, and commit the journal. |
 | `plan-change-proposed` | See "A plan change proposal". |
@@ -89,12 +89,12 @@ The executor's reason is in the journal, not in this conversation: a relaunch fi
 
 ## A plan change proposal
 
-A reviewer found that the overview would have to change to stay true, and wrote the proposal at `pending_proposal` of `show --json`. The developer decides, and you keep the hand while they do.
+A reviewer found that the blueprint would have to change to stay true, and wrote the proposal at `pending_proposal` of `show --json`. The developer decides, and you keep the hand while they do.
 
 1. When `interview.md` already holds the decision on this proposal, under "Plan change decisions", a relaunch after a session died: it is the reply of step 3, and nothing is asked again.
-2. Otherwise, first do the steps of "When the loop stops", so the pull request shows who has the hand. Then present the proposal yourself, at the level of the overview: what would change in it, why, and the proof, not the code. Ask: accept or decline, with your recommendation and its reason in one line.
+2. Otherwise, first do the steps of "When the loop stops", so the pull request shows who has the hand. Then present the proposal yourself, at the level of the blueprint: what would change in it, why, and the proof, not the code. Ask: accept or decline, with your recommendation and its reason in one line.
 3. The reply:
-   - Declined: ask the reason in one line. Write the decision and the reason into `interview.md` under "Plan change decisions", quoted in the developer's words and translated, then `surface-status record <plan> plan-change-refused --why "<reason>"`, and commit `interview.md` with the journal. Back to the loop, in this session: the agents bring the code back to the overview, and the next reviewer does not raise the same break again.
+   - Declined: ask the reason in one line. Write the decision and the reason into `interview.md` under "Plan change decisions", quoted in the developer's words and translated, then `surface-status record <plan> plan-change-refused --why "<reason>"`, and commit `interview.md` with the journal. Back to the loop, in this session: the agents bring the code back to the blueprint, and the next reviewer does not raise the same break again.
    - Accepted: write the decision into `interview.md` under "Plan change decisions", then `surface-status record <plan> plan-change-accepted`, and commit `interview.md` with the journal. The plan is back in drafting, which belongs to `/surface-plan`: stop as "When the loop stops" says, and tell the developer to run `/surface-plan`, which draws the next revision and may ask its questions first. You draw no revision: you cannot load `/surface-plan`, and you never write the plan. The new revision is approved by a new launch of `/surface-execute`.
    - A question is answered from the files, and nothing is recorded. In doubt, ask whether the reply is a decision.
 
@@ -145,7 +145,7 @@ A relaunch of `/surface-execute` on a plan blocked during execution resumes it t
 
 ## When the loop stops
 
-The loop stops on a row that says so, on a refusal of the script, on an agent's return the steps above do not expect, and on no progress. An alarm or a refusal `overview-changed` means `overview.md` was modified after its approval: nothing goes on until the developer restores the approved content or abandons the plan with `/surface-status`.
+The loop stops on a row that says so, on a refusal of the script, on an agent's return the steps above do not expect, and on no progress. An alarm or a refusal `blueprint-changed` means `blueprint.md` was modified after its approval: nothing goes on until the developer restores the approved content or abandons the plan with `/surface-status`.
 
 At every stop, once a plan was found:
 

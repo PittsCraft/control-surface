@@ -1,6 +1,6 @@
 ---
 name: surface-plan
-description: Plans a feature with the developer and holds the plan until its approval. Explores the code, asks one question at a time, writes the plan, has the overview drawn and cross-checked by fresh agents, then commits, pushes and opens a draft pull request. It keeps the hand and takes amendments in the conversation until the developer approves with /surface-execute. Relaunched, it resumes from the plan folder and takes an amendment, a decision on a plan change proposal, or an instruction after a block.
+description: Plans a feature with the developer and holds the plan until its approval. Explores the code, asks one question at a time, writes the plan, has the blueprint drawn and cross-checked by fresh agents, then commits, pushes and opens a draft pull request. It keeps the hand and takes amendments in the conversation until the developer approves with /surface-execute. Relaunched, it resumes from the plan folder and takes an amendment, a decision on a plan change proposal, or an instruction after a block.
 argument-hint: <specs, a path to them, a plan folder, or an amendment>
 disable-model-invocation: true
 allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(true)
@@ -8,7 +8,7 @@ allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/
 
 # surface-plan
 
-You plan a feature with the developer, not for them, and you hold the plan until they approve it. You write only in the plan folder: never the code, never `overview.md` (a fresh extractor draws it), never `journal.jsonl` (the state script alone writes it). What the developer gave is at the end, under "What the developer gave".
+You plan a feature with the developer, not for them, and you hold the plan until they approve it. You write only in the plan folder: never the code, never `blueprint.md` (a fresh extractor draws it), never `journal.jsonl` (the state script alone writes it). What the developer gave is at the end, under "What the developer gave".
 
 ## Resuming from files
 
@@ -78,11 +78,11 @@ The conversation is the developer's, the plan folder is the repository's.
 6. Plan. Write `plan.md` from `${CLAUDE_SKILL_DIR}/templates/plan.md`: goal and scope with the numbered acceptance criteria, architecture decisions, slices, tests, definition of done, risks and assumptions, and the gates (see "The gates"). Each section as long as the feature needs, one screen at most, none filled for its own sake; no code beyond a signature or a schema fragment. Each slice behind its `<!-- slice:N -->` marker, alone on its line; a slice number the journal has seen is never reused. A new revision carries every amendment and accepted plan change of `interview.md`, and keeps the numbers of the slices already done. Every document you write in the plan folder must pass the gates of step 1, which read it too: a decision still to come or an option set aside is described, never cited by a record number that does not exist.
 7. Extraction. Launch a fresh `surface-extractor` (see "The agents") and wait for its return.
 8. Cross-check. Launch a fresh `surface-checker` with the report path `checks/rev-NN-MM.md` and wait for its return. Check that the report exists and opens with the count returned, then `surface-status record <plan> check-done --report checks/rev-NN-MM.md --omissions <k> --json`.
-9. Omissions. None: step 10. Otherwise, when `passes.planning` of `show` is more than `passes.ceiling`, stop at the ceiling (see "The agents"). Else read the report and choose: the overview must show more, then step 7 with the report's path; or the plan does more than the need, then correct `plan.md` and step 7. Then step 8 again. A pass is a cross-check with omissions, which sends the overview or the plan back for rework; a clean check costs none. So the overview or the plan is reworked `passes.ceiling` times, and the check after them hands back.
+9. Omissions. None: step 10. Otherwise, when `passes.planning` of `show` is more than `passes.ceiling`, stop at the ceiling (see "The agents"). Else read the report and choose: the blueprint must show more, then step 7 with the report's path; or the plan does more than the need, then correct `plan.md` and step 7. Then step 8 again. A pass is a cross-check with omissions, which sends the blueprint or the plan back for rework; a clean check costs none. So the blueprint or the plan is reworked `passes.ceiling` times, and the check after them hands back.
 10. Draft. `surface-status record <plan> plan-drafted --json`, then "Commit, push and pull request". Refused with the code `gate-list`: `plan.md` lacks its gates block or holds a malformed one; correct it, then step 8.
-11. Hand over. Tell the developer where to read the overview: its path, and its link in the pull request. Name the gates the loop will run, `gates` of `show`, or say that the plan names none and the loop then has no objective check. Then keep the hand and ask: amend, or approve by launching `/surface-execute`, whose launch alone approves this revision.
+11. Hand over. Tell the developer where to read the blueprint: its path, and its link in the pull request. Name the gates the loop will run, `gates` of `show`, or say that the plan names none and the loop then has no objective check. Then keep the hand and ask: amend, or approve by launching `/surface-execute`, whose launch alone approves this revision.
     - A reply that asks for a change is an amendment: take it as "Taking an amendment" says, which writes it first, records it, draws and cross-checks the next revision, commits and pushes it. Then ask the same question again.
-    - A question, about the plan or the overview, is answered from the files, and nothing is recorded.
+    - A question, about the plan or the blueprint, is answered from the files, and nothing is recorded.
     - In doubt, ask whether the reply is an amendment.
     - A reply that agrees approves nothing: say that the launch of `/surface-execute` approves, and record nothing.
 
@@ -101,7 +101,7 @@ The plan names the commands that check the whole project, tests, lint, type chec
 
 A fresh agent for each extraction and each cross-check, launched with the Agent tool: `subagent_type` its name, `model` its value in `settings.models` of `show` (`extractor`, `checker`), and a prompt of file paths only, never the conversation. Each returns a few lines.
 
-- `surface-extractor`: the plan folder; the form of the overview, `${CLAUDE_SKILL_DIR}/templates/overview.md`; after a cross-check with omissions, the path of its report.
+- `surface-extractor`: the plan folder; the form of the blueprint, `${CLAUDE_SKILL_DIR}/templates/blueprint.md`; after a cross-check with omissions, the path of its report.
 - `surface-checker`: the plan folder, and the path of the report to write.
 
 If an agent returns without its file, launch it once more; then tell the developer and stop.
@@ -112,9 +112,9 @@ Stop at the ceiling: once `passes.planning` is more than `passes.ceiling`, or wh
 
 From `last_event` and the files:
 
-- `interview-closed`, `amendment-received`, `plan-change-accepted`: step 6; step 7 when `plan.md` already carries the last answer, amendment or decision of `interview.md`; step 8 when `overview.md` already draws that plan.
+- `interview-closed`, `amendment-received`, `plan-change-accepted`: step 6; step 7 when `plan.md` already carries the last answer, amendment or decision of `interview.md`; step 8 when `blueprint.md` already draws that plan.
 - `resumed`: follow the developer's last instruction under "Instructions after a block" in `interview.md`, then step 7 or 8.
-- `check-done`: read its line in `journal.jsonl`. No omission: step 10; if the script refuses `plan-drafted` because the check did not cover the current files, step 8. Omissions: step 9, or step 8 when `overview.md` already shows what the report lists as missing.
+- `check-done`: read its line in `journal.jsonl`. No omission: step 10; if the script refuses `plan-drafted` because the check did not cover the current files, step 8. Omissions: step 9, or step 8 when `blueprint.md` already shows what the report lists as missing.
 
 ## Taking an amendment
 
@@ -122,10 +122,10 @@ Only in `awaiting-approval`, or `blocked` during execution. The amendment is the
 
 ## A plan change proposal
 
-A reviewer found that the overview would have to change to stay true, and wrote the proposal at `pending_proposal`. `/surface-execute` puts it to the developer itself when its loop meets it; you take it when the developer launches `/surface-plan` in that state instead. When `interview.md` already holds the decision on this proposal, take it and ask nothing again. Otherwise present it at the level of the overview: what would change in it, why, and the proof, not the code. Then ask: accept or refuse, with your recommendation.
+A reviewer found that the blueprint would have to change to stay true, and wrote the proposal at `pending_proposal`. `/surface-execute` puts it to the developer itself when its loop meets it; you take it when the developer launches `/surface-plan` in that state instead. When `interview.md` already holds the decision on this proposal, take it and ask nothing again. Otherwise present it at the level of the blueprint: what would change in it, why, and the proof, not the code. Then ask: accept or refuse, with your recommendation.
 
-- Accepted: write the decision into `interview.md` under "Plan change decisions", then `surface-status record <plan> plan-change-accepted --json`, then step 6: the plan grows slices with new numbers, and a new revision of the overview follows.
-- Refused: ask the reason in one line and write it into `interview.md`, then `surface-status record <plan> plan-change-refused --why "<reason>" --json`, commit, and invite the developer to relaunch `/surface-execute`: the agents bring the code back to the overview, and the next reviewer does not raise the same break again.
+- Accepted: write the decision into `interview.md` under "Plan change decisions", then `surface-status record <plan> plan-change-accepted --json`, then step 6: the plan grows slices with new numbers, and a new revision of the blueprint follows.
+- Refused: ask the reason in one line and write it into `interview.md`, then `surface-status record <plan> plan-change-refused --why "<reason>" --json`, commit, and invite the developer to relaunch `/surface-execute`: the agents bring the code back to the blueprint, and the next reviewer does not raise the same break again.
 
 ## After a block
 

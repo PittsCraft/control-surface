@@ -7,12 +7,12 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from state_support import (
+    BP1,
     CHECKED,
     DRAFTING,
     EXECUTING,
     FIXING,
     GATED,
-    OV1,
     PL1,
     PROPOSAL,
     REVIEWING,
@@ -48,11 +48,11 @@ from surface_status.machine import PlanState, State, sends_work_back
 
 
 def context(ceiling: int) -> RecordContext:
-    return RecordContext(ceiling=ceiling, gates_declared=True, overview_hash=OV1)
+    return RecordContext(ceiling=ceiling, gates_declared=True, blueprint_hash=BP1)
 
 
 def check(omissions: int) -> CheckDone:
-    return CheckDone(rev=1, report="r", omissions=omissions, overview=OV1, plan=PL1)
+    return CheckDone(rev=1, report="r", omissions=omissions, blueprint=BP1, plan=PL1)
 
 
 def review(*, defects: int = 0, deviations: int = 0) -> ReviewDone:
@@ -90,7 +90,7 @@ class TestPlanning:
     def test_is_not_restarted_by_a_draft_nor_by_the_execution_events(self) -> None:
         state = must_accept(replay(DRAFTING), check(1))
         state = must_accept(state, check(0))
-        drafted = must_accept(state, PlanDrafted(rev=1, overview=OV1, plan=PL1, slices=(1, 2)))
+        drafted = must_accept(state, PlanDrafted(rev=1, blueprint=BP1, plan=PL1, slices=(1, 2)))
         assert drafted.planning_passes == 1
 
     def test_the_execution_events_leave_it_alone(self) -> None:
@@ -147,7 +147,7 @@ class TestExecution:
         state = must_accept(state, GatesRun(run=3, result=GateResult.PASS))
         state = must_accept(state, FixDone(pass_=1))
         state = must_accept(state, review())
-        conform = must_accept(state, Conform(conformity="c", overview=OV1))
+        conform = must_accept(state, Conform(conformity="c", blueprint=BP1))
         assert (conform.state, conform.execution_passes) == (State.CONFORM, 2)
 
     @pytest.mark.parametrize("resetting", ["approved", "refused", "resumed"])
@@ -155,7 +155,7 @@ class TestExecution:
         cases: dict[str, tuple[PlanState, Event]] = {
             "approved": (
                 state_in(State.AWAITING_APPROVAL, execution_passes=3),
-                PlanApproved(rev=1, overview=OV1),
+                PlanApproved(rev=1, blueprint=BP1),
             ),
             "refused": (
                 state_in(State.PLAN_CHANGE_PROPOSED, execution_passes=3),
@@ -172,7 +172,7 @@ class TestExecution:
     def test_is_kept_across_a_block_and_a_conform_and_by_amendments_of_planning(self) -> None:
         state = state_in(State.REVIEWING, execution_passes=2)
         assert must_accept(state, Blocked(why="x")).execution_passes == 2
-        assert must_accept(state, Conform(conformity="c", overview=OV1)).execution_passes == 2
+        assert must_accept(state, Conform(conformity="c", blueprint=BP1)).execution_passes == 2
 
     def test_the_two_phases_count_apart(self) -> None:
         state = must_accept(state_in(State.DRAFTING), check(1))
@@ -227,7 +227,7 @@ class TestCeiling:
             (State.FIXING, GatesRun(run=9, result=GateResult.PASS)),
             (State.EXECUTING, PlanChangeProposed(proposal=PROPOSAL, slice_=1)),
             (State.EXECUTING, BreakSuspected(slice_=1, why="x")),
-            (State.REVIEWING, Conform(conformity="c", overview=OV1)),
+            (State.REVIEWING, Conform(conformity="c", blueprint=BP1)),
             (State.REVIEWING, Blocked(why="ceiling")),
             (State.FIXING, Blocked(why="ceiling")),
         ],
@@ -285,7 +285,7 @@ def plan_loop(ceiling: int, omissions: list[int]) -> tuple[int, PlanState]:
     for reworks, found in enumerate(omissions):  # each turn after the first is step 7 again
         state = must_accept(state, check(found), context(ceiling))
         if found == 0:
-            drafted = PlanDrafted(rev=1, overview=OV1, plan=PL1, slices=(1, 2))
+            drafted = PlanDrafted(rev=1, blueprint=BP1, plan=PL1, slices=(1, 2))
             return reworks, must_accept(state, drafted, context(ceiling))
         if state.planning_passes > ceiling:
             return reworks, must_accept(state, Blocked(why="ceiling"), context(ceiling))
@@ -305,7 +305,7 @@ class TestThePlanningLoop:
             ([0], 0, State.AWAITING_APPROVAL),
         ],
     )
-    def test_a_ceiling_of_three_lets_the_overview_be_reworked_three_times(
+    def test_a_ceiling_of_three_lets_the_blueprint_be_reworked_three_times(
         self, omissions: list[int], reworks: int, end: State
     ) -> None:
         sent, state = plan_loop(3, omissions)
@@ -384,7 +384,7 @@ def _step(loop: Loop, answer: Answer) -> None:  # noqa: PLR0912 (one arm per row
         else:
             loop.record(BreakSuspected(slice_=slice_, why="x"))
     elif state.state is State.REVIEWING and _clean_review_last(state):
-        loop.record(Conform(conformity="c", overview=OV1))
+        loop.record(Conform(conformity="c", blueprint=BP1))
     elif state.state is State.REVIEWING and state.gates is not GateResult.PASS:
         loop.record(GatesRun(run=1, result=GateResult(answer(("pass", "fail")))))
     elif state.state is State.REVIEWING:

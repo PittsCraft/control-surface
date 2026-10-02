@@ -121,8 +121,8 @@ def test_a_merge_of_main_into_the_branch_adds_nothing_to_the_reviewed_diff(repo:
     assert payload["base"] == repo.git("rev-parse", "main")
     reviewed = repo.git("diff", "--no-renames", "--name-only", payload["base"], "HEAD").splitlines()
     assert sorted(reviewed) == [
+        f"docs/plans/{A}/blueprint.md",
         f"docs/plans/{A}/journal.jsonl",
-        f"docs/plans/{A}/overview.md",
         f"docs/plans/{A}/plan.md",
         "src/feature.py",
     ]

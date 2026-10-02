@@ -84,13 +84,13 @@ class Project:
         return Result(code, out.getvalue(), err.getvalue())
 
     def plan(self, name: str = PLAN, gates: tuple[str, ...] = ()) -> Path:
-        """Make a plan folder holding the developer's files: an overview, a plan of two slices.
+        """Make a plan folder holding the developer's files: a blueprint, a plan of two slices.
 
         The plan names `gates` in its gates block; none by default, so the gate guards are lifted.
         """
         folder = self.plans / name
         folder.mkdir()
-        (folder / "overview.md").write_text("# Overview\n", encoding="utf-8")
+        (folder / "blueprint.md").write_text("# Blueprint\n", encoding="utf-8")
         (folder / "plan.md").write_text(plan_text(gates), encoding="utf-8")
         return folder
 

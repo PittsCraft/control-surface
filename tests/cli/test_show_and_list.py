@@ -163,7 +163,7 @@ def test_the_plans_dir_setting_moves_the_search(project: Project) -> None:
     )
     other = project.root / "work" / "plans" / "2026-09-05-elsewhere"
     other.mkdir(parents=True)
-    (other / "overview.md").write_text("# Overview\n", encoding="utf-8")
+    (other / "blueprint.md").write_text("# Blueprint\n", encoding="utf-8")
     (other / "plan.md").write_text("<!-- slice:1 -->\n", encoding="utf-8")
     assert project.run("record", "2026-09-05-elsewhere", "plan-opened").code == 0
     assert [plan["name"] for plan in project.run().json()["plans"]] == ["2026-09-05-elsewhere"]
@@ -221,7 +221,7 @@ BOUND = {
 
 
 @pytest.mark.parametrize("bound", list(BOUND))
-def test_show_raises_an_alarm_on_an_overview_edited_since_its_approval(
+def test_show_raises_an_alarm_on_an_blueprint_edited_since_its_approval(
     project: Project, bound: str
 ) -> None:
     reached, then = BOUND[bound]
@@ -229,18 +229,18 @@ def test_show_raises_an_alarm_on_an_overview_edited_since_its_approval(
     if then is not None:
         then(project)
     assert project.run("show", PLAN).json()["alarms"] == []
-    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     alarms = project.run("show", PLAN).json()["alarms"]
-    assert [alarm["code"] for alarm in alarms] == ["overview-changed"]
+    assert [alarm["code"] for alarm in alarms] == ["blueprint-changed"]
     text = project.run("show", PLAN, as_json=False).out
-    assert "ALARM overview-changed: overview.md differs" in text
+    assert "ALARM blueprint-changed: blueprint.md differs" in text
 
 
-def test_show_raises_an_alarm_on_an_approved_overview_deleted(project: Project) -> None:
+def test_show_raises_an_alarm_on_an_approved_blueprint_deleted(project: Project) -> None:
     folder = project.reach("reviewing")
-    (folder / "overview.md").unlink()
+    (folder / "blueprint.md").unlink()
     alarms = project.run("show", PLAN).json()["alarms"]
-    assert [alarm["code"] for alarm in alarms] == ["overview-missing"]
+    assert [alarm["code"] for alarm in alarms] == ["blueprint-missing"]
 
 
 @pytest.mark.parametrize("unbound", ["drafting", "awaiting-approval", "blocked during planning"])
@@ -248,16 +248,16 @@ def test_show_raises_no_alarm_while_no_approval_binds(project: Project, unbound:
     folder = project.reach("drafting" if unbound == "blocked during planning" else unbound)
     if unbound == "blocked during planning":
         _block(project)
-    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     assert project.run("show", PLAN).json()["alarms"] == []
     assert "ALARM" not in project.run("show", PLAN, as_json=False).out
 
 
-def test_an_amendment_releases_the_overview_from_the_last_approval(project: Project) -> None:
+def test_an_amendment_releases_the_blueprint_from_the_last_approval(project: Project) -> None:
     folder = project.reach("executing")
     _block(project)
     assert project.record(PLAN, "amendment-received").code == 0
-    (folder / "overview.md").write_text("# Overview\nrevision 2\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nrevision 2\n", encoding="utf-8")
     assert project.run("show", PLAN).json()["alarms"] == []
 
 
@@ -272,7 +272,7 @@ def test_the_text_of_show_holds_what_the_json_holds(project: Project) -> None:
     assert "max_autonomous_passes: 3" in text
 
 
-REASON = "the export needs a column the overview does not show"
+REASON = "the export needs a column the blueprint does not show"
 
 
 def test_a_suspected_break_waits_in_the_journal_for_a_later_session(project: Project) -> None:

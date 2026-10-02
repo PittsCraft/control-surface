@@ -3,10 +3,10 @@
 import pytest
 from state_support import (
     AWAITING,
+    BP1,
     CONTEXT,
     EXECUTING,
     FIXING,
-    OV1,
     PL2,
     PROPOSAL,
     REVIEWING,
@@ -32,17 +32,17 @@ from surface_status.machine import Origin, State
 
 
 def test_approval_goes_to_executing_when_slices_remain() -> None:
-    assert replay([*AWAITING, PlanApproved(rev=1, overview=OV1)]).state is State.EXECUTING
+    assert replay([*AWAITING, PlanApproved(rev=1, blueprint=BP1)]).state is State.EXECUTING
 
 
 def test_approval_goes_to_reviewing_when_every_declared_slice_is_done() -> None:
     prev = state_in(State.AWAITING_APPROVAL, declared=frozenset({1, 2}), done=frozenset({1, 2}))
-    assert must_accept(prev, PlanApproved(rev=2, overview=OV1)).state is State.REVIEWING
+    assert must_accept(prev, PlanApproved(rev=2, blueprint=BP1)).state is State.REVIEWING
 
 
 def test_approval_of_a_plan_without_slices_goes_to_reviewing() -> None:
     prev = state_in(State.AWAITING_APPROVAL, declared=frozenset())
-    assert must_accept(prev, PlanApproved(rev=1, overview=OV1)).state is State.REVIEWING
+    assert must_accept(prev, PlanApproved(rev=1, blueprint=BP1)).state is State.REVIEWING
 
 
 def test_the_last_slice_moves_to_reviewing_and_the_others_do_not() -> None:

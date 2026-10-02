@@ -13,11 +13,11 @@ from pathlib import Path
 import pytest
 from chain_contract import (
     ALWAYS_WRITTEN,
+    BLUEPRINT_SECTIONS,
     CLOSING_LINE,
     DOCUMENTS_LANGUAGE,
     FORMER_LANGUAGE_RULE,
     LANGUAGE_SOURCES,
-    OVERVIEW_SECTIONS,
     PLAN,
     PLANNING_EVENTS,
     SEEN_BY,
@@ -248,7 +248,7 @@ def test_first_launch_follows_the_planning_sequence() -> None:
         "check-done",
         "plan-drafted",
         '"Commit, push and pull request"',
-        "Tell the developer where to read the overview",
+        "Tell the developer where to read the blueprint",
     ]
     assert [step for step in order if step in PLANNING_EVENTS] == list(PLANNING_EVENTS)
     positions = _positions(steps, order)
@@ -513,10 +513,10 @@ def test_an_amendment_outside_the_hand_is_explained_and_refused() -> None:
     )
 
 
-def test_the_overview_template_holds_the_nine_sections_and_no_slice() -> None:
-    template = _template("overview.md")
+def test_the_blueprint_template_holds_the_nine_sections_and_no_slice() -> None:
+    template = _template("blueprint.md")
     headings = _headings(template)
-    assert headings == list(OVERVIEW_SECTIONS)
+    assert headings == list(BLUEPRINT_SECTIONS)
     _, extractor = (AGENTS / "surface-extractor.md").read_text(encoding="utf-8").split("\n---\n", 1)
     for heading in headings:
         assert heading in extractor
@@ -524,8 +524,8 @@ def test_the_overview_template_holds_the_nine_sections_and_no_slice() -> None:
     assert parse_slice_markers(template) == ()
 
 
-def test_the_overview_template_gathers_the_unchanged_sections_in_one_closing_line() -> None:
-    template = _template("overview.md")
+def test_the_blueprint_template_gathers_the_unchanged_sections_in_one_closing_line() -> None:
+    template = _template("blueprint.md")
     opening = template.split("\n## ", 1)[0]
     assert "As long as the feature needs, and no longer." in opening
     always = [heading.split(".", 1)[0] for heading in ALWAYS_WRITTEN]
@@ -542,8 +542,8 @@ def test_the_overview_template_gathers_the_unchanged_sections_in_one_closing_lin
     assert "mermaid diagram wherever" not in template
 
 
-def test_the_overview_template_says_which_critical_zones_the_plan_touches() -> None:
-    template = _template("overview.md")
+def test_the_blueprint_template_says_which_critical_zones_the_plan_touches() -> None:
+    template = _template("blueprint.md")
     nine = template[template.index("## 9. Sensitive zones") :]
     said = "Critical zones touched, among those the repository's agent instructions declare: none."
     assert said in nine
@@ -589,25 +589,25 @@ def test_commits_hold_only_the_plan_folder_with_its_journal_lines() -> None:
     assert "Each journal line goes in the commit of the files it describes" in commit
 
 
-# Boundaries: this command writes neither code, nor the overview, nor the journal.
+# Boundaries: this command writes neither code, nor the blueprint, nor the journal.
 
 
 def test_the_command_writes_only_in_the_plan_folder() -> None:
     opening = _body().split("\n## ", 1)[0]
     assert "You write only in the plan folder" in opening
-    assert "never the code, never `overview.md`" in opening
+    assert "never the code, never `blueprint.md`" in opening
     assert "never `journal.jsonl` (the state script alone writes it)" in opening
 
 
 # Templates.
 
 
-@pytest.mark.parametrize("name", ["plan.md", "overview.md", "interview.md", "exploration.md"])
+@pytest.mark.parametrize("name", ["plan.md", "blueprint.md", "interview.md", "exploration.md"])
 def test_every_template_is_cited(name: str) -> None:
     assert f"${{CLAUDE_SKILL_DIR}}/templates/{name}" in _body()
 
 
-@pytest.mark.parametrize("name", ["plan.md", "overview.md", "interview.md"])
+@pytest.mark.parametrize("name", ["plan.md", "blueprint.md", "interview.md"])
 def test_every_template_is_written_in_the_language_exploration_names(name: str) -> None:
     assert f"Written in {DOCUMENTS_LANGUAGE}: translate the headings" in _template(name)
 
@@ -630,8 +630,8 @@ def test_no_prompt_follows_the_language_of_the_specs(path: Path) -> None:
     assert FORMER_LANGUAGE_RULE not in path.read_text(encoding="utf-8")
 
 
-def test_the_extractor_is_given_the_overview_template() -> None:
-    assert "`${CLAUDE_SKILL_DIR}/templates/overview.md`" in section(_body(), "The agents")
+def test_the_extractor_is_given_the_blueprint_template() -> None:
+    assert "`${CLAUDE_SKILL_DIR}/templates/blueprint.md`" in section(_body(), "The agents")
 
 
 def test_the_cited_templates_exist() -> None:

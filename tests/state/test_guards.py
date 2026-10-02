@@ -3,14 +3,14 @@
 import pytest
 from state_support import (
     AWAITING,
+    BP1,
+    BP2,
     CHECKED,
     CONTEXT,
     DRAFTING,
     EXECUTING,
     FIXING,
     GATED,
-    OV1,
-    OV2,
     PL1,
     PL2,
     PROPOSAL,
@@ -43,35 +43,35 @@ from surface_status.events import (
 from surface_status.guards import InvalidJournalError, RecordContext, RefusalCode, fold
 from surface_status.machine import Origin, State, Suspicion
 
-CHANGED = RecordContext(ceiling=3, gates_declared=True, overview_hash=OV2)
-UNREAD = RecordContext(ceiling=3, gates_declared=True, overview_hash=None)
-NO_GATES = RecordContext(ceiling=3, gates_declared=False, overview_hash=OV1)
+CHANGED = RecordContext(ceiling=3, gates_declared=True, blueprint_hash=BP2)
+UNREAD = RecordContext(ceiling=3, gates_declared=True, blueprint_hash=None)
+NO_GATES = RecordContext(ceiling=3, gates_declared=False, blueprint_hash=BP1)
 
 
-def test_a_slice_a_fix_an_amendment_and_conformity_are_refused_once_the_overview_changed() -> None:
-    """The frozen overview: `overview.md` differs from the last `plan-approved`."""
+def test_a_slice_a_fix_an_amendment_and_conformity_are_refused_once_the_blueprint_changed() -> None:
+    """The frozen blueprint: `blueprint.md` differs from the last `plan-approved`."""
     cases: list[tuple[State, Event]] = [
         (State.EXECUTING, SliceDone(slice_=1, gates="lint")),
         (State.EXECUTING, PlanAmended(slice_=1, why="x", plan=PL2, slices=(1, 2))),
         (State.FIXING, PlanAmended(slice_=1, why="x", plan=PL2, slices=(1, 2))),
         (State.FIXING, FixDone(pass_=1)),
-        (State.REVIEWING, Conform(conformity="conformity.md", overview=OV1)),
+        (State.REVIEWING, Conform(conformity="conformity.md", blueprint=BP1)),
     ]
     for state, event in cases:
         prev = state_in(state)
         assert must_accept(prev, event, CONTEXT)
         for context in (CHANGED, UNREAD):
             refusal = must_refuse(prev, event, context)
-            assert refusal.code is RefusalCode.OVERVIEW_CHANGED, (state, event)
+            assert refusal.code is RefusalCode.BLUEPRINT_CHANGED, (state, event)
 
 
 def test_conformity_carries_the_hash_it_was_computed_from_and_replay_checks_it() -> None:
     prev = state_in(State.REVIEWING)
-    refusal = must_refuse(prev, Conform(conformity="conformity.md", overview=OV2), None)
-    assert refusal.code is RefusalCode.OVERVIEW_CHANGED
+    refusal = must_refuse(prev, Conform(conformity="conformity.md", blueprint=BP2), None)
+    assert refusal.code is RefusalCode.BLUEPRINT_CHANGED
 
 
-def test_the_events_that_are_not_guarded_ignore_the_overview_hash() -> None:
+def test_the_events_that_are_not_guarded_ignore_the_blueprint_hash() -> None:
     prev = state_in(State.REVIEWING)
     review = ReviewDone(pass_=1, report="r", defects=0, deviations=0, breaks=0)
     assert must_accept(prev, review, CHANGED)
@@ -80,7 +80,7 @@ def test_the_events_that_are_not_guarded_ignore_the_overview_hash() -> None:
 
 class TestPlanDrafted:
     def drafted(self, **changes: object) -> PlanDrafted:
-        fields: dict[str, object] = {"rev": 1, "overview": OV1, "plan": PL1, "slices": (1, 2)}
+        fields: dict[str, object] = {"rev": 1, "blueprint": BP1, "plan": PL1, "slices": (1, 2)}
         return PlanDrafted(**{**fields, **changes})  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
 
     def test_needs_a_cross_check_of_the_revision(self) -> None:
@@ -89,13 +89,13 @@ class TestPlanDrafted:
 
     def test_is_refused_when_the_last_check_counts_omissions(self) -> None:
         prev = replay(
-            [*DRAFTING, CheckDone(rev=1, report="r", omissions=2, overview=OV1, plan=PL1)]
+            [*DRAFTING, CheckDone(rev=1, report="r", omissions=2, blueprint=BP1, plan=PL1)]
         )
         assert must_refuse(prev, self.drafted()).code is RefusalCode.CROSS_CHECK
 
     def test_is_refused_when_the_check_covered_other_hashes(self) -> None:
         prev = replay(CHECKED)
-        assert must_refuse(prev, self.drafted(overview=OV2)).code is RefusalCode.CROSS_CHECK
+        assert must_refuse(prev, self.drafted(blueprint=BP2)).code is RefusalCode.CROSS_CHECK
         assert must_refuse(prev, self.drafted(plan=PL2)).code is RefusalCode.CROSS_CHECK
 
     def test_is_refused_when_the_check_is_of_another_revision(self) -> None:
@@ -104,17 +104,17 @@ class TestPlanDrafted:
     def test_uses_the_last_check_only(self) -> None:
         events = [
             *CHECKED,
-            CheckDone(rev=1, report="r2", omissions=1, overview=OV1, plan=PL1),
+            CheckDone(rev=1, report="r2", omissions=1, blueprint=BP1, plan=PL1),
         ]
         assert must_refuse(replay(events), self.drafted()).code is RefusalCode.CROSS_CHECK
-        events.append(CheckDone(rev=1, report="r3", omissions=0, overview=OV1, plan=PL1))
+        events.append(CheckDone(rev=1, report="r3", omissions=0, blueprint=BP1, plan=PL1))
         assert must_accept(replay(events), self.drafted()).declared == {1, 2}
 
 
-def test_approval_needs_the_overview_of_the_last_draft() -> None:
+def test_approval_needs_the_blueprint_of_the_last_draft() -> None:
     prev = replay(AWAITING)
-    assert must_refuse(prev, PlanApproved(rev=1, overview=OV2)).code is RefusalCode.DRAFT_HASH
-    assert must_accept(prev, PlanApproved(rev=1, overview=OV1)).approved_overview == OV1
+    assert must_refuse(prev, PlanApproved(rev=1, blueprint=BP2)).code is RefusalCode.DRAFT_HASH
+    assert must_accept(prev, PlanApproved(rev=1, blueprint=BP1)).approved_blueprint == BP1
 
 
 def test_a_slice_must_be_declared_and_not_done() -> None:
@@ -195,7 +195,7 @@ class TestFixDone:
 
 
 class TestConform:
-    conform = Conform(conformity="conformity.md", overview=OV1)
+    conform = Conform(conformity="conformity.md", blueprint=BP1)
 
     def clean(self) -> ReviewDone:
         return ReviewDone(pass_=1, report="r", defects=0, deviations=0, breaks=0)
@@ -229,7 +229,7 @@ class TestConform:
 class TestSuspectedBreak:
     """The executor's reason is kept in the journal until a reviewer judges it."""
 
-    suspected = BreakSuspected(slice_=2, why="the overview names no such field")
+    suspected = BreakSuspected(slice_=2, why="the blueprint names no such field")
 
     def pending(self) -> list[Event]:
         return [*EXECUTING, SliceDone(slice_=1, gates="lint"), self.suspected]
@@ -237,7 +237,7 @@ class TestSuspectedBreak:
     def test_keeps_the_plan_executing_and_carries_the_reason(self) -> None:
         state = replay(self.pending())
         assert state.state is State.EXECUTING
-        assert state.suspicion == Suspicion(2, "the overview names no such field")
+        assert state.suspicion == Suspicion(2, "the blueprint names no such field")
         assert state.remaining == (2,)
 
     def test_is_refused_on_a_slice_not_declared_or_already_done(self) -> None:
@@ -290,7 +290,7 @@ class TestSuspectedBreak:
 
     def test_outlasts_a_block_and_its_resumption(self) -> None:
         blocked = must_accept(replay(self.pending()), Blocked(why="at the ceiling"))
-        assert blocked.suspicion == Suspicion(2, "the overview names no such field")
+        assert blocked.suspicion == Suspicion(2, "the blueprint names no such field")
         resumed = must_accept(blocked, Resumed())
         assert resumed.state is State.EXECUTING
         assert resumed.suspicion == blocked.suspicion

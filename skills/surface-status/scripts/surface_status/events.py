@@ -36,7 +36,7 @@ class CheckDone:
     rev: int
     report: str
     omissions: int
-    overview: str
+    blueprint: str
     plan: str
 
 
@@ -44,7 +44,7 @@ class CheckDone:
 class PlanDrafted:
     name: ClassVar[str] = "plan-drafted"
     rev: int
-    overview: str
+    blueprint: str
     plan: str
     slices: tuple[int, ...]
     # The commands of the `gates` block of `plan.md`, which the gate runner runs once this
@@ -61,7 +61,7 @@ class AmendmentReceived:
 class PlanApproved:
     name: ClassVar[str] = "plan-approved"
     rev: int
-    overview: str
+    blueprint: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,7 +153,7 @@ class Resumed:
 class Conform:
     name: ClassVar[str] = "conform"
     conformity: str
-    overview: str
+    blueprint: str
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,6 +1,6 @@
 """The description of the pull request, from the state (ADR 0016).
 
-It lists every plan of the branch with its state and the links to `overview.md` and `plan.md`.
+It lists every plan of the branch with its state and the links to `blueprint.md` and `plan.md`.
 Then the one thing conform leaves the developer to read themselves: the files the branch changed
 inside the critical zones the project declares, as the reviewer listed them in `conformity.md`.
 Then the decisions agents took within the contract, which the developer did not see go by: the
@@ -33,7 +33,7 @@ CRITICAL_NOTE = (
     " project declares critical."
 )
 DECISIONS_TITLE = "### Decisions the agents took within the contract"
-DECISIONS_NOTE = "For information: none of them changes the approved overview."
+DECISIONS_NOTE = "For information: none of them changes the approved blueprint."
 _UNSAFE_IN_URL = {" ": "%20", "#": "%23", "?": "%3F", "%": "%25"}
 
 
@@ -128,7 +128,7 @@ def _plan_row(root: Path, settings: Settings, scope: BranchScope, folder: PlanFo
         "name": folder.name,
         "state": None if view.state is None else view.state.state.value,
         "hand": hand_of(view.state),
-        "overview": _link(root, scope, (directory / "overview.md").as_posix(), "overview.md"),
+        "blueprint": _link(root, scope, (directory / "blueprint.md").as_posix(), "blueprint.md"),
         "plan": _link(root, scope, (directory / "plan.md").as_posix(), "plan.md"),
         "decisions": [
             _decision_item(root, scope, directory, decision) for decision in decisions(view.events)
@@ -156,12 +156,12 @@ def render(rows: Sequence[Payload]) -> str:
     lines = [
         TITLE,
         "",
-        "| Plan | State | Overview | Plan |",
+        "| Plan | State | Blueprint | Plan |",
         "|---|---|---|---|",
     ]
     lines.extend(
         f"| `{row['name']}` | {row['state'] or 'no event yet'} "
-        f"| {row['overview'] or 'missing'} | {row['plan'] or 'missing'} |"
+        f"| {row['blueprint'] or 'missing'} | {row['plan'] or 'missing'} |"
         for row in rows
     )
     to_read = [_critical_line(row["name"], item) for row in rows for item in row["critical_files"]]

@@ -50,10 +50,10 @@ def test_a_hash_has_the_documented_shape_and_tells_contents_apart() -> None:
 
 def test_a_file_hash_reads_the_file_and_is_none_when_it_is_missing(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
-    folder.overview.write_bytes(b"x\r\ny\r\n")
-    assert folder.overview_hash() == content_hash(b"x\ny\n")
-    folder.overview.unlink()
-    assert folder.overview_hash() is None
+    folder.blueprint.write_bytes(b"x\r\ny\r\n")
+    assert folder.blueprint_hash() == content_hash(b"x\ny\n")
+    folder.blueprint.unlink()
+    assert folder.blueprint_hash() is None
     assert folder.file_hash("gates") is None  # a folder is not a file
 
 
@@ -325,7 +325,7 @@ def test_numbers_go_past_two_digits_without_a_clash(tmp_path: Path) -> None:
 def test_every_event_type_has_a_rule_for_the_files_it_cites() -> None:
     for kind in EVENT_TYPES:
         assert kind in EVENTS
-    assert cited_files(PlanApproved(rev=1, overview="x")) == ("overview.md",)
+    assert cited_files(PlanApproved(rev=1, blueprint="x")) == ("blueprint.md",)
     assert cited_files(GatesRun(run=3, result=GateResult.PASS)) == ("gates/run-03.txt",)
     review = ReviewDone(pass_=1, report="r.md", defects=0, deviations=0, breaks=1, proposal="p.md")
     assert cited_files(review) == ("r.md", "p.md")

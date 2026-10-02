@@ -52,8 +52,8 @@ def test_every_event_is_a_frozen_dataclass(name: str) -> None:
 
 def test_the_own_fields_follow_the_specs() -> None:
     own = {kind.name: [f.name for f in dataclasses.fields(kind)] for kind in EVENT_TYPES}
-    assert own["check-done"] == ["rev", "report", "omissions", "overview", "plan"]
-    assert own["plan-drafted"] == ["rev", "overview", "plan", "slices", "gates"]
+    assert own["check-done"] == ["rev", "report", "omissions", "blueprint", "plan"]
+    assert own["plan-drafted"] == ["rev", "blueprint", "plan", "slices", "gates"]
     assert own["plan-amended"] == ["slice_", "why", "plan", "slices"]
     assert own["break-suspected"] == ["slice_", "why"]
     assert own["review-done"] == [

@@ -6,7 +6,7 @@
       "name": "2026-09-01-alpha",
       "state": "executing",
       "hand": "agents",
-      "overview": "[overview.md](docs/plans/2026-09-01-alpha/overview.md)",
+      "blueprint": "[blueprint.md](docs/plans/2026-09-01-alpha/blueprint.md)",
       "plan": "[plan.md](docs/plans/2026-09-01-alpha/plan.md)",
       "decisions": [
         {
@@ -25,5 +25,5 @@
       "critical_files": []
     }
   ],
-  "body": "## Plans on this branch\n\n| Plan | State | Overview | Plan |\n|---|---|---|---|\n| `2026-09-01-alpha` | executing | [overview.md](docs/plans/2026-09-01-alpha/overview.md) | [plan.md](docs/plans/2026-09-01-alpha/plan.md) |\n\n### Decisions the agents took within the contract\n\nFor information: none of them changes the approved overview.\n\n- `2026-09-01-alpha`, slice 1: plan amended: the parser needs a second pass\n- `2026-09-01-alpha`, slice 2: suspected break dismissed by a reviewer: the export needs a column (note: [reviews/suspicion-01.md](docs/plans/2026-09-01-alpha/reviews/suspicion-01.md))\n\nRefreshed by `surface-status pr-body`; edit the plans, not this text.\n"
+  "body": "## Plans on this branch\n\n| Plan | State | Blueprint | Plan |\n|---|---|---|---|\n| `2026-09-01-alpha` | executing | [blueprint.md](docs/plans/2026-09-01-alpha/blueprint.md) | [plan.md](docs/plans/2026-09-01-alpha/plan.md) |\n\n### Decisions the agents took within the contract\n\nFor information: none of them changes the approved blueprint.\n\n- `2026-09-01-alpha`, slice 1: plan amended: the parser needs a second pass\n- `2026-09-01-alpha`, slice 2: suspected break dismissed by a reviewer: the export needs a column (note: [reviews/suspicion-01.md](docs/plans/2026-09-01-alpha/reviews/suspicion-01.md))\n\nRefreshed by `surface-status pr-body`; edit the plans, not this text.\n"
 }

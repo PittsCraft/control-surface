@@ -65,37 +65,37 @@ def test_check_passes_with_a_conform_plan(project: Project) -> None:
     assert project.run(*REQUIRE).code == 0
 
 
-def test_a_conform_plan_whose_overview_is_edited_fails_the_check_naming_the_plan(
+def test_a_conform_plan_whose_blueprint_is_edited_fails_the_check_naming_the_plan(
     project: Project,
 ) -> None:
     folder = project.reach("conform")
-    (folder / "overview.md").write_text("# Overview\nedited after conformity\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\nedited after conformity\n", encoding="utf-8")
     result = project.run(*REQUIRE, as_json=False)
     assert result.code == 1
     assert PLAN in result.err
-    assert "overview-changed" in result.err
-    assert _problem_codes(project) == ["overview-changed"]
+    assert "blueprint-changed" in result.err
+    assert _problem_codes(project) == ["blueprint-changed"]
 
 
 def test_the_same_plan_restored_to_its_approved_content_passes_again(project: Project) -> None:
     folder = project.reach("conform")
-    approved = (folder / "overview.md").read_bytes()
-    (folder / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    approved = (folder / "blueprint.md").read_bytes()
+    (folder / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     assert project.run(*REQUIRE).code == 1
-    (folder / "overview.md").write_bytes(approved)
+    (folder / "blueprint.md").write_bytes(approved)
     assert project.run(*REQUIRE).code == 0
 
 
-def test_a_conform_plan_whose_overview_was_deleted_fails(project: Project) -> None:
+def test_a_conform_plan_whose_blueprint_was_deleted_fails(project: Project) -> None:
     folder = project.reach("conform")
-    (folder / "overview.md").unlink()
+    (folder / "blueprint.md").unlink()
     assert project.run(*REQUIRE).code == 1
-    assert _problem_codes(project) == ["overview-missing"]
+    assert _problem_codes(project) == ["blueprint-missing"]
 
 
 def test_the_hash_of_a_checkout_with_crlf_endings_still_passes(project: Project) -> None:
     folder = project.reach("conform")
-    (folder / "overview.md").write_bytes(b"# Overview\r\n")
+    (folder / "blueprint.md").write_bytes(b"# Blueprint\r\n")
     assert project.run(*REQUIRE).code == 0
 
 
@@ -153,7 +153,7 @@ def test_a_journal_the_machine_refuses_to_replay_is_exit_2(project: Project) -> 
     folder = project.reach("interview")
     with (folder / "journal.jsonl").open("a", encoding="utf-8") as journal:
         journal.write('{"v": 1, "at": "2026-09-29T09:00:00Z", "event": "conform", ')
-        journal.write('"conformity": "conformity.md", "overview": "sha256:' + "0" * 64 + '"}\n')
+        journal.write('"conformity": "conformity.md", "blueprint": "sha256:' + "0" * 64 + '"}\n')
     assert project.run("check").code == 2
 
 

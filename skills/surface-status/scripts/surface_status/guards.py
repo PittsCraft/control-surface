@@ -6,7 +6,7 @@ Two families of guards (ADR 0011):
   is replayed and when an event is recorded, so a hand edited journal cannot slip through replay.
 - Record-time guards need a fact that lives outside the journal or is worked out before the
   record: the ceiling from the settings, whether the approved plan names gates, the current hash
-  of `overview.md`. `RecordContext` carries them in as plain values, so this module still reads
+  of `blueprint.md`. `RecordContext` carries them in as plain values, so this module still reads
   no file. Replay has no context and skips them, since a setting that changed since the event was
   recorded must not make the old journal invalid.
 """
@@ -47,7 +47,7 @@ class RefusalCode(StrEnum):
     TRANSITION = "transition"  # the pair (event, state) is not in the table
     CROSS_CHECK = "cross-check"
     DRAFT_HASH = "draft-hash"
-    OVERVIEW_CHANGED = "overview-changed"
+    BLUEPRINT_CHANGED = "blueprint-changed"
     SLICE = "slice"
     SLICE_LIST = "slice-list"
     PROPOSAL = "proposal"
@@ -81,7 +81,7 @@ class RecordContext:
 
     ceiling: int  # `max_autonomous_passes`
     gates_declared: bool  # the approved revision of the plan names at least one gate command
-    overview_hash: str | None  # current hash of `overview.md`, None when the file is missing
+    blueprint_hash: str | None  # current hash of `blueprint.md`, None when the file is missing
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,7 +94,7 @@ class DiskFacts:
     """
 
     missing_files: tuple[str, ...]  # cited files that are not regular files of the folder
-    overview_hash: str | None
+    blueprint_hash: str | None
     plan_hash: str | None
     slices: tuple[int, ...] | None  # markers of `plan.md`, read only for events that carry slices
     slices_problem: str | None = None  # why the markers could not be read, if they could not
@@ -129,19 +129,19 @@ def _check_drafted(prev: PlanState, event: PlanDrafted) -> Refusal | None:
             RefusalCode.CROSS_CHECK,
             f"the last cross-check of revision {event.rev} counts {check.omissions} omissions",
         )
-    if check.overview != event.overview or check.plan != event.plan:
+    if check.blueprint != event.blueprint or check.plan != event.plan:
         return _refuse(
             RefusalCode.CROSS_CHECK,
-            "the last cross-check did not cover the current hashes of the overview and the plan",
+            "the last cross-check did not cover the current hashes of the blueprint and the plan",
         )
     return None
 
 
 def _check_approved(prev: PlanState, event: PlanApproved) -> Refusal | None:
-    if event.overview != prev.drafted_overview:
+    if event.blueprint != prev.drafted_blueprint:
         return _refuse(
             RefusalCode.DRAFT_HASH,
-            "the overview differs from the one of the last plan-drafted",
+            "the blueprint differs from the one of the last plan-drafted",
         )
     return None
 
@@ -199,10 +199,10 @@ def _check_review(event: ReviewDone) -> Refusal | None:
 
 
 def _check_conform(prev: PlanState, event: Conform) -> Refusal | None:
-    if event.overview != prev.approved_overview:
+    if event.blueprint != prev.approved_blueprint:
         return _refuse(
-            RefusalCode.OVERVIEW_CHANGED,
-            "the overview differs from the one of the last plan-approved",
+            RefusalCode.BLUEPRINT_CHANGED,
+            "the blueprint differs from the one of the last plan-approved",
         )
     review = prev.last_review
     if review is None:
@@ -257,7 +257,7 @@ def _check_ceiling(prev: PlanState, event: Event, context: RecordContext) -> Ref
     """Refuse a pass the loop may no longer take on its own.
 
     A pass sends work back to an agent: in planning a check with omissions, which sends the
-    overview or the plan back for rework; in execution what `sends_work_back` names. Both loops
+    blueprint or the plan back for rework; in execution what `sends_work_back` names. Both loops
     send work back `ceiling` times; the pass that would send it once more is still recorded,
     since it holds what does not converge, and hands back; none after it. So a ceiling of 3 gives
     three reworks in planning and three fixes in execution, a fixer whose own gate run fails
@@ -277,13 +277,15 @@ def _check_ceiling(prev: PlanState, event: Event, context: RecordContext) -> Ref
     return None
 
 
-def _check_overview_frozen(prev: PlanState, event: Event, context: RecordContext) -> Refusal | None:
+def _check_blueprint_frozen(
+    prev: PlanState, event: Event, context: RecordContext
+) -> Refusal | None:
     if not isinstance(event, SliceDone | PlanAmended | FixDone | Conform):
         return None
-    if context.overview_hash is None or context.overview_hash != prev.approved_overview:
+    if context.blueprint_hash is None or context.blueprint_hash != prev.approved_blueprint:
         return _refuse(
-            RefusalCode.OVERVIEW_CHANGED,
-            "the overview differs from the one of the last plan-approved",
+            RefusalCode.BLUEPRINT_CHANGED,
+            "the blueprint differs from the one of the last plan-approved",
         )
     return None
 
@@ -307,7 +309,7 @@ def record_guards(prev: PlanState | None, event: Event, context: RecordContext) 
     if prev is None:
         return None
     return (
-        _check_overview_frozen(prev, event, context)
+        _check_blueprint_frozen(prev, event, context)
         or _check_ceiling(prev, event, context)
         or _check_gates(prev, event, context)
     )
@@ -367,7 +369,7 @@ def disk_guards(
             RefusalCode.FILE_MISSING, "cited file missing: " + ", ".join(facts.missing_files)
         )
     if isinstance(event, CheckDone | PlanDrafted | PlanApproved | Conform):
-        stale = _stale("overview", event.overview, facts.overview_hash)
+        stale = _stale("blueprint", event.blueprint, facts.blueprint_hash)
         if stale is not None:
             return stale
     if isinstance(event, CheckDone | PlanDrafted | PlanAmended):

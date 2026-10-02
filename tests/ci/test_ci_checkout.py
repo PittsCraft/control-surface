@@ -57,7 +57,7 @@ def build_plan(toy: Path, name: str, events: tuple[tuple[str, tuple[str, ...]], 
     for report in REPORTS:
         (folder / report).parent.mkdir(parents=True, exist_ok=True)
         (folder / report).write_text("report\n", encoding="utf-8")
-    (folder / "overview.md").write_text("# Overview\n", encoding="utf-8")
+    (folder / "blueprint.md").write_text("# Blueprint\n", encoding="utf-8")
     (folder / "plan.md").write_text("<!-- slice:1 -->\n```gates\n```\n", encoding="utf-8")
     for event, arguments in events:
         ok(toy, SCRIPT, "record", f"docs/plans/{name}", event, *arguments)

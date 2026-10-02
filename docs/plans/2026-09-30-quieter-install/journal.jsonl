@@ -1,8 +1,8 @@
 {"v": 1, "at": "2026-09-30T20:20:48Z", "event": "plan-opened", "slug": "quieter-install"}
 {"v": 1, "at": "2026-09-30T20:23:57Z", "event": "interview-closed"}
-{"v": 1, "at": "2026-09-30T20:26:25Z", "event": "check-done", "rev": 1, "report": "checks/rev-01-01.md", "omissions": 0, "overview": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b", "plan": "sha256:ce02126c278bd55c24a528a029392abe30683c835aed8844e6796ad7d5b0dcfc"}
-{"v": 1, "at": "2026-09-30T20:26:28Z", "event": "plan-drafted", "rev": 1, "overview": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b", "plan": "sha256:ce02126c278bd55c24a528a029392abe30683c835aed8844e6796ad7d5b0dcfc", "slices": [1, 2], "gates": ["scripts/gate.sh"]}
-{"v": 1, "at": "2026-09-30T20:32:36Z", "event": "plan-approved", "rev": 1, "overview": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b"}
+{"v": 1, "at": "2026-09-30T20:26:25Z", "event": "check-done", "rev": 1, "report": "checks/rev-01-01.md", "omissions": 0, "blueprint": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b", "plan": "sha256:ce02126c278bd55c24a528a029392abe30683c835aed8844e6796ad7d5b0dcfc"}
+{"v": 1, "at": "2026-09-30T20:26:28Z", "event": "plan-drafted", "rev": 1, "blueprint": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b", "plan": "sha256:ce02126c278bd55c24a528a029392abe30683c835aed8844e6796ad7d5b0dcfc", "slices": [1, 2], "gates": ["scripts/gate.sh"]}
+{"v": 1, "at": "2026-09-30T20:32:36Z", "event": "plan-approved", "rev": 1, "blueprint": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b"}
 {"v": 1, "at": "2026-09-30T20:36:08Z", "event": "plan-amended", "slice": 1, "why": "plan.md and planning notes reworded so the repository gates (decision links, privacy) pass: no ADR number 0035, no personal path", "plan": "sha256:929798c57674200e2e9b31601613d909b2fd6af6c061c50ec3a7ae0059869656", "slices": [1, 2]}
 {"v": 1, "at": "2026-09-30T20:40:19Z", "event": "slice-done", "slice": 1, "gates": "scripts/gate.sh"}
 {"v": 1, "at": "2026-09-30T20:45:06Z", "event": "slice-done", "slice": 2, "gates": "scripts/gate.sh"}
@@ -12,4 +12,4 @@
 {"v": 1, "at": "2026-09-30T20:54:34Z", "event": "gates-run", "run": 2, "result": "pass"}
 {"v": 1, "at": "2026-09-30T20:58:55Z", "event": "fix-done", "pass": 1}
 {"v": 1, "at": "2026-09-30T21:01:43Z", "event": "review-done", "pass": 2, "report": "reviews/pass-02.md", "defects": 0, "deviations": 0, "breaks": 0}
-{"v": 1, "at": "2026-09-30T21:01:50Z", "event": "conform", "conformity": "conformity.md", "overview": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b"}
+{"v": 1, "at": "2026-09-30T21:01:50Z", "event": "conform", "conformity": "conformity.md", "blueprint": "sha256:f1f8c7d12d03e3abd3ec9b3fc5eabed454ed99dc54f29ad62e0da2aa8c5ab67b"}

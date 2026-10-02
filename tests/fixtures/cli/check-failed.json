@@ -31,8 +31,8 @@
       "ok": false,
       "problems": [
         {
-          "code": "overview-changed",
-          "message": "overview.md differs from the one of the last plan-approved"
+          "code": "blueprint-changed",
+          "message": "blueprint.md differs from the one of the last plan-approved"
         }
       ]
     }

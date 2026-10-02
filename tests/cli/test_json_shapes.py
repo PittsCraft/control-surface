@@ -35,7 +35,7 @@ def test_golden_show_executing(project: Project) -> None:
 
 def test_golden_show_with_a_suspected_break(project: Project) -> None:
     project.reach("executing")
-    project.record(PLAN, "break-suspected", "--slice", "1", "--why", "the overview names no id")
+    project.record(PLAN, "break-suspected", "--slice", "1", "--why", "the blueprint names no id")
     assert_golden("show-suspected.json", project.run("show", PLAN).out)
 
 
@@ -83,7 +83,7 @@ def test_golden_check_failing(project: Project) -> None:
     project.reach("executing", "2026-09-02-dropped")
     project.run("abandon", "2026-09-02-dropped", "--why", "changed course")
     edited = project.reach("conform", "2026-09-03-edited")
-    (edited / "overview.md").write_text("# Overview\nedited\n", encoding="utf-8")
+    (edited / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     assert_golden("check-failed.json", project.run("check", "--require", "conform").out)
 
 

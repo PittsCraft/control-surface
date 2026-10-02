@@ -70,7 +70,7 @@ def _critical_files_problem(folder: PlanFolder, event: Conform, root: Path | Non
 def _disk_facts(folder: PlanFolder, event: Event, root: Path | None) -> DiskFacts:
     facts = DiskFacts(
         missing_files=tuple(name for name in cited_files(event) if not folder.is_file(name)),
-        overview_hash=folder.overview_hash(),
+        blueprint_hash=folder.blueprint_hash(),
         plan_hash=folder.plan_hash(),
         slices=None,
     )
@@ -96,7 +96,7 @@ def record_context(
     return RecordContext(
         ceiling=settings.max_autonomous_passes,
         gates_declared=state is not None and bool(state.approved_gates),
-        overview_hash=folder.overview_hash(),
+        blueprint_hash=folder.blueprint_hash(),
     )
 
 

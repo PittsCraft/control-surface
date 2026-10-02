@@ -1,7 +1,7 @@
 [project]
 name = "control-surface"
 version = "0.0.0"
-description = "A chain of Claude Code skills that plans, executes and reviews a feature against an approved overview."
+description = "A chain of Claude Code skills that plans, executes and reviews a feature against an approved blueprint."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"

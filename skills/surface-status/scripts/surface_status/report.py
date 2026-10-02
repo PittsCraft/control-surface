@@ -142,7 +142,7 @@ def error_row(name: str, message: str) -> Payload:
 
 
 def _approval_binds(state: PlanState) -> bool:
-    """Whether the last approval still holds the work to its overview.
+    """Whether the last approval still holds the work to its blueprint.
 
     It does from the approval to `conform`, a block during execution and a pending plan change
     included. It does not in planning, where a new revision is drawn, nor once abandoned.
@@ -158,18 +158,18 @@ def _approval_binds(state: PlanState) -> bool:
             return False
 
 
-def overview_alarms(view: PlanView) -> list[Payload]:
-    """Say when `overview.md` is not the one the developer approved, while that approval binds."""
+def blueprint_alarms(view: PlanView) -> list[Payload]:
+    """Say when `blueprint.md` is not the one the developer approved, while that approval binds."""
     state = view.state
     if state is None or not _approval_binds(state):
         return []
-    current = view.folder.overview_hash()
+    current = view.folder.blueprint_hash()
     if current is None:
-        message = "overview.md is missing, its content cannot be the approved one"
-        return [{"code": "overview-missing", "message": message}]
-    if current != state.approved_overview:
-        message = "overview.md differs from the one of the last plan-approved"
-        return [{"code": "overview-changed", "message": message}]
+        message = "blueprint.md is missing, its content cannot be the approved one"
+        return [{"code": "blueprint-missing", "message": message}]
+    if current != state.approved_blueprint:
+        message = "blueprint.md differs from the one of the last plan-approved"
+        return [{"code": "blueprint-changed", "message": message}]
     return []
 
 
@@ -213,7 +213,7 @@ def show_payload(view: PlanView, settings: Settings) -> Payload:
         "pending_proposal": state.pending_proposal if state else None,
         "pending_suspicion": _suspicion(state),
         "last_event": view.events[-1].name if view.events else None,
-        "alarms": overview_alarms(view),
+        "alarms": blueprint_alarms(view),
         "settings": settings.to_dict(),
     }
 
@@ -229,7 +229,7 @@ def _problems_for_conform(view: PlanView) -> list[Payload]:
         where = "no event yet" if state is None else state.state.value
         message = f"in progress ({where}): the plan is neither conform nor abandoned"
         return [{"code": "in-progress", "message": message}]
-    return overview_alarms(view)
+    return blueprint_alarms(view)
 
 
 def check_plan(folder: PlanFolder, *, require: str | None) -> Payload:

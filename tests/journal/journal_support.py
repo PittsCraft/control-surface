@@ -66,18 +66,18 @@ EVENTS: dict[type[Event], SearchStrategy[Event]] = {
     PlanOpened: st.builds(PlanOpened, slug=_texts),
     InterviewClosed: st.builds(InterviewClosed),
     CheckDone: st.builds(
-        CheckDone, rev=_counts, report=_texts, omissions=_counts, overview=_hashes, plan=_hashes
+        CheckDone, rev=_counts, report=_texts, omissions=_counts, blueprint=_hashes, plan=_hashes
     ),
     PlanDrafted: st.builds(
         PlanDrafted,
         rev=_counts,
-        overview=_hashes,
+        blueprint=_hashes,
         plan=_hashes,
         slices=_slices,
         gates=st.none() | _commands,
     ),
     AmendmentReceived: st.builds(AmendmentReceived),
-    PlanApproved: st.builds(PlanApproved, rev=_counts, overview=_hashes),
+    PlanApproved: st.builds(PlanApproved, rev=_counts, blueprint=_hashes),
     SliceDone: st.builds(SliceDone, slice_=_slice, gates=_texts),
     PlanAmended: st.builds(PlanAmended, slice_=_slice, why=_texts, plan=_hashes, slices=_slices),
     BreakSuspected: st.builds(BreakSuspected, slice_=_slice, why=_texts),
@@ -98,7 +98,7 @@ EVENTS: dict[type[Event], SearchStrategy[Event]] = {
     PlanChangeRefused: st.builds(PlanChangeRefused, proposal=_texts, why=_texts),
     Blocked: st.builds(Blocked, why=_texts),
     Resumed: st.builds(Resumed),
-    Conform: st.builds(Conform, conformity=_texts, overview=_hashes),
+    Conform: st.builds(Conform, conformity=_texts, blueprint=_hashes),
     Abandoned: st.builds(Abandoned, why=_texts),
 }
 all_events = st.one_of(list(EVENTS.values()))
@@ -123,11 +123,11 @@ def plan_text(
 def new_folder(
     parent: Path, name: str = "2026-09-29-feature", gates: tuple[str, ...] = GATES
 ) -> PlanFolder:
-    """Make a plan folder holding the developer's files: an overview, a plan of two slices."""
+    """Make a plan folder holding the developer's files: a blueprint, a plan of two slices."""
     root = parent / name
     root.mkdir()
     folder = PlanFolder(root)
-    folder.overview.write_text("# Overview\n", encoding="utf-8")
+    folder.blueprint.write_text("# Blueprint\n", encoding="utf-8")
     folder.plan.write_text(plan_text(gates=gates), encoding="utf-8")
     return folder
 
@@ -147,7 +147,7 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
     Judgments (counts, results) are drawn, and now and then a value is left stale, so the walks
     meet both acceptances and refusals of every guard.
     """
-    overview = folder.overview_hash() or ""
+    blueprint = folder.blueprint_hash() or ""
     plan = folder.plan_hash() or ""
     slices = folder.declared_slices()
     review = state.last_review if state else None
@@ -163,12 +163,12 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
             report = write(folder, folder.next_check(rev))
             omissions = data.draw(st.sampled_from([0, 0, 0, 1]))
             return CheckDone(
-                rev=rev, report=report, omissions=omissions, overview=overview, plan=plan
+                rev=rev, report=report, omissions=omissions, blueprint=blueprint, plan=plan
             )
         case "plan-drafted":
             return PlanDrafted(
                 rev=check.rev if check else 1,
-                overview=overview,
+                blueprint=blueprint,
                 plan=plan,
                 slices=slices,
                 gates=folder.declared_gates(),
@@ -176,7 +176,7 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
         case "amendment-received":
             return AmendmentReceived()
         case "plan-approved":
-            return PlanApproved(rev=1, overview=overview)
+            return PlanApproved(rev=1, blueprint=blueprint)
         case "slice-done":
             pending = state.remaining if state and state.remaining else (1, 2)
             return SliceDone(slice_=data.draw(st.sampled_from(pending)), gates="lint")
@@ -219,7 +219,7 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
             return Resumed()
         case "conform":
             text = data.draw(st.sampled_from(CONFORMITIES))
-            return Conform(conformity=write(folder, "conformity.md", text), overview=overview)
+            return Conform(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
         case "abandoned":
             return Abandoned(why="changed my mind")
         case _:

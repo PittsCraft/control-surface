@@ -40,7 +40,7 @@ def digest(label: str) -> str:
     return "sha256:" + sha256(label.encode()).hexdigest()
 
 
-OV1, OV2 = digest("overview 1"), digest("overview 2")
+BP1, BP2 = digest("blueprint 1"), digest("blueprint 2")
 PL1, PL2 = digest("plan 1"), digest("plan 2")
 
 S = State
@@ -99,7 +99,7 @@ EXPECTED: dict[str, dict[State | None, frozenset[State]]] = {
 }
 
 GATES = ("true",)
-CONTEXT = RecordContext(ceiling=3, gates_declared=True, overview_hash=OV1)
+CONTEXT = RecordContext(ceiling=3, gates_declared=True, blueprint_hash=BP1)
 
 PROPOSAL = "plan-changes/01.md"
 
@@ -113,12 +113,12 @@ def state_in(state: State, **changes: Any) -> PlanState:  # noqa: ANN401 (overri
         done=frozenset(),
         planning_passes=0,
         execution_passes=0,
-        drafted_overview=OV1,
+        drafted_blueprint=BP1,
         drafted_plan=PL1,
         drafted_gates=GATES,
-        approved_overview=OV1,
+        approved_blueprint=BP1,
         approved_gates=GATES,
-        last_check=CheckSummary(rev=1, omissions=0, overview=OV1, plan=PL1),
+        last_check=CheckSummary(rev=1, omissions=0, blueprint=BP1, plan=PL1),
         last_review=ReviewSummary(pass_=1, defects=0, deviations=0, breaks=0),
         gates=GateResult.PASS,
         proposal_origin=Origin.SLICE if state is State.PLAN_CHANGE_PROPOSED else None,
@@ -135,14 +135,14 @@ def valid_event(name: str) -> Event:
         "plan-opened": PlanOpened(slug="feature"),
         "interview-closed": InterviewClosed(),
         "check-done": CheckDone(
-            rev=1, report="checks/rev-01-01.md", omissions=0, overview=OV1, plan=PL1
+            rev=1, report="checks/rev-01-01.md", omissions=0, blueprint=BP1, plan=PL1
         ),
-        "plan-drafted": PlanDrafted(rev=1, overview=OV1, plan=PL1, slices=(1, 2)),
+        "plan-drafted": PlanDrafted(rev=1, blueprint=BP1, plan=PL1, slices=(1, 2)),
         "amendment-received": AmendmentReceived(),
-        "plan-approved": PlanApproved(rev=1, overview=OV1),
+        "plan-approved": PlanApproved(rev=1, blueprint=BP1),
         "slice-done": SliceDone(slice_=1, gates="lint"),
         "plan-amended": PlanAmended(slice_=1, why="renamed", plan=PL2, slices=(1, 2)),
-        "break-suspected": BreakSuspected(slice_=1, why="the overview names no such field"),
+        "break-suspected": BreakSuspected(slice_=1, why="the blueprint names no such field"),
         "suspicion-dismissed": SuspicionDismissed(slice_=1, report="reviews/suspicion-01.md"),
         "plan-change-proposed": PlanChangeProposed(proposal=PROPOSAL, slice_=1),
         "gates-run": GatesRun(run=2, result=GateResult.PASS),
@@ -154,7 +154,7 @@ def valid_event(name: str) -> Event:
         "plan-change-refused": PlanChangeRefused(proposal=PROPOSAL, why="not wanted"),
         "blocked": Blocked(why="does not converge"),
         "resumed": Resumed(),
-        "conform": Conform(conformity="conformity.md", overview=OV1),
+        "conform": Conform(conformity="conformity.md", blueprint=BP1),
         "abandoned": Abandoned(why="changed my mind"),
     }
     return events[name]
@@ -185,10 +185,10 @@ OPENED = journal(PlanOpened(slug="feature"))
 DRAFTING = [*OPENED, InterviewClosed()]
 CHECKED = [
     *DRAFTING,
-    CheckDone(rev=1, report="checks/rev-01-01.md", omissions=0, overview=OV1, plan=PL1),
+    CheckDone(rev=1, report="checks/rev-01-01.md", omissions=0, blueprint=BP1, plan=PL1),
 ]
-AWAITING = [*CHECKED, PlanDrafted(rev=1, overview=OV1, plan=PL1, slices=(1, 2))]
-EXECUTING = [*AWAITING, PlanApproved(rev=1, overview=OV1)]
+AWAITING = [*CHECKED, PlanDrafted(rev=1, blueprint=BP1, plan=PL1, slices=(1, 2))]
+EXECUTING = [*AWAITING, PlanApproved(rev=1, blueprint=BP1)]
 REVIEWING = [*EXECUTING, SliceDone(slice_=1, gates="lint"), SliceDone(slice_=2, gates="lint")]
 GATED = [*REVIEWING, GatesRun(run=1, result=GateResult.PASS)]
 FIXING = [
