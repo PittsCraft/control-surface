@@ -1,4 +1,4 @@
-# control-surface
+# Control Surface
 
 **Steer from the right control surface, and let agents work where they are reliable.**
 
