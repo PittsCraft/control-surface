@@ -57,7 +57,7 @@ Write in the language `exploration.md` names in its repository rules. NN is the 
 - On a break: `plan-changes/NN.md`, the plan change proposal, written at the level of the blueprint for the developer: what must change in it, why, and the proof.
 - No finding: `conformity.md`, which leads to the conformant state. It lists each acceptance criterion of `blueprint.md` with what proves it holds: a test, a file and line, a gate result. A criterion you cannot prove is a finding, not a line of `conformity.md`.
 
-When you write `conformity.md`, end it with the files the branch changed inside the critical zones the repository's agent instructions declare: the developer reads their code themselves, and the state script shows them in the pull request description. Which files a zone covers is your reading, whatever section 9 of the blueprint names. List them in one fenced block, which starts at the first column and keeps its `critical-files` tag in any language, one path per line from the root of the repository, as `git diff --name-only --relative` prints it there, a file the branch deleted included:
+When you write `conformity.md`, end it with the files the branch changed inside the critical zones the repository's agent instructions declare: the developer reads their code themselves, and the state script shows them in the pull request description. Which files a zone covers is your reading, whatever the sensitive zones of the blueprint name. List them in one fenced block, which starts at the first column and keeps its `critical-files` tag in any language, one path per line from the root of the repository, as `git diff --name-only --relative` prints it there, a file the branch deleted included:
 
 ```critical-files
 <path>

@@ -53,7 +53,7 @@ def test_the_list_reports_an_unreadable_journal_and_exits_2(project: Project) ->
     assert "line 1" in rows[1]["error"]
 
 
-def test_the_hand_follows_the_table_of_the_specs() -> None:
+def test_the_turn_follows_the_table_of_the_specs() -> None:
     developer = {
         State.INTERVIEW,
         State.AWAITING_APPROVAL,
@@ -221,7 +221,7 @@ BOUND = {
 
 
 @pytest.mark.parametrize("bound", list(BOUND))
-def test_show_raises_an_alarm_on_an_blueprint_edited_since_its_approval(
+def test_show_raises_an_alarm_on_a_blueprint_edited_since_its_approval(
     project: Project, bound: str
 ) -> None:
     reached, then = BOUND[bound]

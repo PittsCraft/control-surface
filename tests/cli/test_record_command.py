@@ -157,7 +157,7 @@ def test_a_refusal_exits_1_names_the_reason_and_leaves_the_journal_alone(project
     assert text.out == ""
 
 
-def test_an_blueprint_edited_after_approval_refuses_the_next_slice(project: Project) -> None:
+def test_a_blueprint_edited_after_approval_refuses_the_next_slice(project: Project) -> None:
     folder = project.reach("executing")
     (folder / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
     result = project.record(PLAN, "slice-done", "--slice", "1", "--gates", "lint")
