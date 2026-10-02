@@ -368,7 +368,7 @@ def _hand_over() -> str:
 def test_the_hand_over_stays_in_the_conversation_and_asks_amend_or_approve() -> None:
     hand_over = _hand_over()
     assert "Then stop" not in hand_over
-    assert "Say in one line how its body is cut, and why." in hand_over
+    assert "Say in one line how the body of the blueprint is cut, and why" in hand_over
     assert (
         "stay in the conversation and ask: amend, or approve by launching `/surface-execute`, whose"
         " launch alone approves this revision" in hand_over
