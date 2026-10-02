@@ -16,7 +16,7 @@ Guards fall in two families:
 - Journal-only guards need the state and the event, and run at replay and at record.
 - Record-time guards need a `RecordContext` of plain values the caller read beforehand (the ceiling, whether the approved plan names gates, the current blueprint hash), and run at record only. They cover the frozen blueprint, the ceiling of autonomous passes and the gate results.
 
-The pass counters and "the gate result since the last change" are facts of the state, reset by each act of the developer. `conform` needs a clean review made since the last change of the work.
+The pass counters and "the gate result since the last change" are facts of the state, reset by each act of the developer. `conformant` needs a clean review made since the last change of the work.
 
 ## Consequences
 

@@ -10,4 +10,4 @@
 {"v": 1, "at": "2026-09-29T09:09:00Z", "event": "gates-run", "run": 2, "result": "pass"}
 {"v": 1, "at": "2026-09-29T09:10:00Z", "event": "fix-done", "pass": 0}
 {"v": 1, "at": "2026-09-29T09:11:00Z", "event": "review-done", "pass": 1, "report": "reviews/pass-01.md", "defects": 0, "deviations": 0, "breaks": 0}
-{"v": 1, "at": "2026-09-29T09:12:00Z", "event": "conform", "conformity": "conformity.md", "blueprint": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5"}
+{"v": 1, "at": "2026-09-29T09:12:00Z", "event": "conformant", "conformity": "conformity.md", "blueprint": "sha256:a2d407b864b2bce4e969deba27e7789d66b3f74e96c64fce7cfe474689a941c5"}

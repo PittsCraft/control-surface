@@ -108,8 +108,8 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("plans", nargs="*", help="plan folders (default: every plan)")
     check.add_argument(
         "--require",
-        choices=[report.REQUIRE_CONFORM],
-        help="every plan must be conform, or abandoned before its approval",
+        choices=[report.REQUIRE_CONFORMANT],
+        help="every plan must be conformant, or abandoned before its approval",
     )
     resolver = add("resolve", "name the plan a command must act on")
     resolver.add_argument(

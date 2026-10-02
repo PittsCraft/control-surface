@@ -76,7 +76,7 @@ def test_reviewer_holds_the_classification_of_a_finding() -> None:
     assert "file and line" in classifying
 
 
-def test_reviewer_leads_a_review_with_no_finding_to_the_conform_state() -> None:
+def test_reviewer_leads_a_review_with_no_finding_to_the_conformant_state() -> None:
     _, body = read_agent("surface-reviewer")
     writing = section(body, "What you write in a review")
     no_finding = next(line for line in writing.splitlines() if line.startswith("- No finding"))
@@ -181,7 +181,7 @@ def test_extractor_opens_section_nine_with_the_critical_zones_the_plan_touches()
     assert f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it" in nine
     assert f"or the statement that {TOUCHES_NONE}" in nine
     assert "then what the developer would not see go by" in nine
-    assert "what the developer still reads themselves once the work is conform" in body
+    assert "what the developer still reads themselves once the work is conformant" in body
 
 
 def test_checker_counts_a_touched_critical_zone_missing_from_section_nine() -> None:
@@ -206,7 +206,7 @@ def test_reviewer_lists_the_changed_files_of_the_critical_zones_in_a_block() -> 
     assert "a file the branch deleted included" in writing
     assert "Leave the block out when the branch changed no such file" in writing
     assert "or when the repository declares no critical zone" in writing
-    refusal = "The script refuses `conform` on a second block, an unclosed one, or a path"
+    refusal = "The script refuses `conformant` on a second block, an unclosed one, or a path"
     assert f"{refusal} the branch did not change" in writing
 
 
@@ -228,7 +228,7 @@ def test_reviewer_is_launched_for_three_things() -> None:
 def test_reviewer_corrects_a_refused_list_and_nothing_else() -> None:
     _, body = read_agent("surface-reviewer")
     correcting = section(body, f"What you correct on {REFUSED_LIST}")
-    assert "The state script refused `conform`" in correcting
+    assert "The state script refused `conformant`" in correcting
     assert f"the `{CRITICAL_FILES_TAG}` block of `conformity.md` is malformed" in correcting
     assert "or names a file the branch did not change" in correcting
     assert "The reason is the one your mandate gives" in correcting

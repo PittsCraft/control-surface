@@ -1,4 +1,4 @@
-"""`record conform` in a real repository: the code `conformity.md` leaves the developer to read.
+"""`record conformant` in a real repository: the code `conformity.md` leaves the developer to read.
 
 Which files a critical zone covers is the reviewer's reading. That the branch changed a file is a
 fact of git, so the script checks it before the list reaches the pull request description.
@@ -22,7 +22,7 @@ REVIEW = (
     "--breaks",
     "0",
 )
-CONFORM = ("conform", "--conformity", "conformity.md")
+CONFORMANT = ("conformant", "--conformity", "conformity.md")
 
 
 @pytest.fixture
@@ -57,8 +57,8 @@ def test_the_files_the_branch_added_and_modified_are_accepted(repo: Repo) -> Non
     repo.write("billing/pay.py")
     _reviewed(repo.project, "billing/pay.py", "billing/tax.py")
     repo.commit("the work and its review")
-    assert repo.run("record", A, *CONFORM).code == 0
-    assert _state(repo) == "conform"
+    assert repo.run("record", A, *CONFORMANT).code == 0
+    assert _state(repo) == "conformant"
 
 
 def test_a_listed_file_the_branch_did_not_change_refuses_the_conformity(repo: Repo) -> None:
@@ -69,7 +69,7 @@ def test_a_listed_file_the_branch_did_not_change_refuses_the_conformity(repo: Re
     _reviewed(repo.project, "billing/pay.py", "billing/tax.py", "billing/typo.py")
     repo.commit("the work and its review")
     before = repo.project.journal(A)
-    refused = repo.run("record", A, *CONFORM)
+    refused = repo.run("record", A, *CONFORMANT)
     assert refused.code == 1
     assert refused.json()["refused"] == {
         "code": "critical-files",
@@ -80,8 +80,8 @@ def test_a_listed_file_the_branch_did_not_change_refuses_the_conformity(repo: Re
     }
     assert repo.project.journal(A) == before
     assert _state(repo) == "reviewing"
-    text = repo.run("record", A, *CONFORM, as_json=False)
-    assert text.err.startswith("refused conform (critical-files): conformity.md: ")
+    text = repo.run("record", A, *CONFORMANT, as_json=False)
+    assert text.err.startswith("refused conformant (critical-files): conformity.md: ")
 
 
 def test_a_malformed_block_refuses_the_conformity_with_its_line(repo: Repo) -> None:
@@ -91,7 +91,7 @@ def test_a_malformed_block_refuses_the_conformity_with_its_line(repo: Repo) -> N
     unclosed = "proof\n```critical-files\nbilling/pay.py\n"
     (folder / "conformity.md").write_text(unclosed, encoding="utf-8")
     repo.commit("the work and its review")
-    refused = repo.run("record", A, *CONFORM).json()["refused"]
+    refused = repo.run("record", A, *CONFORMANT).json()["refused"]
     assert refused["code"] == "critical-files"
     assert refused["reason"].startswith("conformity.md: line 2: the critical-files block is not")
 
@@ -105,7 +105,7 @@ def test_a_file_the_branch_deleted_or_moved_is_one_it_changed(repo: Repo) -> Non
     repo.git("rm", "-q", "billing/gone.py")
     _reviewed(repo.project, "billing/old.py", "billing/new.py", "billing/gone.py")
     repo.commit("the work and its review")
-    assert repo.run("record", A, *CONFORM).code == 0
+    assert repo.run("record", A, *CONFORMANT).code == 0
 
 
 def test_a_change_left_uncommitted_is_not_the_branch_s(repo: Repo) -> None:
@@ -113,11 +113,11 @@ def test_a_change_left_uncommitted_is_not_the_branch_s(repo: Repo) -> None:
     _reviewed(repo.project, "billing/pay.py")
     repo.commit("the review")
     repo.write("billing/pay.py")
-    refused = repo.run("record", A, *CONFORM)
+    refused = repo.run("record", A, *CONFORMANT)
     assert refused.code == 1
     assert refused.json()["refused"]["code"] == "critical-files"
     repo.commit("the work")
-    assert repo.run("record", A, *CONFORM).code == 0
+    assert repo.run("record", A, *CONFORMANT).code == 0
 
 
 def test_a_file_main_changed_after_the_branch_left_it_is_not_the_branch_s(repo: Repo) -> None:
@@ -130,7 +130,7 @@ def test_a_file_main_changed_after_the_branch_left_it_is_not_the_branch_s(repo: 
     repo.write("billing/tax.py", "rate = 2\n")
     repo.commit("main moves on")
     repo.switch("feature")
-    assert repo.run("record", A, *CONFORM).json()["refused"]["code"] == "critical-files"
+    assert repo.run("record", A, *CONFORMANT).json()["refused"]["code"] == "critical-files"
 
 
 def test_a_conformity_that_lists_nothing_asks_git_nothing(repo: Repo) -> None:
@@ -139,7 +139,7 @@ def test_a_conformity_that_lists_nothing_asks_git_nothing(repo: Repo) -> None:
     repo.git("branch", "-D", "main")
     folder = repo.plan("reviewing", A)
     assert repo.run("record", A, *REVIEW).code == 0
-    assert repo.run("record", A, *CONFORM).code == 0
+    assert repo.run("record", A, *CONFORMANT).code == 0
     assert (folder / "conformity.md").read_text(encoding="utf-8") == "report\n"
 
 
@@ -150,7 +150,7 @@ def test_a_list_that_git_cannot_check_is_a_usage_error_not_an_acceptance(repo: R
     _reviewed(repo.project, "billing/pay.py")
     repo.commit("the work and its review")
     before = repo.project.journal(A)
-    result = repo.run("record", A, *CONFORM)
+    result = repo.run("record", A, *CONFORMANT)
     assert result.code == 2
     assert "cannot find the main branch" in result.json()["error"]
     assert repo.project.journal(A) == before
@@ -164,6 +164,6 @@ def test_in_a_project_inside_the_work_tree_the_paths_start_at_the_project_root(
     repo.write("app/billing/pay.py")
     folder = _reviewed(app, "app/billing/pay.py")
     repo.commit("the work and its review")
-    assert app.record(A, *CONFORM).json()["refused"]["code"] == "critical-files"
+    assert app.record(A, *CONFORMANT).json()["refused"]["code"] == "critical-files"
     (folder / "conformity.md").write_text(conformity("billing/pay.py"), encoding="utf-8")
-    assert app.record(A, *CONFORM).code == 0
+    assert app.record(A, *CONFORMANT).code == 0

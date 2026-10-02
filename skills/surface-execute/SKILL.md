@@ -1,6 +1,6 @@
 ---
 name: surface-execute
-description: Approves a drafted plan, then hands its slices, reviews and fixes to fresh agents and runs the full gates, until the plan is conform or the loop hands back to the developer. A plan change proposal or the ceiling is put to the developer in the conversation. Takes the plan folder as an optional argument.
+description: Approves a drafted plan, then hands its slices, reviews and fixes to fresh agents and runs the full gates, until the plan is conformant or the loop hands back to the developer. A plan change proposal or the ceiling is put to the developer in the conversation. Takes the plan folder as an optional argument.
 argument-hint: "[plan]"
 disable-model-invocation: true
 allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr edit *)
@@ -8,7 +8,7 @@ allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash
 
 # surface-execute
 
-You dispatch the execution of a plan. Launched on a plan awaiting approval, you approve it: the developer's launch is the approval. Then you hand each slice, each review and each fix to a fresh agent, run the full gates through the state script, and record each outcome, until the plan is conform or the loop hands back to the developer. You write neither code nor plan: agents write them, the state script writes the journal, you record through the script and commit. When the loop hands back, you keep the hand wherever the developer's reply approves nothing new: a plan change proposal, the ceiling. A revision is approved only by the launch of this command, never by a sentence of the conversation, and after a dead session, relaunching it is the way to resume.
+You dispatch the execution of a plan. Launched on a plan awaiting approval, you approve it: the developer's launch is the approval. Then you hand each slice, each review and each fix to a fresh agent, run the full gates through the state script, and record each outcome, until the plan is conformant or the loop hands back to the developer. You write neither code nor plan: agents write them, the state script writes the journal, you record through the script and commit. When the loop hands back, you stay in the conversation wherever the developer's reply approves nothing new: a plan change proposal, the ceiling. A revision is approved only by the launch of this command, never by a sentence of the conversation, and after a dead session, relaunching it is the way to resume.
 
 ## Ground rules
 
@@ -46,7 +46,7 @@ Read the state, apply the first row that holds, read the state again, and so on 
 | `awaiting-approval`, at launch | Say in one line the plan and the revision you approve, the `rev` of the last `plan-drafted`, and the gates it names, `gates` of `show --json`. Then `surface-status record <plan> plan-approved` and commit the journal. |
 | `blocked` during execution, at launch | `surface-status record <plan> resumed`, and commit the journal. |
 | `plan-change-proposed` | See "A plan change proposal". |
-| `conform`, `abandoned` | Stop: the plan is over. |
+| `conformant`, `abandoned` | Stop: the plan is over. |
 | `interview`, `drafting`, `blocked` during planning, or no event yet | Stop: this plan belongs to `/surface-plan`. |
 | Ceiling reached, and work left to the agents | See "At the ceiling". |
 | `executing`, a break suspected | See "A suspected break". |
@@ -60,7 +60,7 @@ How to read the rows:
 
 - `blocked` during execution: the last `plan-approved` of the journal comes after every `amendment-received` and `plan-change-accepted`. Otherwise it is `blocked` during planning.
 - A break suspected: `pending_suspicion` of `show --json` is not null. The executor recorded it, with its reason, before it returned, and no reviewer has judged it yet.
-- Ceiling reached: `passes.execution` of `show --json` is more than `passes.ceiling`. A pass is one time the loop sends work back to an agent, for a review's defects or deviations, a failed gate run, a fixer's own included, or a dismissed suspicion; a clean review or a green run costs none. So the loop sends work back `passes.ceiling` times, and the pass after them hands back. Work is left to the agents in `executing`, in `fixing`, and in `reviewing` unless the conformity row holds: recording `conform` is the one step the ceiling lets through.
+- Ceiling reached: `passes.execution` of `show --json` is more than `passes.ceiling`. A pass is one time the loop sends work back to an agent, for a review's defects or deviations, a failed gate run, a fixer's own included, or a dismissed suspicion; a clean review or a green run costs none. So the loop sends work back `passes.ceiling` times, and the pass after them hands back. Work is left to the agents in `executing`, in `fixing`, and in `reviewing` unless the conformity row holds: recording `conformant` is the one step the ceiling lets through.
 - A clean review: a `review-done` with no defect, no deviation and no break. Nothing changed since: no commit after the one that carries it, and no change in the working tree outside the plan folder.
 - No green gate run since the last change: the journal holds no `gates-run` with the result `pass` after its last `plan-approved`, `slice-done` and `review-done`. When `gates` of `show --json` is empty or null, the approved plan names no gates, and they count as green.
 - No progress: when an agent returns, the journal has not moved, and it reports no refusal, stop and report. Never launch the same step twice in a row without progress. The reviewers "Conformity" sends to correct a refused list are the exception: they move no line, the record that follows them does, and their own bound is there.
@@ -89,10 +89,10 @@ The executor's reason is in the journal, not in this conversation: a relaunch fi
 
 ## A plan change proposal
 
-A reviewer found that the blueprint would have to change to stay true, and wrote the proposal at `pending_proposal` of `show --json`. The developer decides, and you keep the hand while they do.
+A reviewer found that the blueprint would have to change to stay true, and wrote the proposal at `pending_proposal` of `show --json`. The developer decides, and you stay in the conversation while they do.
 
 1. When `interview.md` already holds the decision on this proposal, under "Plan change decisions", a relaunch after a session died: it is the reply of step 3, and nothing is asked again.
-2. Otherwise, first do the steps of "When the loop stops", so the pull request shows who has the hand. Then present the proposal yourself, at the level of the blueprint: what would change in it, why, and the proof, not the code. Ask: accept or decline, with your recommendation and its reason in one line.
+2. Otherwise, first do the steps of "When the loop stops", so the pull request shows whose turn it is. Then present the proposal yourself, at the level of the blueprint: what would change in it, why, and the proof, not the code. Ask: accept or decline, with your recommendation and its reason in one line.
 3. The reply:
    - Declined: ask the reason in one line. Write the decision and the reason into `interview.md` under "Plan change decisions", quoted in the developer's words and translated, then `surface-status record <plan> plan-change-refused --why "<reason>"`, and commit `interview.md` with the journal. Back to the loop, in this session: the agents bring the code back to the blueprint, and the next reviewer does not raise the same break again.
    - Accepted: write the decision into `interview.md` under "Plan change decisions", then `surface-status record <plan> plan-change-accepted`, and commit `interview.md` with the journal. The plan is back in drafting, which belongs to `/surface-plan`: stop as "When the loop stops" says, and tell the developer to run `/surface-plan`, which draws the next revision and may ask its questions first. You draw no revision: you cannot load `/surface-plan`, and you never write the plan. The new revision is approved by a new launch of `/surface-execute`.
@@ -126,17 +126,17 @@ The fixer runs the full gates once at its end. Green, it records `fix-done` and 
 
 ## Conformity
 
-The last review found nothing and nothing changed since: the reviewer wrote `conformity.md`. `surface-status record <plan> conform --conformity conformity.md`, then commit the journal, with `conformity.md` when its content is not committed yet. Stop, as "When the loop stops" says, and hand back in one line: the plan is conform, and the developer marks the pull request ready when they want, which triggers their CI. Conform means the reviewer proved every acceptance criterion, since one it cannot prove is a finding: `conformity.md` keeps that proof, and nothing asks the developer to read it. Say the one exception in one sentence: conform leaves nothing to check, except the code of the critical zones the project declares, whose changed files the pull request description lists, when there are any, for the developer to read themselves.
+The last review found nothing and nothing changed since: the reviewer wrote `conformity.md`. `surface-status record <plan> conformant --conformity conformity.md`, then commit the journal, with `conformity.md` when its content is not committed yet. Stop, as "When the loop stops" says, and hand back in one line: the plan is conformant, and the developer marks the pull request ready when they want, which triggers their CI. Conformant means the reviewer proved every acceptance criterion, since one it cannot prove is a finding: `conformity.md` keeps that proof, and nothing asks the developer to read it. Say the one exception in one sentence: a conformant plan leaves nothing to check, except the code of the critical zones the project declares, whose changed files the pull request description lists, when there are any, for the developer to read themselves.
 
-Refused with the code `critical-files`: the list of those files, which the reviewer left in `conformity.md` for the script, is malformed or names a file the branch did not change. The developer is not asked to repair an agent's list, and only a reviewer edits a reviewer's report: launch a fresh `surface-reviewer`. Its mandate: the plan folder, the base commit (`base` of `surface-status commits <plan> --json`), and the mode, a refused list of critical files, with the refusal's reason. It corrects that list and nothing else, and records nothing: when it returns, record `conform` again, as above. Refused again: a fresh reviewer again, with the new reason, up to `passes.ceiling` of `show --json` reviewers in all, since the one setting that bounds what the loop does on its own bounds this too. Keep that count yourself: a refused `conform` leaves no line in the journal, and these attempts do not raise `passes.execution`. Still refused after them: stop and report the reason to the developer.
+Refused with the code `critical-files`: the list of those files, which the reviewer left in `conformity.md` for the script, is malformed or names a file the branch did not change. The developer is not asked to repair an agent's list, and only a reviewer edits a reviewer's report: launch a fresh `surface-reviewer`. Its mandate: the plan folder, the base commit (`base` of `surface-status commits <plan> --json`), and the mode, a refused list of critical files, with the refusal's reason. It corrects that list and nothing else, and records nothing: when it returns, record `conformant` again, as above. Refused again: a fresh reviewer again, with the new reason, up to `passes.ceiling` of `show --json` reviewers in all, since the one setting that bounds what the loop does on its own bounds this too. Keep that count yourself: a refused `conformant` leaves no line in the journal, and these attempts do not raise `passes.execution`. Still refused after them: stop and report the reason to the developer.
 
 ## At the ceiling
 
-The loop does not converge within its autonomous passes: the developer takes the hand back. Launch no fix.
+The loop does not converge within its autonomous passes: it is the developer's turn again. Launch no fix.
 
 1. `surface-status record <plan> blocked --why "<reason>"`, the reason naming on one line what does not converge. Commit the journal.
-2. Do the steps of "When the loop stops", and say in the terminal: blocked, the developer takes the hand back; a summary of what does not converge, from the reports of the passes (review counts with their paths, failed gate runs, dismissed suspicions), and a suspected break still waiting for its reviewer, with its reason.
-3. Keep the hand and ask: resume, or amend the plan, with your recommendation and its reason in one line.
+2. Do the steps of "When the loop stops", and say in the terminal: blocked, it is the developer's turn again; a summary of what does not converge, from the reports of the passes (review counts with their paths, failed gate runs, dismissed suspicions), and a suspected break still waiting for its reviewer, with its reason.
+3. Stay in the conversation and ask: resume, or amend the plan, with your recommendation and its reason in one line.
    - Resume: `surface-status record <plan> resumed`, commit the journal, and back to the loop in this session, with a fresh count. A suspected break still waiting goes to its reviewer.
    - Amend: tell the developer to run `/surface-plan <amendment>`, which takes it and draws the next revision. Record nothing, and stop.
    - A question is answered from the files, and nothing is recorded.
@@ -149,7 +149,7 @@ The loop stops on a row that says so, on a refusal of the script, on an agent's 
 
 At every stop, once a plan was found:
 
-1. Say in the terminal why the loop stopped and who has the hand, with the paths worth reading.
+1. Say in the terminal why the loop stopped and whose turn it is, with the paths worth reading.
 2. Push the branch to its upstream, which `/surface-plan` set at the first draft. Without an upstream, push nothing and say so.
 3. Refresh the pull request's description: the output of `surface-status pr-body` (it takes no argument, since it describes every plan of the branch), given to `gh pr edit --body-file -` on its standard input. Without a pull request or without `gh`, say so. Nothing else is written on the pull request.
-4. Never mark the pull request ready, since that triggers the CI: on `conform`, the developer does, when they want.
+4. Never mark the pull request ready, since that triggers the CI: on `conformant`, the developer does, when they want.

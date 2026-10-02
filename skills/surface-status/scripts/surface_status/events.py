@@ -150,8 +150,8 @@ class Resumed:
 
 
 @dataclass(frozen=True, slots=True)
-class Conform:
-    name: ClassVar[str] = "conform"
+class Conformant:
+    name: ClassVar[str] = "conformant"
     conformity: str
     blueprint: str
 
@@ -181,7 +181,7 @@ Event: TypeAlias = (
     | PlanChangeRefused
     | Blocked
     | Resumed
-    | Conform
+    | Conformant
     | Abandoned
 )
 
@@ -205,7 +205,7 @@ EVENT_TYPES: tuple[type[Event], ...] = (
     PlanChangeRefused,
     Blocked,
     Resumed,
-    Conform,
+    Conformant,
     Abandoned,
 )
 EVENT_NAMES: tuple[str, ...] = tuple(kind.name for kind in EVENT_TYPES)

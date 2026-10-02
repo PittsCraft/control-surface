@@ -73,10 +73,10 @@ def test_a_session_bypasses_permissions_in_the_container_only(
         toy.claude_command("/surface-execute")
 
 
-def test_the_nominal_path_reaches_conform(tmp_path: Path) -> None:
+def test_the_nominal_path_reaches_conformant(tmp_path: Path) -> None:
     project = toy.build(toy.State.AWAITING, tmp_path)
     assert run_to_end(project, "/surface-execute", tmp_path / "logs" / "execute.jsonl") == 0
-    assert state(project) == "conform"
+    assert state(project) == "conformant"
     seen = events(project)
     assert seen.count("plan-approved") == 1
     assert seen.count("slice-done") == 2
@@ -109,7 +109,7 @@ def test_a_session_killed_in_a_slice_resumes_it(tmp_path: Path) -> None:
     assert seen[: len(at_kill)] == at_kill
     assert seen.count("plan-approved") == 1
     assert seen.count("slice-done") == 2
-    assert state(project) == "conform"
+    assert state(project) == "conformant"
 
 
 def test_a_modified_blueprint_stops_the_loop(tmp_path: Path) -> None:

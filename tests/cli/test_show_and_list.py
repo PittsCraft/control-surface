@@ -1,4 +1,4 @@
-"""The plan list and `show`: state, who has the hand, next step, slices, passes, settings."""
+"""The plan list and `show`: state, whose turn it is, next step, slices, passes, settings."""
 
 import json
 from dataclasses import replace
@@ -9,7 +9,7 @@ from cli_support import PLAN, Project, plan_text
 
 from surface_status.events import PlanOpened
 from surface_status.machine import State, apply
-from surface_status.report import hand_of
+from surface_status.report import turn_of
 
 
 @pytest.fixture
@@ -20,11 +20,11 @@ def project(tmp_path: Path) -> Project:
 def test_no_argument_lists_the_plans_with_state_and_hand(project: Project) -> None:
     project.reach("interview", "2026-09-01-a")
     project.reach("executing", "2026-09-02-b")
-    project.reach("conform", "2026-09-03-c")
+    project.reach("conformant", "2026-09-03-c")
     assert project.run().json()["plans"] == [
-        {"name": "2026-09-01-a", "state": "interview", "hand": "developer"},
-        {"name": "2026-09-02-b", "state": "executing", "hand": "agents"},
-        {"name": "2026-09-03-c", "state": "conform", "hand": "nobody"},
+        {"name": "2026-09-01-a", "state": "interview", "turn": "developer"},
+        {"name": "2026-09-02-b", "state": "executing", "turn": "agents"},
+        {"name": "2026-09-03-c", "state": "conformant", "turn": "nobody"},
     ]
 
 
@@ -32,7 +32,7 @@ def test_the_text_list_has_one_row_per_plan(project: Project) -> None:
     project.reach("awaiting-approval")
     text = project.run(as_json=False).out
     assert [row.split() for row in text.splitlines()] == [
-        [PLAN, "awaiting-approval", "hand:", "developer"]
+        [PLAN, "awaiting-approval", "turn:", "developer"]
     ]
 
 
@@ -61,7 +61,7 @@ def test_the_hand_follows_the_table_of_the_specs() -> None:
         State.BLOCKED,
     }
     for state in State:
-        if state in {State.CONFORM, State.ABANDONED}:
+        if state in {State.CONFORMANT, State.ABANDONED}:
             expected = "nobody"
         else:
             expected = "developer" if state in developer else "agents"
@@ -70,7 +70,7 @@ def test_the_hand_follows_the_table_of_the_specs() -> None:
 
 def _hand(state: State) -> str:
     opened = apply(None, PlanOpened(slug="x"))
-    return hand_of(replace(opened, state=state))
+    return turn_of(replace(opened, state=state))
 
 
 def test_show_reports_the_slices_and_the_counters(project: Project) -> None:
@@ -214,7 +214,7 @@ BOUND = {
     "executing": ("executing", None),
     "reviewing": ("reviewing", None),
     "fixing": ("reviewing", _defect),
-    "conform": ("conform", None),
+    "conformant": ("conformant", None),
     "blocked during execution": ("executing", _block),
     "plan-change-proposed": ("plan-change-proposed", None),
 }
@@ -265,7 +265,7 @@ def test_the_text_of_show_holds_what_the_json_holds(project: Project) -> None:
     project.reach("reviewing")
     text = project.run("show", PLAN, as_json=False).out
     assert f"plan: {PLAN}" in text
-    assert "state: reviewing (hand: agents)" in text
+    assert "state: reviewing (turn: agents)" in text
     assert "slices: done 1, 2; remaining none" in text
     assert "passes: planning 0, execution 0, ceiling 3" in text
     assert "gates: none" in text

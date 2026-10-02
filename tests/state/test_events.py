@@ -27,7 +27,7 @@ SPECS_EVENTS = (
     "plan-change-refused",
     "blocked",
     "resumed",
-    "conform",
+    "conformant",
     "abandoned",
 )
 

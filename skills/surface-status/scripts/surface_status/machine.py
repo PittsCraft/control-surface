@@ -16,7 +16,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -45,11 +45,11 @@ class State(StrEnum):
     FIXING = "fixing"
     PLAN_CHANGE_PROPOSED = "plan-change-proposed"
     BLOCKED = "blocked"
-    CONFORM = "conform"
+    CONFORMANT = "conformant"
     ABANDONED = "abandoned"
 
 
-TERMINAL = frozenset({State.CONFORM, State.ABANDONED})
+TERMINAL = frozenset({State.CONFORMANT, State.ABANDONED})
 NON_TERMINAL = tuple(state for state in State if state not in TERMINAL)
 
 
@@ -101,7 +101,7 @@ TRANSITIONS: Mapping[str, Mapping[State | None, Arrival]] = {
         State.FIXING: State.BLOCKED,
     },
     "resumed": {State.BLOCKED: Rule.BEFORE_BLOCKED},
-    "conform": {State.REVIEWING: State.CONFORM},
+    "conformant": {State.REVIEWING: State.CONFORMANT},
     "abandoned": dict.fromkeys(NON_TERMINAL, State.ABANDONED),
 }
 
@@ -298,7 +298,7 @@ def _record(prev: PlanState, event: Event) -> PlanState:  # noqa: C901, PLR0911,
             return replace(prev, before_blocked=prev.state)
         case Resumed():
             return replace(prev, planning_passes=0, execution_passes=0)
-        case Conform() | Abandoned():
+        case Conformant() | Abandoned():
             return prev
         case _:
             assert_never(event)

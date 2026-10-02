@@ -2,7 +2,7 @@
   "v": 1,
   "plan": "2026-09-29-feature",
   "state": "executing",
-  "hand": "agents",
+  "turn": "agents",
   "next_step": "surface-execute: launch slice 2",
   "slices": {
     "declared": [

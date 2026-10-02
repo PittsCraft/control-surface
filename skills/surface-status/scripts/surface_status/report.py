@@ -17,11 +17,11 @@ from surface_status.plan_folder import JOURNAL, PlanFolder
 from surface_status.settings import Settings
 
 JSON_VERSION = 1
-REQUIRE_CONFORM = "conform"
+REQUIRE_CONFORMANT = "conformant"
 
 Payload = dict[str, Any]
 
-_HAND = {
+_TURN = {
     State.INTERVIEW: "developer",
     State.DRAFTING: "agents",
     State.AWAITING_APPROVAL: "developer",
@@ -30,13 +30,13 @@ _HAND = {
     State.FIXING: "agents",
     State.PLAN_CHANGE_PROPOSED: "developer",
     State.BLOCKED: "developer",
-    State.CONFORM: "nobody",
+    State.CONFORMANT: "nobody",
     State.ABANDONED: "nobody",
 }
 
 _ALARM = (
     "abandoned after its approval: the branch may carry code written under this plan that was"
-    " never declared conform. The alarm stays even if that code was removed, since the script"
+    " never declared conformant. The alarm stays even if that code was removed, since the script"
     " cannot see code. Remove it or merge knowingly: the check is an alarm, not a lock"
 )
 
@@ -76,9 +76,9 @@ def discover(root: Path, settings: Settings) -> list[PlanFolder]:
     ]
 
 
-def hand_of(state: PlanState | None) -> str:
-    """Who has the hand in each state; the command opens a plan."""
-    return "agents" if state is None else _HAND[state.state]
+def turn_of(state: PlanState | None) -> str:
+    """Whose turn it is in each state; the command opens a plan."""
+    return "agents" if state is None else _TURN[state.state]
 
 
 def _state_name(state: PlanState | None) -> str | None:
@@ -121,7 +121,7 @@ def next_step(state: PlanState | None) -> str:  # noqa: C901, PLR0911 (one arm p
                 "the developer decides: surface-plan takes an instruction or an amendment, "
                 "surface-execute resumes where the loop stopped"
             )
-        case State.CONFORM | State.ABANDONED:
+        case State.CONFORMANT | State.ABANDONED:
             return "none: the plan is over"
 
 
@@ -129,7 +129,7 @@ def plan_row(view: PlanView) -> Payload:
     return {
         "name": view.folder.name,
         "state": _state_name(view.state),
-        "hand": hand_of(view.state),
+        "turn": turn_of(view.state),
     }
 
 
@@ -138,19 +138,19 @@ def list_payload(rows: Sequence[Payload]) -> Payload:
 
 
 def error_row(name: str, message: str) -> Payload:
-    return {"name": name, "state": None, "hand": None, "error": message}
+    return {"name": name, "state": None, "turn": None, "error": message}
 
 
 def _approval_binds(state: PlanState) -> bool:
     """Whether the last approval still holds the work to its blueprint.
 
-    It does from the approval to `conform`, a block during execution and a pending plan change
+    It does from the approval to `conformant`, a block during execution and a pending plan change
     included. It does not in planning, where a new revision is drawn, nor once abandoned.
     """
     match state.state:
         case State.EXECUTING | State.REVIEWING | State.FIXING | State.PLAN_CHANGE_PROPOSED:
             return True
-        case State.CONFORM:
+        case State.CONFORMANT:
             return True
         case State.BLOCKED:
             return state.before_blocked in {State.EXECUTING, State.REVIEWING, State.FIXING}
@@ -201,7 +201,7 @@ def show_payload(view: PlanView, settings: Settings) -> Payload:
         "v": JSON_VERSION,
         "plan": view.folder.name,
         "state": _state_name(state),
-        "hand": hand_of(state),
+        "turn": turn_of(state),
         "next_step": next_step(state),
         "slices": slices,
         "passes": {
@@ -218,16 +218,16 @@ def show_payload(view: PlanView, settings: Settings) -> Payload:
     }
 
 
-def _problems_for_conform(view: PlanView) -> list[Payload]:
-    """List what keeps a plan from satisfying `--require conform`."""
+def _problems_for_conformant(view: PlanView) -> list[Payload]:
+    """List what keeps a plan from satisfying `--require conformant`."""
     state = view.state
     if state is not None and state.state is State.ABANDONED:
         if any(isinstance(event, PlanApproved) for event in view.events):
             return [{"code": "abandoned-after-approval", "message": _ALARM}]
         return []
-    if state is None or state.state is not State.CONFORM:
+    if state is None or state.state is not State.CONFORMANT:
         where = "no event yet" if state is None else state.state.value
-        message = f"in progress ({where}): the plan is neither conform nor abandoned"
+        message = f"in progress ({where}): the plan is neither conformant nor abandoned"
         return [{"code": "in-progress", "message": message}]
     return blueprint_alarms(view)
 
@@ -239,7 +239,7 @@ def check_plan(folder: PlanFolder, *, require: str | None) -> Payload:
     except UnreadableJournalError as error:
         problems: list[Payload] = [{"code": "journal-unreadable", "message": str(error)}]
         return {"name": folder.name, "state": None, "ok": False, "problems": problems}
-    problems = _problems_for_conform(view) if require == REQUIRE_CONFORM else []
+    problems = _problems_for_conformant(view) if require == REQUIRE_CONFORMANT else []
     return {
         "name": folder.name,
         "state": _state_name(view.state),
@@ -276,7 +276,7 @@ def render_list(payload: Payload) -> str:
             lines.append(f"{row['name']:<{width}}  unreadable: {row['error']}")
         else:
             state = row["state"] or "no event yet"
-            lines.append(f"{row['name']:<{width}}  {state:<20}  hand: {row['hand']}")
+            lines.append(f"{row['name']:<{width}}  {state:<20}  turn: {row['turn']}")
     return "\n".join(lines) + "\n"
 
 
@@ -301,7 +301,7 @@ def render_show(payload: Payload) -> str:
 
     lines = [
         f"plan: {payload['plan']}",
-        f"state: {payload['state'] or 'no event yet'} (hand: {payload['hand']})",
+        f"state: {payload['state'] or 'no event yet'} (turn: {payload['turn']})",
         f"next step: {payload['next_step']}",
         f"slices: done {listed(slices['done'])}; remaining {listed(slices['remaining'])}",
         (

@@ -1,11 +1,11 @@
 {
   "v": 1,
   "ok": true,
-  "require": "conform",
+  "require": "conformant",
   "plans": [
     {
       "name": "2026-09-01-done",
-      "state": "conform",
+      "state": "conformant",
       "ok": true,
       "problems": []
     },

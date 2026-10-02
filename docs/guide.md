@@ -33,7 +33,7 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 `blueprint.md` is your control surface, and the only thing you have to read. It holds every decision that matters, and is as long as the feature needs and no longer. It shows what will be built, in sections of a fixed order, with a diagram only where one is clearer than prose: the idea in one sentence, acceptance criteria, scope, data, boundaries, sequences, state machines, algorithms, and the sensitive zones: first the critical zones you declared that the plan touches, by name, or that it touches none, then the points that touch your control, your work or your time and that you did not see go by. A section the feature does not change has no heading: one closing line names them, so you see at a glance what is left alone. It does not show the order of construction: that stays in the plan.
 
-- To change something, say what in the conversation: `/surface-plan` keeps the hand after it hands over. It records your amendment, produces the next revision of the plan and of the blueprint, then asks again. A question is answered and changes nothing. In a new session, run `/surface-plan` with your amendment.
+- To change something, say what in the conversation: `/surface-plan` stays in the conversation after it hands over. It records your amendment, produces the next revision of the plan and of the blueprint, then asks again. A question is answered and changes nothing. In a new session, run `/surface-plan` with your amendment.
 - To approve, run `/surface-execute`. Launching it counts as approval, gates included: it names the plan, the revision and the gates it approves, then freezes the blueprint. No sentence of the conversation approves a revision.
 
 ### Permissions
@@ -50,7 +50,7 @@ While the agents work, you do not amend the plan: you wait for the loop to stop,
 
 `/surface-execute` dispatches soundly on any model. The agents run on the models of `.claude/surface.json`, or its defaults, whatever your session's.
 
-### 4. When you get the hand back
+### 4. When the loop hands back to you
 
 The loop hands back in three cases, tells you in the terminal, and in the first two asks you what to do in the conversation.
 
@@ -58,21 +58,21 @@ The loop hands back in three cases, tells you in the terminal, and in the first 
 |---|---|---|
 | A contract break: the blueprint would have to change to stay true | a plan change proposal, in `plan-changes/`, presented at the level of the blueprint | Decline it with a reason in one line: the loop goes on, the agents bring the code back to the blueprint and do not raise the same break again. Accept it, then run `/surface-plan`, which draws the new revision for you to approve with `/surface-execute`. |
 | The ceiling of autonomous passes, three by default | a summary of what does not converge | Answer that it resumes: the loop goes on in the session with a fresh count. Or amend the plan with `/surface-plan <amendment>`. |
-| The conform state | one line that says so, and an updated PR description | Mark the PR ready when you want: step 5. |
+| The conformant state | one line that says so, and an updated PR description | Mark the PR ready when you want: step 5. |
 
 ### 5. Mark the PR ready, then merge
 
-Conform means the last review proved every acceptance criterion of the blueprint you approved: a criterion it cannot prove is a finding, and the loop goes on. Nothing is left for you to check, except the code of the critical zones your `AGENTS.md` or `CLAUDE.md` declares: the PR description lists the files the branch changed there, for you to read yourself. The proof stays in `conformity.md`, each criterion with a test, a file and line or a gate result, for whoever wants it.
+Conformant means the last review proved every acceptance criterion of the blueprint you approved: a criterion it cannot prove is a finding, and the loop goes on. Nothing is left for you to check, except the code of the critical zones your `AGENTS.md` or `CLAUDE.md` declares: the PR description lists the files the branch changed there, for you to read yourself. The proof stays in `conformity.md`, each criterion with a test, a file and line or a gate result, for whoever wants it.
 
 The PR description lists, one line each and for information, the decisions the agents took within the contract that you did not see go by: the plan amendments that keep the blueprint true, and the suspected breaks a reviewer dismissed. It lists nothing when there is nothing to list.
 
 When you want, you mark the PR ready for review, which triggers your CI, and you merge. The chain never does it for you. The conformity check belongs in your CI when the PR is marked ready, and in your hands before merging:
 
 ```sh
-.claude/skills/surface-status/scripts/surface-status check --require conform
+.claude/skills/surface-status/scripts/surface-status check --require conformant
 ```
 
-It fails as long as a plan of the branch is neither conform nor abandoned before its approval, so keep it out of the gates your plans name.
+It fails as long as a plan of the branch is neither conformant nor abandoned before its approval, so keep it out of the gates your plans name.
 
 In a GitHub Actions workflow, the check needs the full history of the repository to find where your branch left the main branch. A checkout at depth 1, the default, makes it exit 2 and say so:
 
@@ -90,14 +90,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: .claude/skills/surface-status/scripts/surface-status check --require conform
+      - run: .claude/skills/surface-status/scripts/surface-status check --require conformant
 ```
 
-Exit code 0 means every plan of the branch is conform, 1 that one is not, 2 that the check could not run.
+Exit code 0 means every plan of the branch is conformant, 1 that one is not, 2 that the check could not run.
 
 ### At any time: `/surface-status`
 
-It lists your plans, their state and who has the hand, and details one plan: its next step, the slices left, the passes used. It also abandons a plan, after asking you to confirm. A plan abandoned after approval makes the conformity check fail, since the branch carries code never declared conform: you then merge knowingly.
+It lists your plans, their state and whose turn it is, and details one plan: its next step, the slices left, the passes used. It also abandons a plan, after asking you to confirm. A plan abandoned after approval makes the conformity check fail, since the branch carries code never declared conformant: you then merge knowingly.
 
 ### Interrupted? Relaunch the same command
 
@@ -107,7 +107,7 @@ On resumption, uncommitted work is taken as the interrupted step's: a fresh agen
 
 ## A session, in short
 
-A sketch of the gestures, not a transcript:
+A sketch of who does what, not a transcript:
 
 ```text
 you      /surface-plan Add a CSV export to the invoices page
@@ -115,7 +115,7 @@ agent    explores the code, then asks its questions one at a time, each with a r
 you      answer them
 agent    writes the plan and the blueprint, pushes the branch, opens a draft PR
 you      read blueprint.md, then ask for changes in the conversation, or run /surface-execute to approve
-agents   slices, gates, review, fixes, until conform or until they hand back
+agents   slices, gates, review, fixes, until the plan is conformant or until they hand back
 you      mark the PR ready when you want, merge
 ```
 

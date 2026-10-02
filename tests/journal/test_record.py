@@ -23,7 +23,7 @@ from surface_status.events import (
     EVENT_NAMES,
     Abandoned,
     CheckDone,
-    Conform,
+    Conformant,
     GateResult,
     GatesRun,
     InterviewClosed,
@@ -81,7 +81,7 @@ def _to_executing(folder: PlanFolder) -> None:
     _accept(folder, PlanApproved(rev=1, blueprint=blueprint))
 
 
-def test_a_plan_walks_from_opening_to_conform_through_record(tmp_path: Path) -> None:
+def test_a_plan_walks_from_opening_to_conformant_through_record(tmp_path: Path) -> None:
     folder = new_folder(tmp_path)
     settings = settings_with(3)
     _to_executing(folder)
@@ -99,11 +99,11 @@ def test_a_plan_walks_from_opening_to_conform_through_record(tmp_path: Path) -> 
     blueprint = folder.blueprint_hash()
     assert blueprint is not None
     _accept(
-        folder, Conform(conformity=write(folder, "conformity.md"), blueprint=blueprint), settings
+        folder, Conformant(conformity=write(folder, "conformity.md"), blueprint=blueprint), settings
     )
     state = load_state(folder)
     assert state is not None
-    assert state.state is State.CONFORM
+    assert state.state is State.CONFORMANT
     assert len(read_events(folder.journal)) == 10
 
 
@@ -500,16 +500,16 @@ def test_a_conformity_whose_critical_files_block_is_malformed_is_refused(
 ) -> None:
     folder = new_folder(tmp_path)
     blueprint = _to_clean_review(folder)
-    conform = Conform(
+    conformant = Conformant(
         conformity=write(folder, "conformity.md", "proof\n" + block), blueprint=blueprint
     )
     before = _bytes(folder)
-    refusal = _refusal(folder, conform)
+    refusal = _refusal(folder, conformant)
     assert refusal.code is RefusalCode.CRITICAL_FILES
     assert refusal.reason.startswith(reason)
     assert _bytes(folder) == before
     write(folder, "conformity.md", "proof\n```critical-files\nsrc/pay.py\n```\n")
-    _accept(folder, conform)
+    _accept(folder, conformant)
 
 
 @pytest.mark.parametrize("text", ["proof\n", "proof\n```critical-files\n```\n"])
@@ -519,7 +519,9 @@ def test_a_conformity_that_lists_no_critical_file_is_recorded_as_before(
     folder = new_folder(tmp_path)
     blueprint = _to_clean_review(folder)
     assert not parse_critical_files(text)
-    _accept(folder, Conform(conformity=write(folder, "conformity.md", text), blueprint=blueprint))
+    _accept(
+        folder, Conformant(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
+    )
 
 
 def test_a_missing_conformity_is_refused_as_a_missing_file_before_its_block_is_read(
@@ -527,7 +529,7 @@ def test_a_missing_conformity_is_refused_as_a_missing_file_before_its_block_is_r
 ) -> None:
     folder = new_folder(tmp_path)
     blueprint = _to_clean_review(folder)
-    refusal = _refusal(folder, Conform(conformity="conformity.md", blueprint=blueprint))
+    refusal = _refusal(folder, Conformant(conformity="conformity.md", blueprint=blueprint))
     assert refusal.code is RefusalCode.FILE_MISSING
 
 
@@ -535,6 +537,6 @@ def test_outside_a_git_work_tree_only_the_form_of_the_block_is_checked(tmp_path:
     folder = new_folder(tmp_path)
     blueprint = _to_clean_review(folder)
     text = "proof\n```critical-files\nsrc/pay.py\n```\n"
-    conform = Conform(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
-    result = record(folder, conform, DEFAULTS, NOW, root=tmp_path)
+    conformant = Conformant(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
+    result = record(folder, conformant, DEFAULTS, NOW, root=tmp_path)
     assert isinstance(result, Accepted), result

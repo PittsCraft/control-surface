@@ -14,7 +14,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -70,14 +70,14 @@ def _onward(prev: PlanState | None) -> str | None:  # noqa: C901, PLR0911 (one a
                 return "gates-run"
             if prev.last_review is None:
                 return "review-done"
-            return "conform" if prev.last_review.clean else "review-done"
+            return "conformant" if prev.last_review.clean else "review-done"
         case State.FIXING:
             return "fix-done" if prev.gates is GateResult.PASS else "gates-run"
         case State.BLOCKED:
             return "resumed"
         case State.PLAN_CHANGE_PROPOSED:
             return "plan-change-refused"
-        case State.CONFORM | State.ABANDONED:
+        case State.CONFORMANT | State.ABANDONED:
             return None
 
 
@@ -175,9 +175,9 @@ def events(draw: DrawFn, prev: PlanState | None) -> Event:  # noqa: C901, PLR091
             return Blocked(why=draw(word))
         case "resumed":
             return Resumed()
-        case "conform":
+        case "conformant":
             approved = None if prev is None else prev.approved_blueprint
-            return Conform(
+            return Conformant(
                 conformity="conformity.md",
                 blueprint=_mostly(draw, approved or BP1, st.sampled_from(BLUEPRINTS)),
             )

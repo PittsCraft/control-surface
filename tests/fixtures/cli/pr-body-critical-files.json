@@ -4,8 +4,8 @@
   "plans": [
     {
       "name": "2026-09-01-alpha",
-      "state": "conform",
-      "hand": "nobody",
+      "state": "conformant",
+      "turn": "nobody",
       "blueprint": "[blueprint.md](docs/plans/2026-09-01-alpha/blueprint.md)",
       "plan": "[plan.md](docs/plans/2026-09-01-alpha/plan.md)",
       "decisions": [],
@@ -21,5 +21,5 @@
       ]
     }
   ],
-  "body": "## Plans on this branch\n\n| Plan | State | Blueprint | Plan |\n|---|---|---|---|\n| `2026-09-01-alpha` | conform | [blueprint.md](docs/plans/2026-09-01-alpha/blueprint.md) | [plan.md](docs/plans/2026-09-01-alpha/plan.md) |\n\n### Code of the critical zones, for you to read yourself\n\nConform leaves nothing else to check: the branch changed these files inside the zones the project declares critical.\n\n- `2026-09-01-alpha`: [billing/pay.py](billing/pay.py)\n- `2026-09-01-alpha`: `billing/old.py` (no longer on the branch)\n\nRefreshed by `surface-status pr-body`; edit the plans, not this text.\n"
+  "body": "## Plans on this branch\n\n| Plan | State | Blueprint | Plan |\n|---|---|---|---|\n| `2026-09-01-alpha` | conformant | [blueprint.md](docs/plans/2026-09-01-alpha/blueprint.md) | [plan.md](docs/plans/2026-09-01-alpha/plan.md) |\n\n### Code of the critical zones, for you to read yourself\n\nA conformant plan leaves nothing else to check: the branch changed these files inside the zones the project declares critical.\n\n- `2026-09-01-alpha`: [billing/pay.py](billing/pay.py)\n- `2026-09-01-alpha`: `billing/old.py` (no longer on the branch)\n\nRefreshed by `surface-status pr-body`; edit the plans, not this text.\n"
 }

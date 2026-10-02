@@ -1,12 +1,12 @@
 {
-  "state": "conform",
+  "state": "conformant",
   "remaining": [],
   "done": [
     1,
     2
   ],
   "planning_passes": 0,
-  "execution_passes": 3,
+  "execution_passes": 0,
   "before_blocked": null,
   "proposal_origin": null
 }

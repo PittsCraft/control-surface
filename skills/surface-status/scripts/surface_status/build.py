@@ -17,7 +17,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     InterviewClosed,
@@ -113,7 +113,7 @@ PARAMS: Mapping[str, tuple[Param, ...]] = {
     "plan-change-refused": (Param("why", Kind.LINE, "the reason, on one line"),),
     "blocked": (Param("why", Kind.LINE, "the reason, on one line"),),
     "resumed": (),
-    "conform": (Param("conformity", Kind.PATH, "the proof of conformity, conformity.md"),),
+    "conformant": (Param("conformity", Kind.PATH, "the proof of conformity, conformity.md"),),
     "abandoned": (Param("why", Kind.LINE, "the reason, on one line"),),
 }
 
@@ -259,10 +259,10 @@ def build_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
             return Blocked(why=_text(values, "why"))
         case "resumed":
             return Resumed()
-        case "conform":
+        case "conformant":
             if blueprint is None:
                 return _missing(BLUEPRINT)
-            return Conform(conformity=_text(values, "conformity"), blueprint=blueprint)
+            return Conformant(conformity=_text(values, "conformity"), blueprint=blueprint)
         case "abandoned":
             return Abandoned(why=_text(values, "why"))
         case _:

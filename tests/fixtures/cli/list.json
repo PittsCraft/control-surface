@@ -4,12 +4,12 @@
     {
       "name": "2026-09-01-first",
       "state": "awaiting-approval",
-      "hand": "developer"
+      "turn": "developer"
     },
     {
       "name": "2026-09-02-second",
-      "state": "conform",
-      "hand": "nobody"
+      "state": "conformant",
+      "turn": "nobody"
     }
   ]
 }

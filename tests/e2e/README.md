@@ -36,8 +36,8 @@ The gate builds the image, mounts this clone read-only at `/clone` and the outpu
 
 | Test | Start | Session | What must hold |
 |---|---|---|---|
-| `test_the_nominal_path_reaches_conform` | `awaiting-approval` | `/surface-execute` | `conform`, one approval, each slice done once, `conformity.md`, and `shelf/export.py` among the files of the critical zone the description lists |
-| `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conform` |
+| `test_the_nominal_path_reaches_conformant` | `awaiting-approval` | `/surface-execute` | `conformant`, one approval, each slice done once, `conformity.md`, and `shelf/export.py` among the files of the critical zone the description lists |
+| `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conformant` |
 | `test_a_modified_blueprint_stops_the_loop` | `blueprint-modified` | `/surface-execute` | nothing recorded, still `executing`, the final message names the blueprint |
 | `test_the_ceiling_hands_back_to_the_developer` | `ceiling` | `/surface-execute` | `blocked` after a second review with findings, and no second fix |
 

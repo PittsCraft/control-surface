@@ -48,8 +48,8 @@ REQUIRED = {
     "refusal-from-slice",
     "refusal-from-review",
     "fix-done-at-ceiling-then-blocked",
-    "fix-without-review-then-conform",
-    "conform-after-three-fixes",
+    "fix-without-review-then-conformant",
+    "conformant-after-three-fixes",
 }
 
 

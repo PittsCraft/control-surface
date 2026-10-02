@@ -16,7 +16,7 @@ def project(tmp_path: Path) -> Project:
 
 def test_golden_list(project: Project) -> None:
     project.reach("awaiting-approval", "2026-09-01-first")
-    project.reach("conform", "2026-09-02-second")
+    project.reach("conformant", "2026-09-02-second")
     assert_golden("list.json", project.run().out)
 
 
@@ -72,19 +72,19 @@ def test_golden_usage_error(project: Project) -> None:
 
 
 def test_golden_check_passing(project: Project) -> None:
-    project.reach("conform", "2026-09-01-done")
+    project.reach("conformant", "2026-09-01-done")
     project.reach("awaiting-approval", "2026-09-02-dropped")
     project.run("abandon", "2026-09-02-dropped", "--why", "not wanted")
-    assert_golden("check-passed.json", project.run("check", "--require", "conform").out)
+    assert_golden("check-passed.json", project.run("check", "--require", "conformant").out)
 
 
 def test_golden_check_failing(project: Project) -> None:
     project.reach("executing", "2026-09-01-running")
     project.reach("executing", "2026-09-02-dropped")
     project.run("abandon", "2026-09-02-dropped", "--why", "changed course")
-    edited = project.reach("conform", "2026-09-03-edited")
+    edited = project.reach("conformant", "2026-09-03-edited")
     (edited / "blueprint.md").write_text("# Blueprint\nedited\n", encoding="utf-8")
-    assert_golden("check-failed.json", project.run("check", "--require", "conform").out)
+    assert_golden("check-failed.json", project.run("check", "--require", "conformant").out)
 
 
 def test_golden_check_without_requirement(project: Project) -> None:
@@ -98,7 +98,7 @@ def test_every_answer_carries_the_version(project: Project) -> None:
         project.run(),
         project.run("show", PLAN),
         project.run("check"),
-        project.run("check", "--require", "conform"),
+        project.run("check", "--require", "conformant"),
         project.record(PLAN, "slice-done", "--slice", "1", "--gates", "lint"),
         project.record(PLAN, "slice-done", "--slice", "1", "--gates", "lint"),
         project.record(PLAN, "nonsense"),

@@ -17,7 +17,7 @@ from surface_status.events import (
     AmendmentReceived,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -75,7 +75,7 @@ def check_attempt(
     if prev is not None:
         if past_the_ceiling(prev, event, context.ceiling):
             assert isinstance(result, Refusal), "a pass was accepted beyond the ceiling"
-        if isinstance(event, SliceDone | PlanAmended | FixDone | Conform) and (
+        if isinstance(event, SliceDone | PlanAmended | FixDone | Conformant) and (
             context.blueprint_hash != prev.approved_blueprint
         ):
             assert isinstance(result, Refusal), "the blueprint changed after approval"

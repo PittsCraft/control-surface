@@ -13,7 +13,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -98,7 +98,7 @@ EVENTS: dict[type[Event], SearchStrategy[Event]] = {
     PlanChangeRefused: st.builds(PlanChangeRefused, proposal=_texts, why=_texts),
     Blocked: st.builds(Blocked, why=_texts),
     Resumed: st.builds(Resumed),
-    Conform: st.builds(Conform, conformity=_texts, blueprint=_hashes),
+    Conformant: st.builds(Conformant, conformity=_texts, blueprint=_hashes),
     Abandoned: st.builds(Abandoned, why=_texts),
 }
 all_events = st.one_of(list(EVENTS.values()))
@@ -217,9 +217,9 @@ def make_event(  # noqa: C901, PLR0911, PLR0912 (one arm per event)
             return Blocked(why="does not converge")
         case "resumed":
             return Resumed()
-        case "conform":
+        case "conformant":
             text = data.draw(st.sampled_from(CONFORMITIES))
-            return Conform(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
+            return Conformant(conformity=write(folder, "conformity.md", text), blueprint=blueprint)
         case "abandoned":
             return Abandoned(why="changed my mind")
         case _:
@@ -245,14 +245,14 @@ def onward(state: PlanState | None) -> str | None:  # noqa: C901, PLR0911 (one a
             if state.gates is not GateResult.PASS:
                 return "gates-run"
             clean_review = state.last_review is not None and state.last_review.clean
-            return "conform" if clean_review else "review-done"
+            return "conformant" if clean_review else "review-done"
         case State.FIXING:
             return "fix-done" if state.gates is GateResult.PASS else "gates-run"
         case State.BLOCKED:
             return "resumed"
         case State.PLAN_CHANGE_PROPOSED:
             return "plan-change-refused"
-        case State.CONFORM | State.ABANDONED:
+        case State.CONFORMANT | State.ABANDONED:
             return None
 
 

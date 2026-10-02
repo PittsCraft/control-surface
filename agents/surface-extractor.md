@@ -44,7 +44,7 @@ Write in the language `exploration.md` names in its repository rules. The bluepr
 
 Sections 1, 2, 3 and 9 are always written. A section from 4 to 8 is written only when the plan changes what it shows. One with no change gets no heading: the blueprint ends with one closing line that names every section left out, as the template shows, so the developer sees at a glance what the feature does not touch. There is no closing line when all nine are written. A written section keeps its number, whatever is left out before it: section 9 is always section 9.
 
-Section 9 opens with the critical zones because their code is what the developer still reads themselves once the work is conform: this is where they learn which zones that will be.
+Section 9 opens with the critical zones because their code is what the developer still reads themselves once the work is conformant: this is where they learn which zones that will be.
 
 One idea per section, short prose. A mermaid diagram only when it shows what the prose of its section does not: a schema that changes, a boundary crossed, an order that matters, states added. Never to fill a section.
 

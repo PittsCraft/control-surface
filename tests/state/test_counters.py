@@ -27,7 +27,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -147,8 +147,8 @@ class TestExecution:
         state = must_accept(state, GatesRun(run=3, result=GateResult.PASS))
         state = must_accept(state, FixDone(pass_=1))
         state = must_accept(state, review())
-        conform = must_accept(state, Conform(conformity="c", blueprint=BP1))
-        assert (conform.state, conform.execution_passes) == (State.CONFORM, 2)
+        conformant = must_accept(state, Conformant(conformity="c", blueprint=BP1))
+        assert (conformant.state, conformant.execution_passes) == (State.CONFORMANT, 2)
 
     @pytest.mark.parametrize("resetting", ["approved", "refused", "resumed"])
     def test_restarts_from_zero_at_each_act_of_the_developer(self, resetting: str) -> None:
@@ -169,10 +169,10 @@ class TestExecution:
         before, event = cases[resetting]
         assert must_accept(before, event).execution_passes == 0
 
-    def test_is_kept_across_a_block_and_a_conform_and_by_amendments_of_planning(self) -> None:
+    def test_is_kept_across_a_block_and_a_conformant_and_by_amendments_of_planning(self) -> None:
         state = state_in(State.REVIEWING, execution_passes=2)
         assert must_accept(state, Blocked(why="x")).execution_passes == 2
-        assert must_accept(state, Conform(conformity="c", blueprint=BP1)).execution_passes == 2
+        assert must_accept(state, Conformant(conformity="c", blueprint=BP1)).execution_passes == 2
 
     def test_the_two_phases_count_apart(self) -> None:
         state = must_accept(state_in(State.DRAFTING), check(1))
@@ -227,7 +227,7 @@ class TestCeiling:
             (State.FIXING, GatesRun(run=9, result=GateResult.PASS)),
             (State.EXECUTING, PlanChangeProposed(proposal=PROPOSAL, slice_=1)),
             (State.EXECUTING, BreakSuspected(slice_=1, why="x")),
-            (State.REVIEWING, Conform(conformity="c", blueprint=BP1)),
+            (State.REVIEWING, Conformant(conformity="c", blueprint=BP1)),
             (State.REVIEWING, Blocked(why="ceiling")),
             (State.FIXING, Blocked(why="ceiling")),
         ],
@@ -384,7 +384,7 @@ def _step(loop: Loop, answer: Answer) -> None:  # noqa: PLR0912 (one arm per row
         else:
             loop.record(BreakSuspected(slice_=slice_, why="x"))
     elif state.state is State.REVIEWING and _clean_review_last(state):
-        loop.record(Conform(conformity="c", blueprint=BP1))
+        loop.record(Conformant(conformity="c", blueprint=BP1))
     elif state.state is State.REVIEWING and state.gates is not GateResult.PASS:
         loop.record(GatesRun(run=1, result=GateResult(answer(("pass", "fail")))))
     elif state.state is State.REVIEWING:
@@ -401,7 +401,7 @@ def _step(loop: Loop, answer: Answer) -> None:  # noqa: PLR0912 (one arm per row
 def drive(ceiling: int, answer: Answer) -> Loop:
     """Follow the loop until a row stops it; `answer` stands for the agents and the gates."""
     loop = Loop(ceiling, replay(EXECUTING), list(EXECUTING))
-    while loop.state.state not in {State.CONFORM, State.PLAN_CHANGE_PROPOSED, State.BLOCKED}:
+    while loop.state.state not in {State.CONFORMANT, State.PLAN_CHANGE_PROPOSED, State.BLOCKED}:
         _step(loop, answer)
     return loop
 
@@ -414,12 +414,12 @@ class TestTheLoop:
             (["pass", *["defect", "pass"] * 3, "defect"], 3, State.BLOCKED),
             # Every fixer's own gate run fails: three fixers, the third one's run hands back.
             (["pass", "defect", "fail", "fail", "fail"], 3, State.BLOCKED),
-            # The third fix converges: its clean review is recorded, then conform.
-            (["pass", *["defect", "pass"] * 3, "clean"], 3, State.CONFORM),
+            # The third fix converges: its clean review is recorded, then conformant.
+            (["pass", *["defect", "pass"] * 3, "clean"], 3, State.CONFORMANT),
             # A fixer whose gates fail, a second one, then a clean review: two passes.
-            (["pass", "defect", "fail", "pass", "clean"], 2, State.CONFORM),
+            (["pass", "defect", "fail", "pass", "clean"], 2, State.CONFORMANT),
             # A red run after the slices, then a fix that converges.
-            (["fail", "pass", "clean"], 1, State.CONFORM),
+            (["fail", "pass", "clean"], 1, State.CONFORMANT),
         ],
     )
     def test_a_ceiling_of_three_lets_three_agents_take_the_work_back(

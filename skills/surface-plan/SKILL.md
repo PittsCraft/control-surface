@@ -1,6 +1,6 @@
 ---
 name: surface-plan
-description: Plans a feature with the developer and holds the plan until its approval. Explores the code, asks one question at a time, writes the plan, has the blueprint drawn and cross-checked by fresh agents, then commits, pushes and opens a draft pull request. It keeps the hand and takes amendments in the conversation until the developer approves with /surface-execute. Relaunched, it resumes from the plan folder and takes an amendment, a decision on a plan change proposal, or an instruction after a block.
+description: Plans a feature with the developer and holds the plan until its approval. Explores the code, asks one question at a time, writes the plan, has the blueprint drawn and cross-checked by fresh agents, then commits, pushes and opens a draft pull request. It stays in the conversation and takes amendments there until the developer approves with /surface-execute. Relaunched, it resumes from the plan folder and takes an amendment, a decision on a plan change proposal, or an instruction after a block.
 argument-hint: <specs, a path to them, a plan folder, or an amendment>
 disable-model-invocation: true
 allowed-tools: Bash(${CLAUDE_PROJECT_DIR}/.claude/skills/surface-status/scripts/surface-status *) Bash(.claude/skills/surface-status/scripts/surface-status *) Bash(true)
@@ -17,7 +17,7 @@ Every launch starts from what the repository holds, never from a conversation: a
 - Write each answer, amendment and decision into `interview.md` as soon as it is given, before anything else.
 - Read the state from the script at every launch and after every recorded event, never from memory.
 - Once `exploration.md` is written, a relaunch reads it and does not explore again.
-- Keeping the hand in the conversation changes none of this: a reply is written before it is acted on, and the state read again from the script. A revision is approved only by the launch of `/surface-execute`, never by a sentence of the conversation. After a dead session, relaunching `/surface-plan` is the way to resume.
+- Staying in the conversation changes none of this: a reply is written before it is acted on, and the state read again from the script. A revision is approved only by the launch of `/surface-execute`, never by a sentence of the conversation. After a dead session, relaunching `/surface-plan` is the way to resume.
 
 ## The state script
 
@@ -37,8 +37,8 @@ If that answer is missing or is not JSON, the chain is not installed or `python3
 2. Otherwise, read `outcome` in the answer above.
    - `one`: the plan is `plan`. When arguments are given and do not plainly answer what that plan awaits, ask first: a new plan, or input for that plan.
    - `several`: ask which one, the `candidates` as options, and "a new plan" too when arguments are given.
-   - `none`: with arguments, open a new plan (first launch). Without, look for a folder of the plans directory holding `specs.md` and no `journal.jsonl`: a launch died before opening it, continue at step 3. Else name the plans of `other_plans`, where the agents have the hand, and from the main branch those of `elsewhere`, each with its `suggestion` to switch branch; ask for specs and stop.
-   - Arguments that amend a plan of `other_plans`: see "Outside your hand".
+   - `none`: with arguments, open a new plan (first launch). Without, look for a folder of the plans directory holding `specs.md` and no `journal.jsonl`: a launch died before opening it, continue at step 3. Else name the plans of `other_plans`, where it is the agents' turn, and from the main branch those of `elsewhere`, each with its `suggestion` to switch branch; ask for specs and stop.
+   - Arguments that amend a plan of `other_plans`: see "Not your turn".
 3. `surface-status show <plan> --json` gives `state`, `last_event`, `passes`, `pending_proposal` and the effective `settings`. Then act on the state:
 
 | State | What you do |
@@ -49,8 +49,8 @@ If that answer is missing or is not JSON, the chain is not installed or `python3
 | `awaiting-approval` | First finish step 10 if it did not end (plan files uncommitted, branch never pushed, no pull request), unless `interview.md` records that the developer declined the push. Then take the amendment given (see "Taking an amendment"); without one, step 11. |
 | `plan-change-proposed` | See "A plan change proposal". |
 | `blocked` | See "After a block". |
-| `executing`, `reviewing`, `fixing` | This command does not see this plan: the agents have the hand. See "Outside your hand". |
-| `conform`, `abandoned` | The plan is over: say so. A new need opens a new plan. |
+| `executing`, `reviewing`, `fixing` | This command does not see this plan: it is the agents' turn. See "Not your turn". |
+| `conformant`, `abandoned` | The plan is over: say so. A new need opens a new plan. |
 
 ## Asking a question
 
@@ -80,7 +80,7 @@ The conversation is the developer's, the plan folder is the repository's.
 8. Cross-check. Launch a fresh `surface-checker` with the report path `checks/rev-NN-MM.md` and wait for its return. Check that the report exists and opens with the count returned, then `surface-status record <plan> check-done --report checks/rev-NN-MM.md --omissions <k> --json`.
 9. Omissions. None: step 10. Otherwise, when `passes.planning` of `show` is more than `passes.ceiling`, stop at the ceiling (see "The agents"). Else read the report and choose: the blueprint must show more, then step 7 with the report's path; or the plan does more than the need, then correct `plan.md` and step 7. Then step 8 again. A pass is a cross-check with omissions, which sends the blueprint or the plan back for rework; a clean check costs none. So the blueprint or the plan is reworked `passes.ceiling` times, and the check after them hands back.
 10. Draft. `surface-status record <plan> plan-drafted --json`, then "Commit, push and pull request". Refused with the code `gate-list`: `plan.md` lacks its gates block or holds a malformed one; correct it, then step 8.
-11. Hand over. Tell the developer where to read the blueprint: its path, and its link in the pull request. Name the gates the loop will run, `gates` of `show`, or say that the plan names none and the loop then has no objective check. Then keep the hand and ask: amend, or approve by launching `/surface-execute`, whose launch alone approves this revision.
+11. Hand over. Tell the developer where to read the blueprint: its path, and its link in the pull request. Name the gates the loop will run, `gates` of `show`, or say that the plan names none and the loop then has no objective check. Then stay in the conversation and ask: amend, or approve by launching `/surface-execute`, whose launch alone approves this revision.
     - A reply that asks for a change is an amendment: take it as "Taking an amendment" says, which writes it first, records it, draws and cross-checks the next revision, commits and pushes it. Then ask the same question again.
     - A question, about the plan or the blueprint, is answered from the files, and nothing is recorded.
     - In doubt, ask whether the reply is an amendment.
@@ -95,7 +95,7 @@ The plan names the commands that check the whole project, tests, lint, type chec
 - Find them in step 1, where the project states them: its manifest and build files, its CI workflows, its agent instructions (`AGENTS.md`, `CLAUDE.md`), its README or contributing guide. Prefer the one command that runs them all when there is one, and the order the CI follows.
 - Found: write them in the plan, and ask nothing. Found none: ask in the interview which commands check the project, "none" among the options.
 - None: the block stays empty, and the plan says in one sentence that the loop has no objective check.
-- A command that deploys, publishes, or needs a secret or a service the developer did not name stays out of the block, and the plan says why. So does the chain's own conformity check, which fails until the plan is conform.
+- A command that deploys, publishes, or needs a secret or a service the developer did not name stays out of the block, and the plan says why. So does the chain's own conformity check, which fails until the plan is conformant.
 
 ## The agents
 
@@ -106,7 +106,7 @@ A fresh agent for each extraction and each cross-check, launched with the Agent 
 
 If an agent returns without its file, launch it once more; then tell the developer and stop.
 
-Stop at the ceiling: once `passes.planning` is more than `passes.ceiling`, or when the script refuses `check-done` with the code `ceiling`, launch nothing more. `surface-status record <plan> blocked --why "<what does not converge>" --json`, commit (see "Commit, push and pull request"), then keep the hand: present what does not converge and ask the developer's instruction in the conversation, as "After a block" says for a block during planning, and go on as it says.
+Stop at the ceiling: once `passes.planning` is more than `passes.ceiling`, or when the script refuses `check-done` with the code `ceiling`, launch nothing more. `surface-status record <plan> blocked --why "<what does not converge>" --json`, commit (see "Commit, push and pull request"), then stay in the conversation: present what does not converge and ask the developer's instruction in the conversation, as "After a block" says for a block during planning, and go on as it says.
 
 ## Drafting, the missing step
 
@@ -132,11 +132,11 @@ A reviewer found that the blueprint would have to change to stay true, and wrote
 The loop stopped at the ceiling of autonomous passes; the `blocked` line of `journal.jsonl` says why. It stopped during planning when the journal holds no `plan-approved` after its last `interview-closed`, `amendment-received` or `plan-change-accepted`; otherwise during execution.
 
 - During planning: present what does not converge, from the last reports under `checks/`, and ask the developer's instruction in the conversation. Write it into `interview.md` under "Instructions after a block", then `surface-status record <plan> resumed --json`, and resume at the missing step. An instruction that amends the plan is taken as an amendment instead.
-- During execution: the developer took the hand back to revise the plan: take the amendment. If they only want the loop to go on, `/surface-execute` resumes it: say so and stop. When `pending_suspicion` of `surface-status show <plan> --json` is not null, name that suspected break and its reason too: an amendment drops it, a resumption hands it to a reviewer.
+- During execution: the loop handed back and the developer revises the plan: take the amendment. If they only want the loop to go on, `/surface-execute` resumes it: say so and stop. When `pending_suspicion` of `surface-status show <plan> --json` is not null, name that suspected break and its reason too: an amendment drops it, a resumption hands it to a reviewer.
 
-## Outside your hand
+## Not your turn
 
-The developer amends a plan only when they have the hand: awaiting approval, or blocked. While the agents work (`executing`, `reviewing`, `fixing`), explain that no amendment is taken now, record nothing, and offer the two ways: wait for the loop to stop, then relaunch `/surface-plan`; or abandon the plan with `/surface-status`.
+The developer amends a plan only when it is their turn: awaiting approval, or blocked. While the agents work (`executing`, `reviewing`, `fixing`), explain that no amendment is taken now, record nothing, and offer the two ways: wait for the loop to stop, then relaunch `/surface-plan`; or abandon the plan with `/surface-status`.
 
 ## Commit, push and pull request
 

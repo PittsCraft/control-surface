@@ -202,7 +202,7 @@ def test_a_conformity_whose_list_of_files_to_read_is_malformed_is_refused(
     proof = folder / "conformity.md"
     proof.write_text("proof\n```critical-files\n../secret.py\n```\n", encoding="utf-8")
     before = project.journal()
-    result = project.record(PLAN, "conform", "--conformity", "conformity.md")
+    result = project.record(PLAN, "conformant", "--conformity", "conformity.md")
     assert result.code == 1
     assert result.json()["refused"] == {
         "code": "critical-files",
@@ -213,7 +213,7 @@ def test_a_conformity_whose_list_of_files_to_read_is_malformed_is_refused(
     assert project.journal() == before
     # Outside a git work tree there is no branch to ask: the form of the block is all that counts.
     proof.write_text("proof\n```critical-files\nbilling/pay.py\n```\n", encoding="utf-8")
-    assert project.record(PLAN, "conform", "--conformity", "conformity.md").code == 0
+    assert project.record(PLAN, "conformant", "--conformity", "conformity.md").code == 0
 
 
 def test_a_derived_field_cannot_be_passed(project: Project) -> None:
@@ -291,7 +291,7 @@ def test_abandon_needs_a_reason(project: Project) -> None:
 
 
 def test_a_plan_over_cannot_be_abandoned_again(project: Project) -> None:
-    project.reach("conform")
+    project.reach("conformant")
     before = project.journal()
     result = project.run("abandon", PLAN, "--why", "too late")
     assert result.code == 1
@@ -300,7 +300,7 @@ def test_a_plan_over_cannot_be_abandoned_again(project: Project) -> None:
 
 
 def test_without_a_plan_abandon_takes_the_only_plan_in_progress(project: Project) -> None:
-    project.reach("conform", "2026-09-01-done")
+    project.reach("conformant", "2026-09-01-done")
     project.reach("executing")
     assert project.run("abandon", "--why", "stop").code == 0
     assert project.run("show", PLAN).json()["state"] == "abandoned"
@@ -316,7 +316,7 @@ def test_without_a_plan_several_in_progress_make_the_caller_name_one(project: Pr
 
 
 def test_without_a_plan_none_in_progress_is_a_usage_error(project: Project) -> None:
-    project.reach("conform")
+    project.reach("conformant")
     assert project.run("show").code == 2
 
 

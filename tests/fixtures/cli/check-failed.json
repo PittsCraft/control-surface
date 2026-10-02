@@ -1,7 +1,7 @@
 {
   "v": 1,
   "ok": false,
-  "require": "conform",
+  "require": "conformant",
   "plans": [
     {
       "name": "2026-09-01-running",
@@ -10,7 +10,7 @@
       "problems": [
         {
           "code": "in-progress",
-          "message": "in progress (executing): the plan is neither conform nor abandoned"
+          "message": "in progress (executing): the plan is neither conformant nor abandoned"
         }
       ]
     },
@@ -21,13 +21,13 @@
       "problems": [
         {
           "code": "abandoned-after-approval",
-          "message": "abandoned after its approval: the branch may carry code written under this plan that was never declared conform. The alarm stays even if that code was removed, since the script cannot see code. Remove it or merge knowingly: the check is an alarm, not a lock"
+          "message": "abandoned after its approval: the branch may carry code written under this plan that was never declared conformant. The alarm stays even if that code was removed, since the script cannot see code. Remove it or merge knowingly: the check is an alarm, not a lock"
         }
       ]
     },
     {
       "name": "2026-09-03-edited",
-      "state": "conform",
+      "state": "conformant",
       "ok": false,
       "problems": [
         {

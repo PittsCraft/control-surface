@@ -22,7 +22,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -88,7 +88,7 @@ class RecordContext:
 class DiskFacts:
     """What the caller read from the plan folder for one event, as plain values.
 
-    For a `conform`, the caller also asked git what the branch changed.
+    For a `conformant`, the caller also asked git what the branch changed.
 
     `None` means the file is missing or unreadable, which `missing_files` already reports.
     """
@@ -100,7 +100,7 @@ class DiskFacts:
     slices_problem: str | None = None  # why the markers could not be read, if they could not
     gates: tuple[str, ...] | None = None  # the gates block of `plan.md`, for the same events
     gates_problem: str | None = None  # why the gates block could not be read, if it could not
-    # Why the critical-files block of the `conformity.md` a `conform` cites cannot be taken.
+    # Why the critical-files block of the `conformity.md` a `conformant` cites cannot be taken.
     critical_files_problem: str | None = None
 
 
@@ -198,7 +198,7 @@ def _check_review(event: ReviewDone) -> Refusal | None:
     return None
 
 
-def _check_conform(prev: PlanState, event: Conform) -> Refusal | None:
+def _check_conformant(prev: PlanState, event: Conformant) -> Refusal | None:
     if event.blueprint != prev.approved_blueprint:
         return _refuse(
             RefusalCode.BLUEPRINT_CHANGED,
@@ -233,8 +233,8 @@ def journal_guards(prev: PlanState | None, event: Event) -> Refusal | None:  # n
             return _check_judged(prev, event)
         case ReviewDone():
             return _check_review(event)
-        case Conform():
-            return _check_conform(prev, event)
+        case Conformant():
+            return _check_conformant(prev, event)
         case (
             PlanOpened()
             | InterviewClosed()
@@ -280,7 +280,7 @@ def _check_ceiling(prev: PlanState, event: Event, context: RecordContext) -> Ref
 def _check_blueprint_frozen(
     prev: PlanState, event: Event, context: RecordContext
 ) -> Refusal | None:
-    if not isinstance(event, SliceDone | PlanAmended | FixDone | Conform):
+    if not isinstance(event, SliceDone | PlanAmended | FixDone | Conformant):
         return None
     if context.blueprint_hash is None or context.blueprint_hash != prev.approved_blueprint:
         return _refuse(
@@ -348,7 +348,7 @@ def _check_gate_list(
 
 def _check_critical_files(event: Event, facts: DiskFacts) -> Refusal | None:
     """Refuse a conformity whose list of code to read cannot be shown as the reviewer wrote it."""
-    if not isinstance(event, Conform) or facts.critical_files_problem is None:
+    if not isinstance(event, Conformant) or facts.critical_files_problem is None:
         return None
     return _refuse(RefusalCode.CRITICAL_FILES, facts.critical_files_problem)
 
@@ -360,7 +360,7 @@ def disk_guards(
 
     The script computes hashes, slice lists and gates itself (ADR 0012); this refuses an event
     that carries a value read before the file changed. `approved_gates` are those of the approved
-    revision, which a `plan-amended` must leave as they are. A `conform` is refused when the
+    revision, which a `plan-amended` must leave as they are. A `conformant` is refused when the
     critical-files block of the `conformity.md` it cites is malformed or lists a file the branch
     did not change: the description would show the developer a wrong list of code to read.
     """
@@ -368,7 +368,7 @@ def disk_guards(
         return _refuse(
             RefusalCode.FILE_MISSING, "cited file missing: " + ", ".join(facts.missing_files)
         )
-    if isinstance(event, CheckDone | PlanDrafted | PlanApproved | Conform):
+    if isinstance(event, CheckDone | PlanDrafted | PlanApproved | Conformant):
         stale = _stale("blueprint", event.blueprint, facts.blueprint_hash)
         if stale is not None:
             return stale

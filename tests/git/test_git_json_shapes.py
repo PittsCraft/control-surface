@@ -54,7 +54,7 @@ def test_the_pr_body_answer_has_its_documented_fields(repo: Repo) -> None:
     assert list(payload["plans"][0]) == [
         "name",
         "state",
-        "hand",
+        "turn",
         "blueprint",
         "plan",
         "decisions",
@@ -96,7 +96,7 @@ def test_golden_pr_body_with_critical_files(repo: Repo) -> None:
         "1. Proved.\n\n```critical-files\nbilling/pay.py\nbilling/old.py\n```\n", encoding="utf-8"
     )
     repo.commit("the work and its review")
-    assert repo.run("record", A, "conform", "--conformity", "conformity.md").code == 0
+    assert repo.run("record", A, "conformant", "--conformity", "conformity.md").code == 0
     result = repo.run("pr-body")
     assert [list(item) for item in result.json()["plans"][0]["critical_files"]] == [
         ["path", "link"],

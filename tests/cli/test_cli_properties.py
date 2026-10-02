@@ -16,7 +16,7 @@ from hypothesis import event as note
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from surface_status.events import Abandoned, Conform, Event, PlanApproved
+from surface_status.events import Abandoned, Conformant, Event, PlanApproved
 from surface_status.journal import read_events
 from surface_status.plan_folder import PlanFolder
 
@@ -49,7 +49,7 @@ CALLS: tuple[Call, ...] = (
     ("plan-change-refused", ("--why", "not needed")),
     ("blocked", ("--why", "does not converge")),
     ("resumed", ()),
-    ("conform", ("--conformity", "conformity.md")),
+    ("conformant", ("--conformity", "conformity.md")),
     ("abandoned", ("--why", "changed course")),
 )
 # What moves a plan on, by state: the guided steps.
@@ -119,7 +119,7 @@ def _choose(project: Project, step: tuple[str, Call | int]) -> Call | None:  # n
     if state == "drafting":
         return CALLS[2]
     if state == "reviewing" and last == "review-done":
-        return CALLS[21]  # conform, once a review came back clean
+        return CALLS[21]  # conformant, once a review came back clean
     if state == "executing" and shown["pending_suspicion"] is not None:
         suspected = str(shown["pending_suspicion"]["slice"])  # a reviewer judged it: no break
         return ("suspicion-dismissed", ("--slice", suspected, "--report", FILES[2]))
@@ -176,10 +176,10 @@ def test_a_refused_record_leaves_the_journal_unchanged_and_an_accepted_one_appen
 
 
 def _oracle(events: list[Event], blueprint: str | None) -> bool:
-    """Whether `check --require conform` must pass, worked out from the raw events."""
+    """Whether `check --require conformant` must pass, worked out from the raw events."""
     approvals = [event for event in events if isinstance(event, PlanApproved)]
     match events[-1] if events else None:
-        case Conform():
+        case Conformant():
             return bool(approvals) and blueprint == approvals[-1].blueprint
         case Abandoned():
             return not approvals
@@ -189,7 +189,7 @@ def _oracle(events: list[Event], blueprint: str | None) -> bool:
 
 @_SUBPROCESS_BUDGET
 @given(steps=_steps())
-def test_the_check_passes_exactly_when_the_plan_is_conform_and_untouched_or_dropped_early(
+def test_the_check_passes_exactly_when_the_plan_is_conformant_and_untouched_or_dropped_early(
     steps: list[tuple[str, Call | int]],
 ) -> None:
     with _project() as (project, folder):
@@ -199,7 +199,7 @@ def test_the_check_passes_exactly_when_the_plan_is_conform_and_untouched_or_drop
             read_events(journal), PlanFolder(folder).blueprint_hash()
         )
         note(f"expected {expected}, final {_state(project) if journal.exists() else 'no journal'}")
-        result = project.run("check", "--require", "conform")
+        result = project.run("check", "--require", "conformant")
         assert result.code == (0 if expected else 1), (steps, result.out)
         assert result.json()["ok"] is expected
 
@@ -220,7 +220,7 @@ def test_the_list_and_show_agree_with_the_journal_on_every_walk(
             return
         shown = project.run("show", folder.name).json()
         assert rows == [
-            {"name": folder.name, "state": shown["state"], "hand": shown["hand"]},
+            {"name": folder.name, "state": shown["state"], "turn": shown["turn"]},
         ]
         events = read_events(journal)
         assert shown["last_event"] == (events[-1].name if events else None)

@@ -2,7 +2,7 @@
 
 Prompt behavior is judged end to end. These tests hold what can be read: the frontmatter against
 the fields the Claude Code documentation of skills defines, the state injected at load, the
-planning sequence and the states this command resumes, the hand it keeps in the conversation, the
+planning sequence and the states this command resumes, its staying in the conversation, the
 sensitive zones it carries, and templates the script and the agents can read.
 """
 
@@ -344,7 +344,7 @@ def test_planning_stops_at_the_ceiling_and_asks_in_the_conversation() -> None:
         ceiling,
         [
             "record <plan> blocked --why",
-            "keep the hand: present what does not converge",
+            "stay in the conversation: present what does not converge",
             "ask the developer's instruction in the conversation",
             '"After a block"',
         ],
@@ -353,7 +353,8 @@ def test_planning_stops_at_the_ceiling_and_asks_in_the_conversation() -> None:
     assert "`/surface-plan`" not in ceiling
 
 
-# The hand-over: the command keeps the hand, and only the launch of `/surface-execute` approves.
+# The hand-over: the command stays in the conversation, and only the launch of `/surface-execute`
+# approves.
 
 
 def _hand_over() -> str:
@@ -367,8 +368,8 @@ def test_the_hand_over_keeps_the_hand_and_asks_amend_or_approve() -> None:
     hand_over = _hand_over()
     assert "Then stop" not in hand_over
     assert (
-        "keep the hand and ask: amend, or approve by launching `/surface-execute`, whose launch"
-        " alone approves this revision" in hand_over
+        "stay in the conversation and ask: amend, or approve by launching `/surface-execute`, whose"
+        " launch alone approves this revision" in hand_over
     )
 
 
@@ -420,7 +421,7 @@ def test_the_resume_table_covers_every_state_in_progress() -> None:
 
 def test_the_terminal_states_are_said_over() -> None:
     actions = _skill_table()
-    assert "The plan is over" in actions["conform"]
+    assert "The plan is over" in actions["conformant"]
     assert "The plan is over" in actions["abandoned"]
 
 
@@ -501,8 +502,8 @@ def test_the_branch_is_found_with_plain_commands_and_no_setting() -> None:
 
 def test_an_amendment_outside_the_hand_is_explained_and_refused() -> None:
     body = _body()
-    outside = section(body, "Outside your hand")
-    assert "only when they have the hand: awaiting approval, or blocked" in outside
+    outside = section(body, "Not your turn")
+    assert "only when it is their turn: awaiting approval, or blocked" in outside
     for state in ("executing", "reviewing", "fixing"):
         assert f"`{state}`" in outside
     assert "record nothing" in outside

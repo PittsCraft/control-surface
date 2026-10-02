@@ -14,17 +14,19 @@ critical zones whose code the developer still reads, and the language of the pla
 BREAK_QUESTION = "Must the blueprint be modified for it to stay true?"
 DEFECT_QUESTION = "Must the code be fixed?"
 # A review with no finding ends the loop in this state.
-NO_FINDING_END = "conform state"
-# On conform, the loop hands back in one line. A criterion the reviewer cannot prove is a finding,
-# so conform leaves nothing to check: `conformity.md` is kept, never a required reading. The chain
-# never marks the pull request ready, since that triggers the host's CI.
-CONFORM_HAND_BACK = (
-    "the plan is conform, and the developer marks the pull request ready when they want"
+NO_FINDING_END = "conformant state"
+# On conformant, the loop hands back in one line. A criterion the reviewer cannot prove is a
+# finding, so a conformant plan leaves nothing to check: `conformity.md` is kept, never a required
+# reading. The chain never marks the pull request ready, since that triggers the host's CI.
+CONFORMANT_HAND_BACK = (
+    "the plan is conformant, and the developer marks the pull request ready when they want"
 )
 # The one exception, which the hand-back says in one sentence: where a mistake would cost most,
 # in the zones the host's agent instructions declare critical, the developer reads the code
 # themselves, from the list of changed files the pull request description gives.
-CONFORM_EXCEPTION = "conform leaves nothing to check, except the code of the critical zones"
+CONFORMANT_EXCEPTION = (
+    "a conformant plan leaves nothing to check, except the code of the critical zones"
+)
 # So the developer learns at approval which zones those will be: section 9 of the blueprint names
 # each declared critical zone the plan touches, or says the plan touches none, and the cross-check
 # counts a touched zone that section 9 does not name as an omission.
@@ -42,9 +44,9 @@ CRITICAL_FILES_OF_THE_BRANCH = (
 # A list the script refuses is an agent's mechanical mistake, never the developer's to repair:
 # they are told not to open `conformity.md`. `/surface-execute` sends it to a fresh reviewer,
 # the third thing a reviewer is launched for, whose only mandate is to correct that block, then
-# records `conform` again, as many times as the ceiling of autonomous passes, the one setting
+# records `conformant` again, as many times as the ceiling of autonomous passes, the one setting
 # that bounds what the loop does on its own; still refused after them, it hands back to the
-# developer. The count is the prompt's, since a refused `conform` leaves no journal line: no
+# developer. The count is the prompt's, since a refused `conformant` leaves no journal line: no
 # pass counted, no journal event, no new gate run, no new review.
 REVIEWER_MODES = (
     "a review",
@@ -90,7 +92,7 @@ EXECUTION_LOOP = (
     "`awaiting-approval`, at launch",
     "`blocked` during execution, at launch",
     "`plan-change-proposed`",
-    "`conform`, `abandoned`",
+    "`conformant`, `abandoned`",
     "Ceiling reached, and work left to the agents",
     "`executing`, a break suspected",
     "`executing`",

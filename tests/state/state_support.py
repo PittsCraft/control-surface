@@ -11,7 +11,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -82,7 +82,7 @@ EXPECTED: dict[str, dict[State | None, frozenset[State]]] = {
         S.FIXING: frozenset({S.BLOCKED}),
     },
     "resumed": {S.BLOCKED: frozenset({S.DRAFTING, S.EXECUTING, S.REVIEWING, S.FIXING})},
-    "conform": {S.REVIEWING: frozenset({S.CONFORM})},
+    "conformant": {S.REVIEWING: frozenset({S.CONFORMANT})},
     "abandoned": {
         state: frozenset({S.ABANDONED})
         for state in (
@@ -154,7 +154,7 @@ def valid_event(name: str) -> Event:
         "plan-change-refused": PlanChangeRefused(proposal=PROPOSAL, why="not wanted"),
         "blocked": Blocked(why="does not converge"),
         "resumed": Resumed(),
-        "conform": Conform(conformity="conformity.md", blueprint=BP1),
+        "conformant": Conformant(conformity="conformity.md", blueprint=BP1),
         "abandoned": Abandoned(why="changed my mind"),
     }
     return events[name]

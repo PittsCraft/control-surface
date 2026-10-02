@@ -26,7 +26,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GateResult,
@@ -55,7 +55,7 @@ def test_a_slice_a_fix_an_amendment_and_conformity_are_refused_once_the_blueprin
         (State.EXECUTING, PlanAmended(slice_=1, why="x", plan=PL2, slices=(1, 2))),
         (State.FIXING, PlanAmended(slice_=1, why="x", plan=PL2, slices=(1, 2))),
         (State.FIXING, FixDone(pass_=1)),
-        (State.REVIEWING, Conform(conformity="conformity.md", blueprint=BP1)),
+        (State.REVIEWING, Conformant(conformity="conformity.md", blueprint=BP1)),
     ]
     for state, event in cases:
         prev = state_in(state)
@@ -67,7 +67,7 @@ def test_a_slice_a_fix_an_amendment_and_conformity_are_refused_once_the_blueprin
 
 def test_conformity_carries_the_hash_it_was_computed_from_and_replay_checks_it() -> None:
     prev = state_in(State.REVIEWING)
-    refusal = must_refuse(prev, Conform(conformity="conformity.md", blueprint=BP2), None)
+    refusal = must_refuse(prev, Conformant(conformity="conformity.md", blueprint=BP2), None)
     assert refusal.code is RefusalCode.BLUEPRINT_CHANGED
 
 
@@ -194,8 +194,8 @@ class TestFixDone:
         assert must_accept(replay(FIXING), FixDone(pass_=1), NO_GATES).state is State.REVIEWING
 
 
-class TestConform:
-    conform = Conform(conformity="conformity.md", blueprint=BP1)
+class TestConformant:
+    conformant = Conformant(conformity="conformity.md", blueprint=BP1)
 
     def clean(self) -> ReviewDone:
         return ReviewDone(pass_=1, report="r", defects=0, deviations=0, breaks=0)
@@ -209,12 +209,12 @@ class TestConform:
         found = must_accept(state_in(State.REVIEWING), review)
         assert found.state is State.FIXING
         seen = state_in(State.REVIEWING, last_review=found.last_review)
-        assert must_refuse(seen, self.conform).code is RefusalCode.CONFORMITY
-        assert must_refuse(prev, self.conform).code is RefusalCode.CONFORMITY
+        assert must_refuse(seen, self.conformant).code is RefusalCode.CONFORMITY
+        assert must_refuse(prev, self.conformant).code is RefusalCode.CONFORMITY
 
     def test_is_accepted_after_a_clean_review(self) -> None:
         reviewed = must_accept(replay(GATED), self.clean())
-        assert must_accept(reviewed, self.conform).state is State.CONFORM
+        assert must_accept(reviewed, self.conformant).state is State.CONFORMANT
 
     def test_needs_a_review_since_the_last_change_of_the_work(self) -> None:
         """A clean review, then a failed gate run and a fix, leaves no review standing."""
@@ -223,7 +223,7 @@ class TestConform:
         green = must_accept(failed, GatesRun(run=3, result=GateResult.PASS))
         fixed = must_accept(green, FixDone(pass_=1))
         assert fixed.state is State.REVIEWING
-        assert must_refuse(fixed, self.conform).code is RefusalCode.CONFORMITY
+        assert must_refuse(fixed, self.conformant).code is RefusalCode.CONFORMITY
 
 
 class TestSuspectedBreak:

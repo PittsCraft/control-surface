@@ -19,7 +19,7 @@ from surface_status.events import (
     Blocked,
     BreakSuspected,
     CheckDone,
-    Conform,
+    Conformant,
     Event,
     FixDone,
     GatesRun,
@@ -213,7 +213,7 @@ def cited_files(event: Event) -> tuple[str, ...]:  # noqa: C901, PLR0911 (one ar
             return (gate_run_name(event.run),)
         case ReviewDone():
             return (event.report,) if event.proposal is None else (event.report, event.proposal)
-        case Conform():
+        case Conformant():
             return (event.conformity, BLUEPRINT)
         case (
             PlanOpened()
@@ -297,7 +297,7 @@ class PlanFolder:
     def critical_files(self, relative: str) -> tuple[str, ...]:
         """Read the files the `critical-files` block of a `conformity.md` lists; none without one.
 
-        `relative` is the proof of conformity a `conform` event cites. Raises `PlanFolderError`
+        `relative` is the proof of conformity a `conformant` event cites. Raises `PlanFolderError`
         when the file cannot be read or its block is malformed, naming the file.
         """
         try:

@@ -1,8 +1,9 @@
 """The description of the pull request, from the state (ADR 0016).
 
 It lists every plan of the branch with its state and the links to `blueprint.md` and `plan.md`.
-Then the one thing conform leaves the developer to read themselves: the files the branch changed
-inside the critical zones the project declares, as the reviewer listed them in `conformity.md`.
+Then the one thing a conformant plan leaves the developer to read themselves: the files the branch
+changed inside the critical zones the project declares, as the reviewer listed them in
+`conformity.md`.
 Then the decisions agents took within the contract, which the developer did not see go by: the
 plan amendments and the dismissed suspected breaks, one line each, for information. Nothing else:
 the description is refreshed as a whole, never appended to.
@@ -15,22 +16,22 @@ from pathlib import Path, PurePosixPath
 from surface_status import gitops
 from surface_status.events import (
     BreakSuspected,
-    Conform,
+    Conformant,
     Event,
     PlanAmended,
     PlanChangeProposed,
     SuspicionDismissed,
 )
 from surface_status.plan_folder import PlanFolder
-from surface_status.report import JSON_VERSION, Payload, PlanView, hand_of, read_plan
+from surface_status.report import JSON_VERSION, Payload, PlanView, read_plan, turn_of
 from surface_status.resolve import BranchScope, branch_scope
 from surface_status.settings import Settings
 
 TITLE = "## Plans on this branch"
 CRITICAL_TITLE = "### Code of the critical zones, for you to read yourself"
 CRITICAL_NOTE = (
-    "Conform leaves nothing else to check: the branch changed these files inside the zones the"
-    " project declares critical."
+    "A conformant plan leaves nothing else to check: the branch changed these files inside the"
+    " zones the project declares critical."
 )
 DECISIONS_TITLE = "### Decisions the agents took within the contract"
 DECISIONS_NOTE = "For information: none of them changes the approved blueprint."
@@ -104,16 +105,16 @@ def _decision_item(
 
 
 def critical_files(view: PlanView) -> tuple[str, ...]:
-    """List the changed files of the critical zones a conform plan leaves the developer to read.
+    """List the changed files of the critical zones a conformant plan leaves the developer to read.
 
-    They are the paths of the critical-files block of the `conformity.md` its `conform` event
-    cites, from the project root. A plan that is not conform lists none: the reviewer names them
+    They are the paths of the critical-files block of the `conformity.md` its `conformant` event
+    cites, from the project root. A plan that is not conformant lists none: the reviewer names them
     when it proves conformity. Raises `PlanFolderError` when that file can no longer be read or
     its block was broken after the record: a description must not say there is nothing to read.
     """
     last = None if view.state is None else view.state.last_event
-    if not isinstance(last, Conform):
-        return ()  # conform is terminal: a plan is conform when, and only when, it ends on one
+    if not isinstance(last, Conformant):
+        return ()  # terminal: a plan is conformant when, and only when, it ends on that event
     return view.folder.critical_files(last.conformity)
 
 
@@ -127,7 +128,7 @@ def _plan_row(root: Path, settings: Settings, scope: BranchScope, folder: PlanFo
     return {
         "name": folder.name,
         "state": None if view.state is None else view.state.state.value,
-        "hand": hand_of(view.state),
+        "turn": turn_of(view.state),
         "blueprint": _link(root, scope, (directory / "blueprint.md").as_posix(), "blueprint.md"),
         "plan": _link(root, scope, (directory / "plan.md").as_posix(), "plan.md"),
         "decisions": [
@@ -178,7 +179,7 @@ def describe(root: Path, settings: Settings) -> Payload | None:
     """Build the description of the branch; None when the branch holds no plan.
 
     Raises `GitError` outside a git work tree, `UnreadableJournalError` for a journal that cannot
-    be replayed, and `PlanFolderError` for a conform plan whose `conformity.md` no longer gives
+    be replayed, and `PlanFolderError` for a conformant plan whose `conformity.md` no longer gives
     its list of files to read.
     """
     scope = branch_scope(root, settings)

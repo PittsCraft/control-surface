@@ -32,13 +32,13 @@ _TO_PLAN_CHANGE_PROPOSED = (
     *_TO_EXECUTING,
     ("plan-change-proposed", ("--proposal", "plan-changes/01.md", "--slice", "1")),
 )
-_TO_CONFORM = (
+_TO_CONFORMANT = (
     *_TO_REVIEWING,
     (
         "review-done",
         ("--report", "reviews/pass-01.md", "--defects", "0", "--deviations", "0", "--breaks", "0"),
     ),
-    ("conform", ("--conformity", "conformity.md")),
+    ("conformant", ("--conformity", "conformity.md")),
 )
 WAYS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "interview": _TO_INTERVIEW,
@@ -47,7 +47,7 @@ WAYS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "executing": _TO_EXECUTING,
     "reviewing": _TO_REVIEWING,
     "plan-change-proposed": _TO_PLAN_CHANGE_PROPOSED,
-    "conform": _TO_CONFORM,
+    "conformant": _TO_CONFORMANT,
 }
 REPORTS = ("checks/rev-01-01.md", "reviews/pass-01.md", "plan-changes/01.md", "conformity.md")
 
