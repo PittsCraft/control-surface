@@ -6,7 +6,7 @@ Approve the blueprint of your feature: every decision that matters, in a form yo
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/layers-dark.svg">
-  <img alt="Four layers. Product: you describe a need. Design: an agent draws a blueprint from it, and you control it. Plan and codebase, below the line: agents draw a detailed plan and build the code, an agent ensures the three stay consistent, every agent wears your harness, and you review the critical code yourself." src="docs/images/layers-light.svg">
+  <img alt="Four layers. Product: you describe a need. Design: an agent draws a blueprint from it, and it is your control surface. Plan and codebase, below the line: agents draw a detailed plan and build the code, an agent ensures the three stay consistent, every agent wears your harness, and you review the critical code yourself." src="docs/images/layers-light.svg">
 </picture>
 
 ## Install
@@ -30,8 +30,8 @@ You could control higher, at the product specs: that is vibe coding. Or lower, i
 ## What you control
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/overview-dark.svg">
-  <img alt="An overview page with its nine sections: the idea in one sentence, acceptance criteria, scope, data schema, architecture and boundaries, sequences, state machines, algorithms, sensitive zones, most of them with a diagram. You review it directly, and ask an agent to amend or approve it." src="docs/images/overview-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/blueprint-dark.svg">
+  <img alt="A blueprint with its nine sections: the idea in one sentence, acceptance criteria, scope, data schema, architecture and boundaries, sequences, state machines, algorithms, sensitive zones, most of them with a diagram. You review it directly, and ask an agent to amend or approve it." src="docs/images/blueprint-light.svg">
 </picture>
 
 The blueprint is as long as the feature needs and no longer, with a diagram wherever one is clearer than prose. It shows what will be built, never the order of construction: that stays in the plan.
@@ -42,7 +42,7 @@ You review it yourself. You never edit it by hand: you ask for a change in the c
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/algorithm-dark.svg">
-  <img alt="The path of a plan. /surface-plan: agents ask what is unclear, draw the detailed plan and the overview until they are aligned, and you review the overview. /surface-execute: agents implement, review and fix until everything is aligned and the gates pass. You get the hand back when the overview must change, or after three fixes." src="docs/images/algorithm-light.svg">
+  <img alt="The path of a plan. /surface-plan: agents ask what is unclear, draw the detailed plan and the blueprint until they are aligned, and you review the blueprint. /surface-execute: agents implement, review and fix until everything is aligned and the gates pass. You get the hand back when the blueprint must change, or after three fixes." src="docs/images/algorithm-light.svg">
 </picture>
 
 Two commands, and three moments when the hand comes back to you: the blueprint would have to change, the loop no longer converges, or the work is conform.
