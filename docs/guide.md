@@ -21,7 +21,7 @@ Claude Code, git, Python 3.11 or newer, and `curl` for the one-line install. The
 In a Claude Code session of your project, run `/surface-plan` with a short description of what you need. It runs on your session's model and effort: Opus with the effort `high` is recommended (`/model opus`, `/effort high`).
 
 - From the main branch, it creates a branch named after your repository's practice: a written convention, else the branches of your past pull requests, and it asks you when it finds none. From any other branch, it opens the plan there, so one branch can carry several plans.
-- It explores the code the feature touches, then asks you its questions one at a time. Each comes with its options and the one it would pick. Your answers are written down as you give them, and it never invents a business rule to fill a gap.
+- It explores the code the feature touches, then asks you its questions one at a time. Each comes with its options and the one it would pick. Your answers are written down as you give them, and it never invents a business rule to fill a gap. A rule a user of the feature would see applied, an order, a number, a limit, is yours to decide: it asks unless your specs or your code already settle it, and settles alone only what is a matter of implementation.
 - It finds the commands that check your project, tests, lint, type checks, where your project states them, and writes them in the plan as its gates. It asks you only if it finds none.
 - It has a detailed plan drafted by the `Plan` agent built into Claude Code, then the blueprint drawn from it and cross-checked, so that the blueprint hides nothing the plan does.
 - Before the first push, if your CI reacts to a push or to a new PR, it warns you and waits for your agreement.
