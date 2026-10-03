@@ -26,7 +26,9 @@ package = false
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["scripts", "skills/surface-status/scripts", "tests"]
+src = ["scripts", "skills/surface-status/scripts", "tests", "evals"]
+# The synthetic host of the evaluations and what its cases hold are another project's files.
+extend-exclude = ["evals/host", "evals/cases"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -60,24 +62,29 @@ ignore = [
   "PLR2004", # magic values are the expected values in tests
   "S603",    # tests run the repository's own scripts
 ]
+"evals/**" = [
+  "S603",    # the evaluations run sessions, git and the state script
+]
 
 [tool.mypy]
 python_version = "3.11"
 strict = true
-files = ["install.py", "scripts", "skills/surface-status/scripts", "tests"]
-mypy_path = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy"]
+files = ["install.py", "scripts", "skills/surface-status/scripts", "tests", "evals"]
+exclude = ["^evals/host/", "^evals/cases/"]
+mypy_path = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy", "evals"]
 
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
-include = ["install.py", "scripts", "skills/surface-status/scripts", "tests"]
-extraPaths = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy"]
+include = ["install.py", "scripts", "skills/surface-status/scripts", "tests", "evals"]
+exclude = ["evals/host", "evals/cases", "**/__pycache__", ".venv"]
+extraPaths = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy", "evals"]
 venvPath = "."
 venv = ".venv"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy"]
+pythonpath = ["scripts", "skills/surface-status/scripts", "tests/cli", "tests/e2e/toy", "evals"]
 addopts = "--ignore=tests/e2e -ra"
 
 [tool.coverage.run]

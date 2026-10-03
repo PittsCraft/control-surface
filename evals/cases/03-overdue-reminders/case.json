@@ -1,0 +1,9 @@
+{
+  "shape": "across-components",
+  "summary": "A new command queues one reminder notice per member with overdue loans, and reads the outbox to space reminders.",
+  "body_sections": {"min": 2, "max": 4},
+  "diagram": "some",
+  "critical_zones": [],
+  "critical_files": [],
+  "amendment": null
+}
