@@ -230,7 +230,8 @@ EXPLORATION = """\
 - Architecture: `shelf/books.py` holds the domain and the reading, `shelf/__main__.py` the command
   line. Standard library only (README).
 - Generated artifacts: none.
-- Gates: `python3 -m unittest discover -s tests -q`, the only one.
+- Gates: `python3 -m unittest discover -s tests -q`, the only one (README). It is the gate of the
+  plan.
 - Conventions: branches `feat/<slug>`; commits `<area>: <what changes>`, imperative. No pull
   request convention stated.
 - Decisions: not recorded anywhere.
@@ -239,9 +240,8 @@ EXPLORATION = """\
 ## What the feature touches
 
 - Domain objects: `Book`, read only. Precedent: the `list` command of `shelf/__main__.py`.
-- Layers: the command line, then `load`. Nothing is persisted.
-- Nothing to regenerate.
-- Tests: `tests/test_cli.py` runs `main` on a temporary shelf file and reads standard output.
+- Settled by the code: a shelf file is read by `load`, and nothing is persisted. Left open: how
+  fields are quoted, and what an empty shelf prints.
 
 ## Project declarations
 
@@ -293,10 +293,10 @@ PLAN = """\
 
 Revision 1. Sources: `specs.md`, `exploration.md`, `interview.md`.
 
-## 1. Goal and scope
-
 `python3 -m shelf export <file>` prints the books of a shelf file as CSV. The ISBN is not
-exported. Acceptance criteria:
+exported.
+
+## Acceptance criteria
 
 1. `python3 -m shelf export <file>` prints the books of the file as CSV on standard output and
    exits with 0.
@@ -306,15 +306,19 @@ exported. Acceptance criteria:
 5. Fields are quoted as Python's `csv` module does by default (Q1).
 6. An empty shelf prints the header alone (Q2).
 
-## 2. Architecture decisions
+## Design
 
 - The CSV is built by a pure function `to_csv(books: list[Book]) -> str` in a new module
   `shelf/export.py`, with the standard `csv` module, lines ended by `\\n`. The command line only
   reads the file and writes the text. Considered: writing in `__main__.py` directly, set aside
   because the function is easier to test alone.
 - Standard library only, as the README requires.
+- Assumption: the year is written as a whole number, as `Book` holds it.
+- Assumption: lines end with `\\n`, the spreadsheet reads it.
 
-## 3. Slices
+## Slices
+
+Each slice ends with the gate green, and its commit follows `<area>: <what changes>`.
 
 <!-- slice:1 -->
 ### Slice 1: the CSV of a list of books
@@ -323,9 +327,9 @@ exported. Acceptance criteria:
   title.
 - Files: `shelf/export.py`, `tests/test_export.py`.
 - Precedent: none.
-- Gates: `python3 -m unittest discover -s tests -q`.
+- Tests: unit tests of `to_csv`: the header, one book, the order by author then title with
+  books whose title order differs, a title holding a comma, an empty list.
 - Done when: the tests of criteria 2 to 6 pass.
-- Depends on: nothing.
 
 <!-- slice:2 -->
 ### Slice 2: the export command
@@ -333,26 +337,11 @@ exported. Acceptance criteria:
 - Goal: the `export` subcommand of `shelf/__main__.py`, which writes `to_csv(load(path))`.
 - Files: `shelf/__main__.py`, `tests/test_cli.py`.
 - Precedent: the `list` subcommand.
-- Gates: `python3 -m unittest discover -s tests -q`.
+- Tests: the command on a temporary shelf file, as the test of `list` does.
 - Done when: a test runs `main(["export", path])` and reads the CSV (criterion 1).
 - Depends on: slice 1.
 
-## 4. Tests
-
-- Slice 1: unit tests of `to_csv`: the header, one book, the order by author then title with
-  books whose title order differs, a title holding a comma, an empty list.
-- Slice 2: the command on a temporary shelf file, as the test of `list` does.
-
-## 5. Definition of Done
-
-The gate `python3 -m unittest discover -s tests -q` green; commits `<area>: <what changes>`.
-
-## 6. Risks and assumptions
-
-- Assumption: the year is written as a whole number, as `Book` holds it.
-- Assumption: lines end with `\\n`, the spreadsheet reads it.
-
-## 7. Gates
+## Gates
 
 The gate the README names, the only one.
 

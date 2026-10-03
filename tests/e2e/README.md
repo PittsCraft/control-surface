@@ -74,7 +74,7 @@ python3 $toy run $p $work/plan-1.jsonl "/surface-plan Export the shelf as CSV fo
 The toy shows no branch practice, no pull request and no merge commit, so the session first asks how to name the branch, recommending `feature/<slug>`, and stops. Answer it with `--resume`: it creates the branch, explores and writes `exploration.md`, then opens `interview.md` with the branch question and its answer under "Git", asks its first interview question and stops. Answer it with `--resume` too. Kill the session that takes the answer as soon as the answer is in `interview.md`. Then relaunch without `--resume`, with `/surface-plan` alone:
 
 - it must not explore again, nor ask again a question that has an answer: it asks the next open one;
-- answered to the end, it writes the plan, has the blueprint drawn and cross-checked, records `plan-drafted`, commits and pushes to the bare remote. `gh` cannot open a pull request on a local remote: the session says so and gives the description.
+- answered to the end, it has the plan drafted by the `Plan` agent and writes it as returned, with the three headings the chain reads and the gate of the toy in its `gates` block, has the blueprint drawn and cross-checked, records `plan-drafted`, commits and pushes to the bare remote. `gh` cannot open a pull request on a local remote: the session says so and gives the description.
 
 ### An amendment, killed right after it was recorded
 

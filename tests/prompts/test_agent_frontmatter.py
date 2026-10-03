@@ -8,7 +8,14 @@ is overridden by the `model` of each Agent call, `effort` exists in the frontmat
 from dataclasses import fields
 
 import pytest
-from prompt_support import AGENTS, ROLES, FrontmatterError, read_agent, split_agent
+from prompt_support import (
+    AGENTS,
+    BUILT_IN_ROLES,
+    ROLES,
+    FrontmatterError,
+    read_agent,
+    split_agent,
+)
 
 from surface_status.settings import Models
 
@@ -26,7 +33,17 @@ def test_the_agent_directory_holds_the_four_roles() -> None:
 
 
 def test_every_role_has_a_setting_and_every_setting_a_role() -> None:
-    assert sorted(ROLES.values()) == sorted(f.name for f in fields(Models))
+    roles = [*ROLES.values(), *BUILT_IN_ROLES.values()]
+    assert sorted(roles) == sorted(f.name for f in fields(Models))
+
+
+def test_the_built_in_agent_has_a_model_alias_and_no_definition() -> None:
+    for name, role in BUILT_IN_ROLES.items():
+        # Nothing to install and nothing to maintain: its model is said by the setting alone, and
+        # passed on each Agent call.
+        assert getattr(Models(), role) in MODEL_ALIASES
+        assert not (AGENTS / f"{name}.md").exists()
+        assert not (AGENTS / f"surface-{role}.md").exists()
 
 
 @pytest.mark.parametrize("name", sorted(ROLES))

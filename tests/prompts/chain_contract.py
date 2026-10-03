@@ -140,6 +140,14 @@ BLUEPRINT_ASPECTS = (
 )
 CLOSING_LINE = "No change:"
 
+# The plan is drafted by the `Plan` agent built into Claude Code, which the chain neither installs
+# nor defines, in the form that agent chooses. It is held to the minimum the chain reads, the
+# headings of its template: the acceptance criteria, numbered, which the blueprint carries and the
+# review cites; the slices, each behind the marker the state script reads; the `gates` block the
+# script runs. No heading carries a number, so no prompt names a section of the plan by one.
+PLAN_AGENT = "Plan"
+PLAN_MINIMUM = ("Acceptance criteria", "Slices", "Gates")
+
 # The plan documents are written in the repository's language, not the conversation's.
 # `/surface-plan` finds it once and writes it in `exploration.md`, where every agent and template
 # names it, in these words; none of them follows the language of `specs.md` any more.

@@ -15,6 +15,9 @@ ROLES = {
     "surface-executor": "executor",
     "surface-reviewer": "reviewer",
 }
+# The agent built into Claude Code that drafts the plan: the chain ships no definition for it, only
+# its key in the `models` setting.
+BUILT_IN_ROLES = {"Plan": "planner"}
 
 _FENCE = "---\n"
 _FIELD = re.compile(r"(?P<key>[A-Za-z][A-Za-z-]*): (?P<value>\S.*)")

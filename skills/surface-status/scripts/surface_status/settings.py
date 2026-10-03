@@ -34,8 +34,13 @@ class SettingsError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class Models:
-    """The model alias passed at launch to each agent role."""
+    """The model alias passed at launch to each agent role.
 
+    `planner` is the role of the `Plan` agent built into Claude Code, which drafts the plan: the
+    chain ships no definition for it, so this alias is the only place its model is said.
+    """
+
+    planner: str = "opus"
     extractor: str = "opus"
     checker: str = "opus"
     executor: str = "sonnet"

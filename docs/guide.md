@@ -23,7 +23,7 @@ In a Claude Code session of your project, run `/surface-plan` with a short descr
 - From the main branch, it creates a branch named after your repository's practice: a written convention, else the branches of your past pull requests, and it asks you when it finds none. From any other branch, it opens the plan there, so one branch can carry several plans.
 - It explores the code the feature touches, then asks you its questions one at a time. Each comes with its options and the one it would pick. Your answers are written down as you give them, and it never invents a business rule to fill a gap.
 - It finds the commands that check your project, tests, lint, type checks, where your project states them, and writes them in the plan as its gates. It asks you only if it finds none.
-- It writes a detailed plan, then draws the blueprint from it and has it cross-checked, so that the blueprint hides nothing the plan does.
+- It has a detailed plan drafted by the `Plan` agent built into Claude Code, then the blueprint drawn from it and cross-checked, so that the blueprint hides nothing the plan does.
 - Before the first push, if your CI reacts to a push or to a new PR, it warns you and waits for your agreement.
 - It commits, pushes, opens a draft PR that links the blueprint and the plan, and tells you where to read the blueprint and which gates the loop will run.
 
@@ -121,7 +121,7 @@ you      mark the PR ready when you want, merge
 
 ## Settings
 
-The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the judgment roles, `sonnet` for the executor). During execution, a pass is one time the loop sends work back to an agent on its own, to fix a review's findings or a failed gate run, or to resume a slice after a dismissed suspicion; a clean review or a green gate run costs none. During planning, a pass is a cross-check that finds omissions, which sends the blueprint or the plan back for rework; a clean check costs none. In both, the loop sends work back `max_autonomous_passes` times on its own, and hands back to you at the pass after them.
+The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the `planner` and the judgment roles, `sonnet` for the `executor`). During execution, a pass is one time the loop sends work back to an agent on its own, to fix a review's findings or a failed gate run, or to resume a slice after a dismissed suspicion; a clean review or a green gate run costs none. During planning, a pass is a cross-check that finds omissions, which sends the blueprint or the plan back for rework; a clean check costs none. In both, the loop sends work back `max_autonomous_passes` times on its own, and hands back to you at the pass after them.
 
 ## Update and drift check
 

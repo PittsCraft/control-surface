@@ -1,44 +1,27 @@
 # Plan: <feature>
 
-Revision <N>. Execution instructions for the agents, slice by slice. Written in the language `exploration.md` names in its repository rules: translate the headings, keep the markers as they are. Sources: `specs.md`, `exploration.md`, `interview.md`. Each section says what the feature needs and no more: one line when that is all there is. The plan stays alive: an executor that deviates amends it in the commit of its code.
+Revision <N>. Execution instructions for the agents, slice by slice, drafted from `specs.md`, `exploration.md` and `interview.md` of the plan folder, and from the code. Written in the language `exploration.md` names in its repository rules: translate the headings, keep the markers and the `gates` tag as they are. The plan stays alive: an executor that deviates amends it in the commit of its code.
 
-## 1. Goal and scope
+The agent that drafts the plan designs it and lays it out as it sees fit: the decisions and the options set aside, the tests, the risks, the assumptions taken instead of a question go where they read best, each as long as the feature needs, none filled for its own sake. The chain reads three things only, which the plan holds under the three headings below, whatever stands around them. No code beyond a signature or a schema fragment. The plan is committed and the repository's checks read it: no path of a machine, and a decision still to come or an option set aside is described, never cited by a record number that does not exist. The agent has no write tool: it returns the plan whole as its answer, and nothing around it, and the command that launched it writes `plan.md`.
 
-What the feature does, and what it explicitly does not. The acceptance criteria, copied from the specs and the interview, numbered.
+When `plan.md` already exists, the agent drafts its next revision, which carries every amendment and every accepted plan change of `interview.md`. A slice that a `slice-done` line of `journal.jsonl` records is built: it stays, under its number. What is left to build goes into the slices that have not run, or into new ones.
 
-## 2. Architecture decisions
+## Acceptance criteria
 
-Each decision with the options considered and why the others were set aside. The existing decisions of the repository that apply. The new ones that deserve a record of their own, in the repository's form.
+Numbered, taken from the specs and the interview: the blueprint carries them, and the review and the proof of conformity cite them by number.
 
-## 3. Slices
+## Slices
 
-Each slice ships and verifies alone, in order. Each is preceded by its marker, alone on its line and starting at the first column: the state script reads the list of slices from the markers, in any language. A slice number is never reused: a new slice takes a number above every number the plan has used. A marker quoted in prose is indented or kept inline.
+Each slice ships and verifies alone, in order. Each is enough for an agent that starts fresh, which reads files and never a conversation: what it delivers, what it touches, the precedent it copies, what proves it done. Each is preceded by its marker, alone on its line and starting at the first column: the state script reads the list of slices from the markers, in any language. A slice number is never reused: a new slice takes a number above every number the plan has used. A marker quoted in prose is indented or kept inline.
 
 <!-- slice:1 -->
 ### Slice 1: <title>
 
-- Goal: what the slice delivers.
-- Files: what it touches.
-- Precedent: what it copies, or "none".
-- Gates: the checks it runs, in the foreground.
-- Done when: what proves it.
-- Depends on: earlier slices, or nothing.
+What the slice delivers, and what proves it done.
 
-## 4. Tests
+## Gates
 
-Per slice: unit tests; a property test for every invariant the specs state, with the tool the repository already uses; integration tests where a boundary is crossed; contract tests when a generated artifact changes; interface tests when the interface changes.
-
-## 5. Definition of Done
-
-The gates of section 7, green locally in the order CI runs them; regenerated artifacts committed with the change that forces them; the repository's conventions for branches, commits and pull requests; what is specific to this feature.
-
-## 6. Risks and assumptions
-
-What could sink the plan and how it is checked early. Every assumption taken instead of a question, with the reason it did not need the developer.
-
-## 7. Gates
-
-The commands that check the whole project, which the state script runs after the slices and at every fix, in order, stopping at the first that fails. Where they were found. One command per line in the block below, which starts at the first column and keeps its `gates` tag in any language. The block is empty when the project has none, and a sentence says so.
+The commands that check the whole project, which the state script runs after the slices and at every fix, in order, stopping at the first that fails. They are the gates `exploration.md` names for the plan, or those the developer named in `interview.md`, as they are: the command that launched the agent found them, and the agent does not choose them. One command per line in the block below, which starts at the first column and keeps its `gates` tag in any language. The block is empty when the project has none, and a sentence says so.
 
 ```gates
 <command>
