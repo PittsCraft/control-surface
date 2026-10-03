@@ -32,6 +32,8 @@ And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root,
 
 Write in the language `exploration.md` names in its repository rules. The blueprint is as long as the feature needs, and no longer: the developer reads all of it, so a small change gets a short page. No section and no diagram is written for its own sake.
 
+A fact is said once in prose on the whole page, the frame included: the idea sums the feature up, and a diagram may draw what the prose says. The acceptance criteria state the rules, carried whole, and nothing tells them again: the body shows what no criterion states, the shape of the data, the boundaries between components, an order between actors, the states, an algorithm, an irreversible effect, an assumption the plan takes, the case that explains a rule, and names a criterion instead of saying it again. The scope says what is left out, and of what is done only what no criterion says. The sensitive zones name each zone, point to the criterion or the section that holds its rule, and say in full only what stands nowhere else. The statement of the critical zones and the closing line are always written, even when a criterion says the same.
+
 ### The frame
 
 Every blueprint opens and closes the same way, so the developer always finds what the work is judged against. No heading carries a number: a section is cited by its title, which an amendment does not move.
@@ -50,7 +52,7 @@ Sensitive zones opens with the critical zones because their code is what the dev
 
 ### The body
 
-Between them, the body shows what will be built. You choose how to cut it: by what the developer has to decide separately, never by the slices of the plan nor by the layout of the code. Take the first cut that fits:
+Between them, the body shows what will be built. It shows behavior, which the developer decides, not code. What a user, a file or another program sees stays on the page: a name they type or read, a message, the value of a limit, a dependency the feature adds, which component calls which, each component under the name the repository gives it, with what it answers for. What only the code sees stays in the plan: the names of functions, constants and helpers, the calls to a library, the layout of the code. You choose how to cut it: by what the developer has to decide separately, never by the slices of the plan nor by the layout of the code. Take the first cut that fits:
 
 1. One behavior, a small change: no cut, a single section.
 2. Several flows or visible behaviors, largely independent: one section per flow, each with its own data, order and states.
@@ -64,7 +66,7 @@ When `blueprint.md` already exists, read it before you write: keep its cut and i
 
 ### The aspects
 
-Whatever the cut, five aspects must not be left in the dark: the data schema, the architecture and its boundaries, the sequences, the state machines, the algorithms. Go through each: what the plan changes of it is shown in the body, in the section it belongs to. The blueprint ends with one closing line that names every aspect the plan leaves alone, as the template shows, so the developer sees at a glance what the feature does not touch. There is no closing line when the plan changes all five.
+Whatever the cut, five aspects must not be left in the dark: the data schema, the architecture and its boundaries, the sequences, the state machines, the algorithms. Go through each: what the plan changes of it is shown on the page, by a criterion or in the body, in the section it belongs to. The blueprint ends with one closing line that names every aspect the plan leaves alone, as the template shows, so the developer sees at a glance what the feature does not touch. There is no closing line when the plan changes all five.
 
 ### The diagrams
 
