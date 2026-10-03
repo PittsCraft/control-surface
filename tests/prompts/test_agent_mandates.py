@@ -171,7 +171,7 @@ def test_extractor_says_a_fact_once_on_the_whole_page_and_shows_behavior_not_cod
     said = [
         "A fact is said once in prose on the whole page, the frame included",
         "the body shows what no criterion states",
-        "The scope says what is left out, and of what is done only what no criterion says",
+        "The scope says what is left out: what is done stands in the criteria and in the body",
         "point to the criterion or the section that holds its rule",
     ]
     positions = [writing.index(sentence) for sentence in said]
@@ -192,7 +192,7 @@ def test_extractor_says_a_fact_once_on_the_whole_page_and_shows_behavior_not_cod
     template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
     form = template.read_text(encoding="utf-8")
     assert "A fact is said once in prose on the whole page" in form
-    assert "Of what it does, only what no criterion says" in form
+    assert "What it does stands in the criteria and in the body" in form
     assert "that no criterion states, as behavior and not as code" in form
 
 

@@ -12,7 +12,7 @@ Numbered, taken from the specs and the interview.
 
 ## Scope and out of scope
 
-What the feature explicitly does not do. Of what it does, only what no criterion says.
+What the feature explicitly does not do. What it does stands in the criteria and in the body.
 
 ## <A section of the body, titled in the words of the feature>
 
