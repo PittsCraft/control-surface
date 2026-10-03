@@ -323,6 +323,28 @@ def test_questions_come_one_at_a_time_with_options_and_a_recommendation() -> Non
     assert "Never invent a business rule to fill a gap" in asking
 
 
+def test_the_interview_asks_what_a_user_of_the_feature_would_see() -> None:
+    steps = section(_body(), "First launch, with specs")
+    interview = next(line for line in steps.splitlines() if line.startswith("5. Interview."))
+    # What separates a rule of the developer from a matter of implementation is said before the
+    # rule that stops the interview: an order or a frequency is never filed as implementation.
+    theirs, settled, question, stop, assumption = _positions(
+        interview,
+        [
+            "A point is the developer's when it is a rule that a user of the feature",
+            "What the specs or the code settle, its closest precedent included, is not asked",
+            "What neither settles is a question, however obvious its answer looks",
+            "Stop when what remains is a matter of implementation you can decide",
+            "It goes to the plan as an assumption",
+        ],
+    )
+    assert theirs < settled < question < stop < assumption
+    assert "or a program that reads what it writes, would see applied" in interview
+    assert "which neither a user nor such a program would see" in interview
+    assert "an order, ties included, a number, a frequency or a limit" in interview
+    assert "your pick is its recommendation, never an assumption of the plan" in interview
+
+
 def test_every_planning_step_goes_to_a_fresh_agent_on_the_models_of_the_settings() -> None:
     agents = section(_body(), "The agents")
     fresh = "A fresh agent for each draft of the plan, each extraction and each cross-check"
