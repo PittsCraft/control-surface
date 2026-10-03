@@ -21,6 +21,12 @@ NO_FINDING_END = "conformant state"
 CONFORMANT_HAND_BACK = (
     "the plan is conformant, and the developer marks the pull request ready when they want"
 )
+# A branch may have no pull request: no `gh`, no remote, or a push the developer declined. The
+# line then names the step that fits, since nobody marks ready a pull request that does not exist.
+CONFORMANT_WITHOUT_PULL_REQUEST = (
+    "the developer opens the pull request, if none is open yet, with the description"
+    " `surface-status pr-body` prints"
+)
 # The one exception, which the hand-back says in one sentence: where a mistake would cost most,
 # in the zones the host's agent instructions declare critical, the developer reads the code
 # themselves, from the list of changed files the pull request description gives.
