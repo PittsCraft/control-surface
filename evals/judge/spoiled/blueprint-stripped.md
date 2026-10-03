@@ -24,7 +24,8 @@ writing to a file.
 `python3 -m shelf export <file>` loads the books of the file, sorts them by author, then by
 title, and prints the CSV on standard output: the header, then one row per book.
 
-The CSV has three columns, in this order:
+The CSV is the only data the feature adds, the shelf file and its books are read and never
+written. It has three columns, in this order:
 
 | Column | From | Form |
 |---|---|---|
@@ -39,6 +40,9 @@ flowchart LR
 ```
 
 `to_csv` is pure: a list of books in, the CSV text out. Standard library only.
+
+Lines end with `\n`, not with the `\r\n` Python's `csv` module writes by default: an assumption,
+the spreadsheet reads it.
 
 ## Sensitive zones
 

@@ -83,7 +83,14 @@ def test_a_campaign_is_summarized_and_reported_from_its_folder(tmp_path: Path) -
         acceptance={"ran": 4, "failed": 0, "output": ""},
     )
     stream(root / "logs" / "01-need.jsonl", cost=1.25)
-    verdict = {"dimension": "blueprint", "criterion": "decidable", "score": 4, "grounded": True}
+    verdict = {
+        "dimension": "blueprint",
+        "criterion": "decidable",
+        "score": 4,
+        "reason": "The order of ties is not said.",
+        "passage": "the most days late first",
+        "grounded": True,
+    }
     (root / "judge.json").write_text(
         json.dumps({"v": 1, "model": "opus", "judgements": [verdict], "refused": []}), "utf-8"
     )
@@ -111,6 +118,8 @@ def test_a_campaign_is_summarized_and_reported_from_its_folder(tmp_path: Path) -
     assert "| `seeded-defect` | a defect |" in text
     assert "## Is it good to work with" in text
     assert "| `blueprint.decidable` | 4 | 4 |" in text
+    remark = f"- `blueprint.decidable`, 4 in `{name}`: The order of ties is not said."
+    assert f'{remark} Passage: "the most days late first"' in text
     assert "1 sessions, 1.25 USD at list price" in text
     assert "What moved" not in text
     # Against itself, nothing moved.

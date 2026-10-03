@@ -153,8 +153,17 @@ def test_each_spoiled_document_lowers_a_criterion_of_the_rubric_and_differs_from
     for pair in pairs:
         assert pair.criterion in criteria[pair.dimension]
         assert pair.replaces in reads[pair.dimension]
-        assert pair.spoiled != originals[pair.replaces]
+        original = judge_check.documents(pair, spoiled=False)
+        spoiled = judge_check.documents(pair, spoiled=True)
+        # One document differs, the one the pair spoils.
+        assert [name for name in original if original[name] != spoiled[name]] == [pair.replaces]
     padded, stripped, answered = (pair.spoiled for pair in pairs)
-    assert len(padded) > len(originals["blueprint"]) > len(stripped)
+    # The padded blueprint is its own lean original with padding added, nothing taken away.
+    lean = pairs[0].original
+    assert lean is not None
+    assert all(line in padded for line in lean.splitlines())
+    assert len(padded) > 2 * len(lean)
+    assert pairs[1].original is None
+    assert len(originals["blueprint"]) > len(stripped)
     assert "An empty shelf prints the header alone" not in stripped
     assert answered.count("### Q") == originals["interview"].count("### Q") + 2

@@ -27,32 +27,16 @@ line, then one line per book, with the title, the author and the year of each bo
 
 ## Scope and out of scope
 
-In scope: the `export` command and the CSV it prints. Out of scope: the ISBN, any other format,
-writing to a file.
+Out of scope: any other format, writing to a file.
 
 ## The export command
 
-`python3 -m shelf export <file>` loads the books of the file, sorts them by author, then by
-title, and prints the CSV on standard output: the header, then one row per book.
-
-The CSV has three columns, in this order:
-
-| Column | From | Form |
-|---|---|---|
-| `title` | `Book.title` | text |
-| `author` | `Book.author` | text |
-| `year` | `Book.year` | whole number |
-
-```mermaid
-flowchart LR
-  cli["shelf/__main__.py: export"] --> load["shelf/books.py: load (existing)"]
-  cli --> csv["shelf/export.py: to_csv"]
-```
-
-`to_csv` is pure: a list of books in, the CSV text out. Standard library only.
+The year is printed as the whole number the shelf file holds. Lines end with a line feed, not
+with the carriage return and line feed Python's `csv` module writes by default: an assumption,
+to confirm with the bookshop.
 
 As said above, the columns are the title, the author and the year, in this order, and the ISBN is
-not one of them: the CSV has three columns.
+not one of them: the CSV has three columns, and its lines are sorted by author, then by title.
 
 ## How the code works, step by step
 
@@ -87,6 +71,6 @@ tests run with `python3 -m unittest discover -s tests -q`, and all of them must 
 ## Sensitive zones
 
 Critical zone touched: the CSV export (`AGENTS.md`). Its columns are a contract with the
-bookshop: their names and their order are fixed by this blueprint.
+bookshop, fixed by criteria 2 and 3.
 
-No change: state machines.
+No change: the data schema, the architecture and its boundaries, the state machines.

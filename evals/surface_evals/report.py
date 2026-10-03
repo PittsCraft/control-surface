@@ -29,6 +29,7 @@ from surface_evals.runner import RECORD as RUN
 SUMMARY = "summary.json"
 REPORT = "report.md"
 EM_DASH = chr(0x2014)  # a code point, so this file holds no literal em dash
+PASSAGE_LIMIT = 240  # characters of a passage kept in a report
 
 # Which way is better, for the measures that have one: +1 the higher, -1 the lower. The others
 # are told and compared, never called better or worse.
@@ -143,11 +144,34 @@ def _verdicts(root: Path) -> dict[str, float | bool]:
     return folded
 
 
+def _lowest(root: Path, case: str, remarks: dict[str, dict[str, object]]) -> None:
+    """Keep, per criterion, the judgement of a run that scores lowest so far, with its reason."""
+    path = root / VERDICTS
+    if not path.is_file():
+        return
+    kept = cast("dict[str, object]", json.loads(path.read_text(encoding="utf-8")))
+    for item in cast("list[dict[str, object]]", kept["judgements"]):
+        key = f"{item['dimension']}.{item['criterion']}"
+        score = cast("int", item["score"])
+        if key not in remarks or score < cast("int", remarks[key]["score"]):
+            passage = str(item["passage"])
+            if len(passage) > PASSAGE_LIMIT:
+                passage = passage[:PASSAGE_LIMIT] + " [...]"
+            remarks[key] = {
+                "case": case,
+                "score": score,
+                "reason": str(item["reason"]),
+                "passage": passage,
+                "grounded": bool(item["grounded"]),
+            }
+
+
 def summarize(out: Path) -> dict[str, object]:
     """Measure every run of an output folder, and fold them per case."""
     cases: dict[str, object] = {}
     every: list[Measures] = []
     judged: list[dict[str, float | bool]] = []
+    remarks: dict[str, dict[str, object]] = {}
     for case in load_cases():
         roots = sorted(path.parent for path in (out / "runs" / case.name).glob(f"run-*/{RUN}"))
         if not roots:
@@ -158,6 +182,8 @@ def summarize(out: Path) -> dict[str, object]:
             (root / "measures.json").write_text(json.dumps(measured, indent=2) + "\n", "utf-8")
         every.extend(measures)
         judged.extend(verdicts)
+        for root in roots:
+            _lowest(root, case.name, remarks)
         cases[case.name] = {
             "shape": case.shape,
             "runs": len(roots),
@@ -177,6 +203,7 @@ def summarize(out: Path) -> dict[str, object]:
         "chain": chain_version(),
         "cases": cases,
         "all": {"runs": len(every), "measures": _spreads(every), "judge": _spreads(judged)},
+        "remarks": dict(sorted(remarks.items())),
         "probes": probes,
         "judge_check": json.loads(check.read_text(encoding="utf-8")) if check.is_file() else None,
         "spent": json.loads(ledger.read_text(encoding="utf-8")) if ledger.is_file() else None,
@@ -245,10 +272,93 @@ def _table(summary: Mapping[str, object], kind: str, names: Sequence[str]) -> li
     return lines
 
 
+def _probes(summary: Mapping[str, object]) -> list[str]:
+    probes = cast("list[dict[str, object]]", summary["probes"])
+    if not probes:
+        return []
+    lines = ["", "## Faults put there on purpose", "", "| Probe | What | Found | Passed |"]
+    lines.append("|---|---|---|---|")
+    for probe in probes:
+        found = probe.get("counts") if probe["kind"] == "reviewer" else probe.get("omissions")
+        passed = "yes" if probe["passed"] else "no"
+        lines.append(f"| `{probe['name']}` | {probe['what']} | `{json.dumps(found)}` | {passed} |")
+    return lines
+
+
+def _judged(summary: Mapping[str, object]) -> list[str]:
+    judged = cast("dict[str, object]", summary["all"])["judge"]
+    if not judged:
+        return []
+    names = sorted(cast("dict[str, object]", judged))
+    lines = ["", "## Is it good to work with", "", "Scores from 1 to 5, by the judge.", ""]
+    lines += _table(summary, "judge", names)
+    lines += [
+        "",
+        "The lowest score of each criterion, with the judge's reason and its passage:",
+        "",
+    ]
+    for name, remark in cast("dict[str, dict[str, object]]", summary.get("remarks", {})).items():
+        rests = "" if remark["grounded"] else " (in no document the judge was given)"
+        lines.append(
+            f"- `{name}`, {remark['score']} in `{remark['case']}`: {remark['reason']}"
+            f" Passage{rests}: {json.dumps(remark['passage'])}"
+        )
+    return lines
+
+
+def _checked(summary: Mapping[str, object]) -> list[str]:
+    check = cast("dict[str, object] | None", summary["judge_check"])
+    if check is None:
+        return []
+    lines = ["", "## The judge, checked", ""]
+    lines.append("| Spoiled document | Criterion | Original | Spoiled | Below |")
+    lines.append("|---|---|---|---|---|")
+    lines += [
+        f"| {pair['what']} | `{pair['criterion']}` | {pair['original']} |"
+        f" {pair['spoiled']} | {'yes' if pair['below'] else 'no'} |"
+        for pair in cast("list[dict[str, object]]", check["pairs"])
+    ]
+    return lines
+
+
+def _spent(summary: Mapping[str, object]) -> list[str]:
+    spent = cast("dict[str, float] | None", summary["spent"])
+    if spent is None:
+        return []
+    return [
+        "",
+        "## Cost",
+        "",
+        (
+            f"{spent['sessions']} sessions, {spent['usd']:.2f} USD at list price. The weekly"
+            f" gauge of the subscription rose by {spent['points']:g} points while they ran,"
+            " every other use of the account included."
+        ),
+    ]
+
+
+def _moved(moves: Sequence[Move] | None) -> list[str]:
+    if moves is None:
+        return []
+    lines = ["", "## What moved since the campaign before", ""]
+    if not moves:
+        lines.append("Nothing lies outside the spread between runs.")
+    lines += [
+        f"- `{move.scope}` `{move.measure}`: {_cell(move.before.to_dict())} then"
+        f" {_cell(move.after.to_dict())}, {move.verdict}."
+        for move in moves
+    ]
+    return lines
+
+
 def render(summary: Mapping[str, object], moves: Sequence[Move] | None = None) -> str:
     """Write the report: the goals, the probes, the judge and its check, the cost, what moved."""
     cases = cast("dict[str, dict[str, object]]", summary["cases"])
     everything = cast("dict[str, object]", summary["all"])
+    outcomes = "; ".join(
+        f"`{name}` {', '.join(cast('list[str]', found['outcomes']))}"
+        for name, found in cases.items()
+    )
     lines = [
         "# Evaluation of the chain",
         "",
@@ -262,58 +372,13 @@ def render(summary: Mapping[str, object], moves: Sequence[Move] | None = None) -
         "",
         *_table(summary, "measures", GOALS),
         "",
-        "Outcomes: "
-        + "; ".join(
-            f"`{name}` {', '.join(cast('list[str]', found['outcomes']))}"
-            for name, found in cases.items()
-        )
-        + ".",
+        f"Outcomes: {outcomes}.",
+        *_probes(summary),
+        *_judged(summary),
+        *_checked(summary),
+        *_spent(summary),
+        *_moved(moves),
     ]
-    probes = cast("list[dict[str, object]]", summary["probes"])
-    if probes:
-        lines += ["", "## Faults put there on purpose", "", "| Probe | What | Found | Passed |"]
-        lines.append("|---|---|---|---|")
-        for probe in probes:
-            found = probe.get("counts") if probe["kind"] == "reviewer" else probe.get("omissions")
-            passed = "yes" if probe["passed"] else "no"
-            lines.append(
-                f"| `{probe['name']}` | {probe['what']} | `{json.dumps(found)}` | {passed} |"
-            )
-    judged = cast("dict[str, dict[str, float]]", everything["judge"])
-    if judged:
-        lines += ["", "## Is it good to work with", "", "Scores from 1 to 5, by the judge.", ""]
-        lines += _table(summary, "judge", sorted(judged))
-    check = cast("dict[str, object] | None", summary["judge_check"])
-    if check is not None:
-        lines += ["", "## The judge, checked", "", "| Spoiled document | Criterion | Original |"]
-        lines[-1] += " Spoiled | Below |"
-        lines.append("|---|---|---|---|---|")
-        for pair in cast("list[dict[str, object]]", check["pairs"]):
-            lines.append(
-                f"| {pair['what']} | `{pair['criterion']}` | {pair['original']} |"
-                f" {pair['spoiled']} | {'yes' if pair['below'] else 'no'} |"
-            )
-    spent = cast("dict[str, float] | None", summary["spent"])
-    if spent is not None:
-        lines += [
-            "",
-            "## Cost",
-            "",
-            (
-                f"{spent['sessions']} sessions, {spent['usd']:.2f} USD at list price. The weekly"
-                f" gauge of the subscription rose by {spent['points']:g} points while they ran,"
-                " every other use of the account included."
-            ),
-        ]
-    if moves is not None:
-        lines += ["", "## What moved since the campaign before", ""]
-        if not moves:
-            lines.append("Nothing lies outside the spread between runs.")
-        for move in moves:
-            lines.append(
-                f"- `{move.scope}` `{move.measure}`: {_cell(move.before.to_dict())} then"
-                f" {_cell(move.after.to_dict())}, {move.verdict}."
-            )
     return "\n".join(lines).replace(EM_DASH, ", ") + "\n"
 
 

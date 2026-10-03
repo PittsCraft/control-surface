@@ -5,6 +5,7 @@
     "dimension": "blueprint",
     "criterion": "no-padding",
     "replaces": "blueprint",
+    "original": "blueprint-lean.md",
     "with": "blueprint-padded.md"
   },
   {
@@ -13,6 +14,7 @@
     "dimension": "blueprint",
     "criterion": "decidable",
     "replaces": "blueprint",
+    "original": null,
     "with": "blueprint-stripped.md"
   },
   {
@@ -21,6 +23,7 @@
     "dimension": "interview",
     "criterion": "not-already-answered",
     "replaces": "interview",
+    "original": null,
     "with": "interview-answered.md"
   }
 ]

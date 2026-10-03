@@ -11,7 +11,8 @@ from dataclasses import dataclass
 OPENING = ("The idea in one sentence", "Acceptance criteria", "Scope and out of scope")
 CLOSING = "Sensitive zones"
 CLOSING_LINE = "No change:"
-NONE_TOUCHED = re.compile(r"\bnone\b", re.IGNORECASE)
+# How a blueprint says the plan touches no critical zone: none, or neither of two.
+NONE_TOUCHED = re.compile(r"\b(none|neither|no critical zone)\b", re.IGNORECASE)
 
 _HEADING = re.compile(r"## (?P<title>.+)")
 _FENCE = re.compile(r"```(?P<tag>\S*)")

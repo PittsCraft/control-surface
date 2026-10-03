@@ -2,7 +2,9 @@
 
 The originals are the documents of the toy project of the end to end tests: its need, its
 interview, its blueprint, written out by hand. `evals/judge/spoiled/` holds each of them spoiled
-in one known way, with the criterion that way must lower. A judge that scores the spoiled one as
+in one known way, with the criterion that way must lower. A pair may bring its own original
+where the toy's would not do: a blueprint is padded from a lean one, since padding added to a
+page that already repeats itself shows nothing. A judge that scores the spoiled one as
 high as the original cannot be trusted on that criterion, and the report says so.
 """
 
@@ -29,6 +31,7 @@ class Pair:
     dimension: str
     criterion: str
     replaces: str  # the document of the originals the spoiled one takes the place of
+    original: str | None  # the pair's own original of that document, else the toy's
     spoiled: str  # its text
 
 
@@ -37,18 +40,35 @@ def originals() -> dict[str, str]:
 
 
 def load_pairs() -> list[Pair]:
-    listed = cast("list[dict[str, str]]", json.loads((SPOILED / "pairs.json").read_text("utf-8")))
+    listed = cast(
+        "list[dict[str, str | None]]", json.loads((SPOILED / "pairs.json").read_text("utf-8"))
+    )
+
+    def text(name: str | None) -> str | None:
+        return None if name is None else (SPOILED / name).read_text(encoding="utf-8")
+
     return [
         Pair(
-            name=item["name"],
-            what=item["what"],
-            dimension=item["dimension"],
-            criterion=item["criterion"],
-            replaces=item["replaces"],
-            spoiled=(SPOILED / item["with"]).read_text(encoding="utf-8"),
+            name=str(item["name"]),
+            what=str(item["what"]),
+            dimension=str(item["dimension"]),
+            criterion=str(item["criterion"]),
+            replaces=str(item["replaces"]),
+            original=text(item["original"]),
+            spoiled=str(text(item["with"])),
         )
         for item in listed
     ]
+
+
+def documents(pair: Pair, *, spoiled: bool) -> dict[str, str]:
+    """Give the documents a pair is judged on: its original, or the same with one spoiled."""
+    given = originals()
+    if pair.original is not None:
+        given[pair.replaces] = pair.original
+    if spoiled:
+        given[pair.replaces] = pair.spoiled
+    return given
 
 
 def check(out: Path, *, model: str, repeats: int, ledger: Ledger) -> Path:
@@ -73,19 +93,19 @@ def check(out: Path, *, model: str, repeats: int, ledger: Ledger) -> Path:
                 refused.append(str(error))
         return found
 
-    # An original is judged once per dimension, whatever the number of its spoiled versions.
+    # The same originals are judged once per dimension, whatever the number of pairs on them.
     pairs = load_pairs()
-    original = {
-        name: judged(by_id[name], originals(), f"original-{name}")
-        for name in sorted({pair.dimension for pair in pairs})
-    }
+    originals_judged: dict[tuple[str, str], list[Judgement]] = {}
     results: list[dict[str, object]] = []
     for pair in pairs:
-        documents = {**originals(), pair.replaces: pair.spoiled}
-        spoiled = judged(by_id[pair.dimension], documents, f"spoiled-{pair.name}")
-        before = [
-            item.score for item in original[pair.dimension] if item.criterion == pair.criterion
-        ]
+        given = documents(pair, spoiled=False)
+        key = (pair.dimension, given[pair.replaces])
+        if key not in originals_judged:
+            originals_judged[key] = judged(by_id[pair.dimension], given, f"original-{pair.name}")
+        spoiled = judged(
+            by_id[pair.dimension], documents(pair, spoiled=True), f"spoiled-{pair.name}"
+        )
+        before = [item.score for item in originals_judged[key] if item.criterion == pair.criterion]
         after = [item.score for item in spoiled if item.criterion == pair.criterion]
         results.append(
             {
