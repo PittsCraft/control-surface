@@ -440,7 +440,19 @@ def _hand_over() -> str:
 def test_the_hand_over_stays_in_the_conversation_and_asks_amend_or_approve() -> None:
     hand_over = _hand_over()
     assert "Then stop" not in hand_over
-    assert "Say in one line how the body of the blueprint is cut, and why" in hand_over
+    # The cut and the gates are said once, and again only when a revision changed them.
+    first, later, pointer = _positions(
+        hand_over,
+        [
+            "At the first hand over of the plan, when `journal.jsonl` holds a single",
+            "At a later one, say in one line which amendment or decision of `interview.md`",
+            "restate neither what it holds nor the plan",
+        ],
+    )
+    assert first < later < pointer
+    assert "say in one line how the body of the blueprint is cut, and why" in hand_over
+    assert "and the cut or the gates again only when the revision changed them" in hand_over
+    assert "name the gates the loop will run, `gates` of `show`" in hand_over
     assert (
         "stay in the conversation and ask: amend, or approve by launching `/surface-execute`, whose"
         " launch alone approves this revision" in hand_over
