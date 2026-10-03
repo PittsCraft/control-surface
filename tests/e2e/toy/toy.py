@@ -366,11 +366,11 @@ BLUEPRINT = """\
 
 Revision 1, drawn from `plan.md`.
 
-## 1. The idea in one sentence
+## The idea in one sentence
 
 A new command prints the books of a shelf file as CSV, for the bookshop's spreadsheet.
 
-## 2. Acceptance criteria
+## Acceptance criteria
 
 1. `python3 -m shelf export <file>` prints the books of the file as CSV on standard output and
    exits with 0.
@@ -381,14 +381,17 @@ A new command prints the books of a shelf file as CSV, for the bookshop's spread
    quote or a line break.
 6. An empty shelf prints the header alone.
 
-## 3. Scope and out of scope
+## Scope and out of scope
 
 In scope: the `export` command and the CSV it prints. Out of scope: the ISBN, any other format,
 writing to a file.
 
-## 4. Data schema
+## The export command
 
-The CSV, three columns, in this order:
+`python3 -m shelf export <file>` loads the books of the file, sorts them by author, then by
+title, and prints the CSV on standard output: the header, then one row per book.
+
+The CSV has three columns, in this order:
 
 | Column | From | Form |
 |---|---|---|
@@ -396,32 +399,15 @@ The CSV, three columns, in this order:
 | `author` | `Book.author` | text |
 | `year` | `Book.year` | whole number |
 
-## 5. Architecture and boundaries
-
 ```mermaid
 flowchart LR
-  cli["shelf/__main__.py: export"] --> load["shelf/books.py: load"]
+  cli["shelf/__main__.py: export"] --> load["shelf/books.py: load (existing)"]
   cli --> csv["shelf/export.py: to_csv"]
 ```
 
 `to_csv` is pure: a list of books in, the CSV text out. Standard library only.
 
-## 6. Sequences
-
-```mermaid
-sequenceDiagram
-  participant D as Developer
-  participant C as export command
-  D->>C: python3 -m shelf export books.jsonl
-  C->>C: load the books, sort, write the CSV
-  C-->>D: CSV on standard output, exit 0
-```
-
-## 8. Algorithms
-
-Sort the books by author, then by title; write the header, then one row per book.
-
-## 9. Sensitive zones
+## Sensitive zones
 
 Critical zone touched: the CSV export (`AGENTS.md`). Its columns are a contract with the
 bookshop: their names and their order are fixed by this blueprint.

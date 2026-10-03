@@ -33,10 +33,10 @@ A control surface is the level you steer the work from. Too high, at the product
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/blueprint-dark.svg">
-  <img alt="A blueprint with its nine sections: the idea in one sentence, acceptance criteria, scope, data schema, architecture and boundaries, sequences, state machines, algorithms, sensitive zones, most of them with a diagram. You review it directly, and ask an agent to amend or approve it." src="docs/images/blueprint-light.svg">
+  <img alt="A blueprint. It opens with the idea in one sentence, the acceptance criteria and the scope, and closes with the sensitive zones. Between them, sections titled in the words of the feature show what will be built, most of them with a diagram. You review it directly, and ask an agent to amend or approve it." src="docs/images/blueprint-light.svg">
 </picture>
 
-The blueprint is as long as the feature needs and no longer, with a diagram wherever one is clearer than prose. It shows what will be built, never the order of construction: that stays in the plan.
+The blueprint is as long as the feature needs and no longer, with a diagram wherever one is clearer than prose. It always opens with the idea, the acceptance criteria and the scope, and closes with the sensitive zones; between them, it is cut for your feature, by flow, by component or by decision. It shows what will be built, never the order of construction: that stays in the plan.
 
 You review it yourself. You never edit it by hand: you ask for a change in the conversation and an agent draws the next revision, and launching `/surface-execute` approves the one you read.
 

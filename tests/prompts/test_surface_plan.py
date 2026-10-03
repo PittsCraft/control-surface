@@ -12,8 +12,9 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
-    ALWAYS_WRITTEN,
-    BLUEPRINT_SECTIONS,
+    BLUEPRINT_ASPECTS,
+    BLUEPRINT_CLOSING,
+    BLUEPRINT_OPENING,
     CLOSING_LINE,
     DOCUMENTS_LANGUAGE,
     FORMER_LANGUAGE_RULE,
@@ -364,9 +365,10 @@ def _hand_over() -> str:
     return steps[start:] if end < 0 else steps[start:end]
 
 
-def test_the_hand_over_keeps_the_hand_and_asks_amend_or_approve() -> None:
+def test_the_hand_over_stays_in_the_conversation_and_asks_amend_or_approve() -> None:
     hand_over = _hand_over()
     assert "Then stop" not in hand_over
+    assert "Say in one line how the body of the blueprint is cut, and why" in hand_over
     assert (
         "stay in the conversation and ask: amend, or approve by launching `/surface-execute`, whose"
         " launch alone approves this revision" in hand_over
@@ -500,7 +502,7 @@ def test_the_branch_is_found_with_plain_commands_and_no_setting() -> None:
     assert "surface.json" not in branch
 
 
-def test_an_amendment_outside_the_hand_is_explained_and_refused() -> None:
+def test_an_amendment_when_it_is_not_the_developers_turn_is_explained_and_refused() -> None:
     body = _body()
     outside = section(body, "Not your turn")
     assert "only when it is their turn: awaiting approval, or blocked" in outside
@@ -514,30 +516,36 @@ def test_an_amendment_outside_the_hand_is_explained_and_refused() -> None:
     )
 
 
-def test_the_blueprint_template_holds_the_nine_sections_and_no_slice() -> None:
+def test_the_blueprint_template_holds_the_frame_around_a_body_and_no_slice() -> None:
     template = _template("blueprint.md")
     headings = _headings(template)
-    assert headings == list(BLUEPRINT_SECTIONS)
+    assert headings[: len(BLUEPRINT_OPENING)] == list(BLUEPRINT_OPENING)
+    assert headings[-1] == BLUEPRINT_CLOSING
+    body = headings[len(BLUEPRINT_OPENING) : -1]
+    assert body == ["<A section of the body, titled in the words of the feature>"]
     _, extractor = (AGENTS / "surface-extractor.md").read_text(encoding="utf-8").split("\n---\n", 1)
-    for heading in headings:
+    for heading in (*BLUEPRINT_OPENING, BLUEPRINT_CLOSING):
         assert heading in extractor
+    for heading in headings:
         assert "slice" not in heading.lower()
+        assert not heading[0].isdigit(), heading
     assert parse_slice_markers(template) == ()
 
 
-def test_the_blueprint_template_gathers_the_unchanged_sections_in_one_closing_line() -> None:
+def test_the_blueprint_template_names_the_aspects_left_alone_in_one_closing_line() -> None:
     template = _template("blueprint.md")
     opening = template.split("\n## ", 1)[0]
     assert "As long as the feature needs, and no longer." in opening
-    always = [heading.split(".", 1)[0] for heading in ALWAYS_WRITTEN]
-    assert f"Sections {', '.join(always[:-1])} and {always[-1]} are always written." in opening
-    assert "A section from 4 to 8 is written only when the plan changes what it shows" in opening
-    assert "under its own number" in opening
-    assert "the closing line names the ones left out, and goes when none is" in opening
-    assert "A mermaid diagram only when it shows what the prose of its section does not" in opening
+    assert "No heading carries a number." in opening
+    assert "The three opening sections and the closing one are always written." in opening
+    assert "the body is cut for the feature" in opening
+    aspects = f"{', '.join(BLUEPRINT_ASPECTS[:-1])} and {BLUEPRINT_ASPECTS[-1]}"
+    assert f"The closing line names the aspects the plan leaves alone, among {aspects}" in opening
+    assert "and goes when the plan changes all five" in opening
+    assert "A mermaid diagram where what it shows has a shape that prose flattens" in opening
     # One closing line, the last of the page, and no section that only says it has no change.
     closing = [line for line in template.splitlines() if line.startswith(CLOSING_LINE)]
-    assert closing == [f"{CLOSING_LINE} <the sections from 4 to 8 left out, by name>."]
+    assert closing == [f"{CLOSING_LINE} <the aspects the plan leaves alone, by name>."]
     assert template.rstrip("\n").endswith(closing[0])
     assert "No change." not in template
     assert "mermaid diagram wherever" not in template
@@ -545,10 +553,10 @@ def test_the_blueprint_template_gathers_the_unchanged_sections_in_one_closing_li
 
 def test_the_blueprint_template_says_which_critical_zones_the_plan_touches() -> None:
     template = _template("blueprint.md")
-    nine = template[template.index("## 9. Sensitive zones") :]
+    zones = template[template.index(f"## {BLUEPRINT_CLOSING}") :]
     said = "Critical zones touched, among those the repository's agent instructions declare: none."
-    assert said in nine
-    assert nine.index(said) < nine.index(CLOSING_LINE)
+    assert said in zones
+    assert zones.index(said) < zones.index(CLOSING_LINE)
 
 
 # Git, pull request and CI.

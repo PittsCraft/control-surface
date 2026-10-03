@@ -10,8 +10,9 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
-    ALWAYS_WRITTEN,
-    BLUEPRINT_SECTIONS,
+    BLUEPRINT_ASPECTS,
+    BLUEPRINT_CLOSING,
+    BLUEPRINT_OPENING,
     BREAK_QUESTION,
     CHAIN_REPORTS,
     CRITICAL_FILES_OF_THE_BRANCH,
@@ -119,79 +120,122 @@ def test_reviewer_reads_and_never_runs_a_command_of_its_own() -> None:
     assert "pytest" not in others
 
 
-# The length of a blueprint: what the feature needs, no section or diagram for its own sake.
+# The form of a blueprint: a fixed frame, a body cut for the feature, as long as it needs.
 
 
-def test_extractor_writes_an_blueprint_as_long_as_the_feature_needs() -> None:
+def test_extractor_writes_a_blueprint_as_long_as_the_feature_needs() -> None:
     _, body = read_agent("surface-extractor")
     writing = section(body, "What you write")
     assert "The blueprint is as long as the feature needs, and no longer" in writing
     assert "a small change gets a short page" in writing
     assert "No section and no diagram is written for its own sake" in writing
     assert "each filled in" not in writing
-    for heading in BLUEPRINT_SECTIONS:
-        assert any(line.startswith(heading) for line in writing.splitlines()), heading
 
 
-def test_extractor_leaves_out_an_unchanged_section_and_names_it_in_the_closing_line() -> None:
+def test_extractor_frames_the_blueprint_with_sections_that_carry_no_number() -> None:
     _, body = read_agent("surface-extractor")
     writing = section(body, "What you write")
-    numbers = [heading.split(".", 1)[0] for heading in BLUEPRINT_SECTIONS]
-    always = [heading.split(".", 1)[0] for heading in ALWAYS_WRITTEN]
-    others = [number for number in numbers if number not in always]
-    assert f"Sections {', '.join(always[:-1])} and {always[-1]} are always written." in writing
-    left_out = f"A section from {others[0]} to {others[-1]} is written only when the plan changes"
-    assert f"{left_out} what it shows" in writing
-    assert "One with no change gets no heading" in writing
-    assert "one closing line that names every section left out, as the template shows" in writing
-    assert "There is no closing line when all nine are written" in writing
-    assert "A written section keeps its number, whatever is left out before it" in writing
-    assert "the sections its closing line names" in section(body, "What you return")
+    lines = writing.splitlines()
+    for heading in (*BLUEPRINT_OPENING, BLUEPRINT_CLOSING):
+        assert any(line.startswith(f"- {heading}") for line in lines), heading
+    assert "It opens with three sections, in this order" in writing
+    assert "It closes with one" in writing
+    assert "No heading carries a number" in writing
+    assert "a section is cited by its title, which an amendment does not move" in writing
+    assert "keeps its number" not in writing
 
 
-def test_extractor_draws_a_diagram_only_when_it_shows_what_the_prose_does_not() -> None:
+def test_extractor_cuts_the_body_by_what_the_developer_decides_separately() -> None:
     _, body = read_agent("surface-extractor")
     writing = section(body, "What you write")
-    rule = "A mermaid diagram only when it shows what the prose of its section does not"
-    assert f"{rule}: a schema that changes, a boundary crossed, an order that matters" in writing
+    assert "by what the developer has to decide separately" in writing
+    assert "never by the slices of the plan nor by the layout of the code" in writing
+    assert "Take the first cut that fits" in writing
+    cuts = [line for line in writing.splitlines() if re.match(r"[1-5]\. ", line)]
+    assert [line.split(":", 1)[0] for line in cuts] == [
+        "1. One behavior, a small change",
+        "2. Several flows or visible behaviors, largely independent",
+        "3. One flow that crosses several components with distinct responsibilities",
+        "4. A feature that a few trade-offs dominate, a migration or a policy for instance",
+        "5. Otherwise",
+    ]
+    assert "Title each section in the words of the feature, not of the method" in writing
+    assert "Say a fact once" in writing
+
+
+def test_extractor_keeps_the_cut_of_the_previous_revision() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    kept = (
+        "When `blueprint.md` already exists, read it before you write: keep its cut and its titles"
+    )
+    assert kept in writing
+    assert (
+        "Cut it again only when the developer asked for another cut, in `interview.md`" in writing
+    )
+    assert "or when the plan no longer fits the one it has" in writing
+    assert "the cut you chose and why" in section(body, "What you return")
+
+
+def test_extractor_goes_through_the_aspects_and_names_those_the_plan_leaves_alone() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    assert f"five aspects must not be left in the dark: {', '.join(BLUEPRINT_ASPECTS)}" in writing
+    named = "one closing line that names every aspect the plan leaves alone, as the template shows"
+    assert named in writing
+    assert "There is no closing line when the plan changes all five" in writing
+    assert "the aspects its closing line names" in section(body, "What you return")
+
+
+def test_extractor_draws_a_diagram_when_prose_would_flatten_a_shape() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    rule = "Draw a mermaid diagram when what you describe has a shape that prose flattens"
+    assert f"{rule}: several things in relation, an order between several actors" in writing
+    assert "the existing elements it attaches to, marked as existing" in writing
+    assert "A diagram may say again what the prose says" in writing
+    assert "Do not draw one for a single fact, a list, or a chain with no branch" in writing
     assert "Never to fill a section" in writing
     assert "wherever one applies" not in body
+    assert "only when it shows what the prose" not in body
 
 
-def test_checker_never_counts_a_short_section_or_the_absence_of_a_diagram() -> None:
+def test_checker_never_counts_a_cut_a_short_section_or_the_absence_of_a_diagram() -> None:
     _, body = read_agent("surface-checker")
     counting = section(body, "What counts as an omission")
-    assert "A short section or the absence of a diagram is never an omission" in counting
+    assert "The cut, the titles and the order of its sections are never an omission" in counting
+    assert "neither is a short section or the absence of a diagram" in counting
     assert "only what the blueprint does not show counts" in counting
-    named = "A section the closing line names while the plan changes what it shows is one"
-    assert named in counting
-    assert "neither written nor named by the closing line" in counting
+    assert f"five aspects must not be left in the dark: {', '.join(BLUEPRINT_ASPECTS)}" in counting
+    assert "An aspect the closing line names while the plan changes it is an omission" in counting
+    assert "neither shown in the body nor named by the closing line" in counting
     # The rule shared with the reviewer's amendment check stays as it was.
     rule = marked_block(counting, "checker-rule").lower()
     assert "closing line" not in rule
     assert "diagram" not in rule
 
 
-# The critical zones: named in section 9 of the blueprint, their changed files listed at conformity.
+# The critical zones: named in the sensitive zones of the blueprint, their changed files listed at
+# conformity.
 
 
-def test_extractor_opens_section_nine_with_the_critical_zones_the_plan_touches() -> None:
+def test_extractor_opens_the_sensitive_zones_with_the_critical_zones_the_plan_touches() -> None:
     _, body = read_agent("surface-extractor")
-    nine = next(line for line in body.splitlines() if line.startswith("9. Sensitive zones"))
-    assert f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it" in nine
-    assert f"or the statement that {TOUCHES_NONE}" in nine
-    assert "then what the developer would not see go by" in nine
+    zones = next(line for line in body.splitlines() if line.startswith(f"- {BLUEPRINT_CLOSING}"))
+    assert f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it" in zones
+    assert f"or the statement that {TOUCHES_NONE}" in zones
+    assert "then what the developer would not see go by" in zones
     assert "what the developer still reads themselves once the work is conformant" in body
 
 
-def test_checker_counts_a_touched_critical_zone_missing_from_section_nine() -> None:
+def test_checker_counts_a_touched_critical_zone_missing_from_the_sensitive_zones() -> None:
     _, body = read_agent("surface-checker")
     counting = section(body, "What counts as an omission")
     assert f"names {CRITICAL_ZONES_OF_THE_PLAN}, or says that {TOUCHES_NONE}" in counting
     assert f"{UNNAMED_ZONE}, even when another section shows the change" in counting
     assert "says none while the plan touches one" in counting
     # The rule shared with the reviewer's amendment check stays as it was.
-    assert "section 9" not in marked_block(counting, "checker-rule").lower()
+    assert "sensitive zones" not in marked_block(counting, "checker-rule").lower()
 
 
 def test_reviewer_lists_the_changed_files_of_the_critical_zones_in_a_block() -> None:
