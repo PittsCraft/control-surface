@@ -12,7 +12,7 @@ What I know about this need and did not write in it.
 - A returned loan is never listed, even when it came back late.
 - When nothing is overdue, the command prints nothing and exits 0. Same when there is no loan at
   all, or no `loans.jsonl` yet.
-- The command always exits 0: there is nothing to refuse.
+- The command has no rule of its own to refuse on: asked as the need says, it always exits 0.
 - It lists the loans of every member. No filter by member, nobody asked for one.
 - It only reads: no file changes and no notice is queued.
 - `<due>` is printed like the `loans` command prints it, `YYYY-MM-DD`. `<days late>` is a whole
@@ -25,3 +25,4 @@ What I know about this need and did not write in it.
 - Function names, and whether the existing `overdue` function of `lending/loans.py` is reused.
 - How the tests are laid out.
 - The help text of the command.
+- What happens on wrong usage, an extra argument for instance: whatever the other commands do.
