@@ -1,0 +1,9 @@
+{
+  "shape": "trade-off",
+  "summary": "A member who owes more than a threshold in fines on their open loans can no longer borrow.",
+  "body_sections": {"min": 2, "max": 4},
+  "diagram": "either",
+  "critical_zones": [],
+  "critical_files": [],
+  "amendment": null
+}

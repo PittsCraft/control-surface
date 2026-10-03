@@ -20,6 +20,7 @@ Every scenario is billed and takes minutes: run them on demand, before a release
 | `blueprint-modified` | revision 1 approved, slice 1 done, then a commit of the developer that edits `blueprint.md` |
 | `developer-break` | both slices done, then a commit of the developer that adds an `isbn` column the blueprint leaves out |
 | `ceiling` | both slices done with a defect the tests do not see (lines sorted by title only), a first review that found it, then a fix that missed it, `max_autonomous_passes: 1` |
+| `done`, `defect`, `deviation` | both slices done and nothing reviewed yet: as planned, with that same defect, or with the tests of slice 1 in another file than the plan names. The evaluations review them (`evals/README.md`) |
 
 `toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
 

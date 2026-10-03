@@ -1,0 +1,9 @@
+{
+  "shape": "several-flows",
+  "summary": "Members queue for a book on loan; a returned book is held for the first of the queue, and holds not picked up expire.",
+  "body_sections": {"min": 2, "max": 5},
+  "diagram": "some",
+  "critical_zones": [],
+  "critical_files": [],
+  "amendment": "A hold lasts 5 days, not 3."
+}

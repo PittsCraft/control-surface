@@ -1,0 +1,29 @@
+[
+  {
+    "name": "padded-blueprint",
+    "what": "a blueprint padded with the need restated, a walk through the code, a diagram of a chain with no branch and the list of the tests",
+    "dimension": "blueprint",
+    "criterion": "no-padding",
+    "replaces": "blueprint",
+    "original": "blueprint-lean.md",
+    "with": "blueprint-padded.md"
+  },
+  {
+    "name": "stripped-blueprint",
+    "what": "a blueprint stripped of the two rules the interview settled, and of the ISBN left out",
+    "dimension": "blueprint",
+    "criterion": "decidable",
+    "replaces": "blueprint",
+    "original": null,
+    "with": "blueprint-stripped.md"
+  },
+  {
+    "name": "answered-question",
+    "what": "an interview with two questions the need and the code already answer",
+    "dimension": "interview",
+    "criterion": "not-already-answered",
+    "replaces": "interview",
+    "original": null,
+    "with": "interview-answered.md"
+  }
+]
