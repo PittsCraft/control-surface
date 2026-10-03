@@ -163,6 +163,39 @@ def test_extractor_cuts_the_body_by_what_the_developer_decides_separately() -> N
     assert "Say a fact once" in writing
 
 
+def test_extractor_says_a_fact_once_on_the_whole_page_and_shows_behavior_not_code() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # The criteria state the rules: the body, the scope and the sensitive zones do not tell them
+    # again, so the developer skips nothing of the page they approve.
+    said = [
+        "A fact is said once in prose on the whole page, the frame included",
+        "the body shows what no criterion states",
+        "The scope says what is left out: what is done stands in the criteria and in the body",
+        "point to the criterion or the section that holds its rule",
+    ]
+    positions = [writing.index(sentence) for sentence in said]
+    assert positions == sorted(positions)
+    assert "names a criterion instead of saying it again" in writing
+    # What must not be lost to brevity: the frame, a diagram, what stands nowhere else.
+    assert "and a diagram may draw what the prose says" in writing
+    assert "The acceptance criteria state the rules, carried whole" in writing
+    assert "and say in full only what stands nowhere else" in writing
+    always = "The statement of the critical zones and the closing line are always written"
+    assert always in writing
+    assert "shown on the page, by a criterion or in the body" in writing
+    # Behavior, not code: what is seen from outside stays, what only the code sees goes.
+    assert "It shows behavior, which the developer decides, not code" in writing
+    assert "What a user, a file or another program sees stays on the page" in writing
+    assert "which component calls which" in writing
+    assert "What only the code sees stays in the plan" in writing
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
+    form = template.read_text(encoding="utf-8")
+    assert "A fact is said once in prose on the whole page" in form
+    assert "What it does stands in the criteria and in the body" in form
+    assert "that no criterion states, as behavior and not as code" in form
+
+
 def test_extractor_keeps_the_cut_of_the_previous_revision() -> None:
     _, body = read_agent("surface-extractor")
     writing = section(body, "What you write")
@@ -208,7 +241,11 @@ def test_checker_never_counts_a_cut_a_short_section_or_the_absence_of_a_diagram(
     assert "only what the blueprint does not show counts" in counting
     assert f"five aspects must not be left in the dark: {', '.join(BLUEPRINT_ASPECTS)}" in counting
     assert "An aspect the closing line names while the plan changes it is an omission" in counting
-    assert "neither shown in the body nor named by the closing line" in counting
+    # A rule a criterion states is not told again in the body: the page shows it all the same.
+    shown = (
+        "neither shown on the page, by a criterion or in the body, nor named by the closing line"
+    )
+    assert shown in counting
     # The rule shared with the reviewer's amendment check stays as it was.
     rule = marked_block(counting, "checker-rule").lower()
     assert "closing line" not in rule
