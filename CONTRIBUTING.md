@@ -16,7 +16,7 @@ Every gate of this repository, one command, the one CI runs:
 scripts/gate.sh
 ```
 
-It runs formatting, lint, strict typing, then the tests on Python 3.11 and on the newest Python. `scripts/gate.sh e2e` runs the end to end tests on a toy project, in a Docker container: real sessions, billed, on demand only and never in CI. Their operating guide, interactive scenarios included, is `tests/e2e/README.md`.
+It runs formatting, lint, strict typing, then the tests on Python 3.11 and on the newest Python. `scripts/gate.sh e2e` runs the end to end tests on a toy project, in a Docker container: real sessions, billed, on demand only and never in CI. Their operating guide, interactive scenarios included, is `tests/e2e/README.md`. `scripts/gate.sh evals` runs the evaluations of the chain, in the same container and billed too: whether it meets its goals and what it is like to work with, after a change of the prompts. Their guide is `evals/README.md`.
 
 The conformity check in a CI shaped checkout is `tests/ci/`: part of the gates, and a job of its own in `ci.yml`.
 
@@ -24,6 +24,7 @@ The conformity check in a CI shaped checkout is `tests/ci/`: part of the gates, 
 
 - `skills/`: the skills of the chain, installed as `.claude/skills/surface-*/`. `surface-status/scripts/` holds the state script, standard library only, with no network access.
 - `install.py`: the installer and the drift check.
+- `evals/`: the evaluations on real sessions: a synthetic host, a corpus of needs, the rubric of the judge, the harness, and the reports of the campaigns kept.
 - `ARCHITECTURE.md`: the architecture as it is now, with a codemap and the invariants. Read it first.
 - `docs/adr/`: the few decisions whose history matters.
 - `docs/guide.md`: the manual for the developer who uses the chain; the README keeps to the idea.

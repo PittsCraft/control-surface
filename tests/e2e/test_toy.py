@@ -50,6 +50,9 @@ def run_to_end(project: Path, prompt: str, log: Path) -> int:
         (toy.State.BLUEPRINT_MODIFIED, "executing"),
         (toy.State.DEVELOPER_BREAK, "reviewing"),
         (toy.State.CEILING, "reviewing"),
+        (toy.State.DONE, "reviewing"),
+        (toy.State.DEFECT, "reviewing"),
+        (toy.State.DEVIATION, "reviewing"),
     ],
 )
 def test_a_prepared_state_is_the_one_named(

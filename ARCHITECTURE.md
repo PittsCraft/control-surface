@@ -41,7 +41,8 @@ host CI    --runs----> surface-status check --require conformant
   - `report.py` (list, `show`, `check`), `pr_body.py`, `settings.py`, and `cli.py` (arguments, exit codes, JSON).
 - `agents/surface-*.md`: the four roles.
 - `install.py`: install, update, `--check`, and the one-line form.
-- `tests/`: one folder per part (`state`, `journal`, `cli`, `git`, `gates`, `install`, `prompts`), `ci/`, `e2e/`, and golden files in `fixtures/`.
+- `tests/`: one folder per part (`state`, `journal`, `cli`, `git`, `gates`, `install`, `prompts`, `evals`), `ci/`, `e2e/`, and golden files in `fixtures/`.
+- `evals/`: the evaluations of the chain on real sessions. `host/`, a synthetic project the chain is installed in; `cases/`, one need per shape, each with a brief, acceptance tests the agents never see and a reference implementation; `judge/`, the rubric and the spoiled documents that check the judge; `surface_evals/`, the harness; `reports/`, the campaigns kept; `run.py`, its command line.
 - `scripts/gate.sh`: every gate. `scripts/check_commit_msg.py`: the commit message hook.
 
 ## Invariants
@@ -105,6 +106,10 @@ The loop stops at every command the developer's rules or mode do not allow, and 
 ### Tests
 
 Unit and hypothesis property tests cover each part of the script and the installer, with sockets blocked; the `ci` profile runs 500 examples. Golden journals replay to their expected states. Prompt tests hold the frontmatter, the contract the prompts carry (`tests/prompts/chain_contract.py`), host neutrality and privacy. The privacy check reads plan folders, where a path of the machine is a leak too, while the decision-link check skips them, since a plan names decisions still to come. `tests/ci/` proves the conformity check in a checkout shaped like a CI's, and the `conformity` job of `ci.yml` runs it again on a real runner. End to end tests run real sessions on a toy project, in a container, on demand only, since they are billed ([ADR 0025](docs/adr/0025-end-to-end-on-a-toy-project.md)).
+
+### Evaluations
+
+The tests say that the chain works, not that it is worth using. The evaluations of `evals/` answer that after a change of the prompts, on real sessions and with no human in them, in the container of the end to end tests, on demand and never in CI ([ADR 0036](docs/adr/0036-evaluations-on-real-sessions.md)). A run plays the developer's side on a synthetic host: it types the need of a case, has a model answer each question from a written brief, since written answers cannot meet questions that change from run to run, then read the blueprint and send back what contradicts the brief, replies with a sentence that agrees, which must approve nothing, and launches `/surface-execute`. A script measures what a script can, from the journal, the plan folder, the streams and the delivered code: the outcome, the passes, acceptance tests kept from the agents, the critical zones, the form of the blueprint; and, on the toy, whether a fault put there on purpose is found by the cross-check and classified by the review. A model judges the rest against a written rubric, the blueprint, the interview, the messages, each judgement with the passage it rests on, and is itself checked: a document spoiled in a known way must score below its original. A measure is kept as its spread over the runs, and the report says what lies outside the spread of the campaign before: there is no threshold, since what to hold is decided once the measures have been observed. A ledger stops a campaign before a ceiling, in USD at list price or in points of the subscription's weekly gauge.
 
 ### Toolchain
 

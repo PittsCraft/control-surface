@@ -8,4 +8,5 @@ __pycache__/
 .coverage
 .DS_Store
 .e2e/
+.evals/
 .claude/worktrees/

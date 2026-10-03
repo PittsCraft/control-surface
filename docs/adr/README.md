@@ -15,3 +15,4 @@ The current architecture is described in [ARCHITECTURE.md](../../ARCHITECTURE.md
 | 0033 | [A suspected break is kept in the journal until a reviewer judges it](0033-a-suspected-break-kept-in-the-journal.md) |
 | 0034 | [Gates named by the plan, run by the script](0034-gates-named-by-the-plan-run-by-the-script.md) |
 | 0035 | [The plan is drafted by Claude Code's built-in Plan agent, held to the minimum the chain reads](0035-plan-drafted-by-the-built-in-plan-agent.md) |
+| 0036 | [Evaluations on real sessions, with a model as the developer and a judge that is checked](0036-evaluations-on-real-sessions.md) |

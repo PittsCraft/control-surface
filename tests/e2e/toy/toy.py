@@ -66,6 +66,10 @@ class State(StrEnum):
     BLUEPRINT_MODIFIED = "blueprint-modified"  # approved, slice 1 done, then the blueprint edited
     DEVELOPER_BREAK = "developer-break"  # every slice done, then a commit against the schema
     CEILING = "ceiling"  # a defect, its review, a fix that missed it, a ceiling of one pass
+    # The states the evaluations review: every slice done, nothing reviewed yet.
+    DONE = "done"  # the work as planned
+    DEFECT = "defect"  # a defect the tests do not see: lines sorted by title only
+    DEVIATION = "deviation"  # the tests of slice 1 in another file than the plan names
 
 
 def plan_name() -> str:
@@ -380,7 +384,8 @@ writing to a file.
 `python3 -m shelf export <file>` loads the books of the file, sorts them by author, then by
 title, and prints the CSV on standard output: the header, then one row per book.
 
-The CSV has three columns, in this order:
+The CSV is the only data the feature adds, the shelf file and its books are read and never
+written. It has three columns, in this order:
 
 | Column | From | Form |
 |---|---|---|
@@ -395,6 +400,9 @@ flowchart LR
 ```
 
 `to_csv` is pure: a list of books in, the CSV text out. Standard library only.
+
+Lines end with `\\n`, not with the `\\r\\n` Python's `csv` module writes by default: an assumption,
+the spreadsheet reads it.
 
 ## Sensitive zones
 
@@ -720,10 +728,13 @@ def _slice(project: Path, plan: str, number: int, message: str, files: Mapping[s
     commit(project, message, [*files, f"{plan}/journal.jsonl"])
 
 
-def _slice_one(project: Path, plan: str, *, defect: bool) -> None:
+def _slice_one(project: Path, plan: str, *, defect: bool, deviation: bool = False) -> None:
+    # The deviation keeps the blueprint true, which says nothing of the tests: only the plan
+    # names their file.
+    tests = "tests/test_csv_rows.py" if deviation else "tests/test_export.py"
     files = {
         "shelf/export.py": EXPORT_DEFECT if defect else EXPORT,
-        "tests/test_export.py": TEST_EXPORT_DEFECT if defect else TEST_EXPORT,
+        tests: TEST_EXPORT_DEFECT if defect else TEST_EXPORT,
     }
     _slice(project, plan, 1, "export: write a list of books as CSV", files)
 
@@ -761,8 +772,8 @@ def build(state: State, dest: Path) -> Path:
     if state is State.AWAITING:
         return project
     _approve(project, plan)
-    defect = state is State.CEILING
-    _slice_one(project, plan, defect=defect)
+    defect = state in {State.CEILING, State.DEFECT}
+    _slice_one(project, plan, defect=defect, deviation=state is State.DEVIATION)
     if state is State.BLUEPRINT_MODIFIED:
         write(project, {f"{plan}/blueprint.md": BLUEPRINT_EDITED})
         commit(project, "blueprint: export the isbn too", [f"{plan}/blueprint.md"])

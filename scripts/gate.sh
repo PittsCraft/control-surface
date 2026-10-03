@@ -4,7 +4,11 @@
 #   scripts/gate.sh e2e    the end to end tests: billed, on demand only, never in CI, and
 #                          in a container that bypasses permissions (ADR 0025); the arguments
 #                          after `e2e` go to pytest, like `-k nominal`
+#   scripts/gate.sh evals  the evaluations of the chain: billed too, in the same container
+#                          (ADR 0036); the arguments after `evals` go to evals/run.py, like
+#                          `corpus --case 01-overdue-list`
 # E2E_OUT chooses the host folder of the end to end logs, `.e2e` by default.
+# EVALS_OUT chooses the folder a campaign of evaluations is kept in, `.evals` by default.
 # GATE_NEWEST_PYTHON overrides the interpreter of the second test run.
 # GATE_ONLY_PYTHON=3.11|newest runs the static checks and that one test run only (CI, one job each).
 set -euo pipefail
@@ -38,6 +42,32 @@ if [ "${1:-}" = "e2e" ]; then
     --volume "$PWD:/clone:ro" --volume "$out:/out" \
     control-surface-e2e \
     pytest -o addopts= -ra -p no:cacheprovider --basetemp /out/basetemp tests/e2e "$@"
+  exit 0
+fi
+
+if [ "${1:-}" = "evals" ]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "gate: the evaluations run in a container and need docker (ADR 0036)" >&2
+    exit 1
+  fi
+  if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+    echo "gate: neither CLAUDE_CODE_OAUTH_TOKEN (from claude setup-token) nor ANTHROPIC_API_KEY" \
+      "is set: no session can start" >&2
+    exit 1
+  fi
+  shift
+  out="${EVALS_OUT:-.evals}"
+  mkdir -p "$out"
+  out="$(cd "$out" && pwd)"
+  step "evals image"
+  docker build --quiet --build-arg UID="$(id -u)" --tag control-surface-e2e \
+    --file tests/e2e/Dockerfile tests/e2e
+  step "evals (billed: real sessions, in the container; the campaign is kept in $out)"
+  docker run --rm --init \
+    --env CLAUDE_CODE_OAUTH_TOKEN --env ANTHROPIC_API_KEY \
+    --volume "$PWD:/clone:ro" --volume "$out:/out" \
+    control-surface-e2e \
+    python3 evals/run.py --out /out "$@"
   exit 0
 fi
 
