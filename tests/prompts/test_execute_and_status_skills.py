@@ -16,6 +16,7 @@ import pytest
 from chain_contract import (
     CONFORMANT_EXCEPTION,
     CONFORMANT_HAND_BACK,
+    CONFORMANT_WITHOUT_PULL_REQUEST,
     CORRECTIONS_CEILING,
     DOCUMENTS_LANGUAGE,
     EXECUTE,
@@ -486,6 +487,18 @@ def test_conformant_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_deve
     body = _execute()
     conformity = section(body, "Conformity")
     assert f"hand back in one line: {CONFORMANT_HAND_BACK}" in conformity
+    without, fitting, absurd = _positions(
+        conformity,
+        [
+            "When the refresh reached no pull request, for want of one, of `gh` or of a remote",
+            f"that line names the step that fits instead: {CONFORMANT_WITHOUT_PULL_REQUEST}",
+            "Nobody marks ready, or refreshes, a pull request that does not exist",
+        ],
+    )
+    assert conformity.index(CONFORMANT_HAND_BACK) < without < fitting < absurd
+    # The refresh tells whether a pull request can be reached: it comes before the line.
+    assert "its push and its refresh first, then hand back in one line" in conformity
+    assert "or opens it first when the refresh reached none" in section(body, "When the loop stops")
     assert "one it cannot prove is a finding" in conformity
     assert "nothing asks the developer to read it" in conformity
     stopping = section(body, "When the loop stops")

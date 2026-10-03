@@ -58,7 +58,7 @@ The loop hands back in three cases, tells you in the terminal, and in the first 
 |---|---|---|
 | A contract break: the blueprint would have to change to stay true | a plan change proposal, in `plan-changes/`, presented at the level of the blueprint | Decline it with a reason in one line: the loop goes on, the agents bring the code back to the blueprint and do not raise the same break again. Accept it, then run `/surface-plan`, which draws the new revision for you to approve with `/surface-execute`. |
 | The ceiling of autonomous passes, three by default | a summary of what does not converge | Answer that it resumes: the loop goes on in the session with a fresh count. Or amend the plan with `/surface-plan <amendment>`. |
-| The conformant state | one line that says so, and an updated PR description | Mark the PR ready when you want: step 5. |
+| The conformant state | one line that says so, and an updated PR description | Mark the PR ready when you want: step 5. When the chain could open no PR, without `gh` or a remote, that line tells you to open it, and how to print its description. |
 
 ### 5. Mark the PR ready, then merge
 
