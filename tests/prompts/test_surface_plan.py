@@ -370,6 +370,13 @@ def test_the_command_writes_the_plan_as_returned_and_checks_only_the_minimum() -
     assert positions == sorted(positions)
     assert "since it has no write tool" in plan
     assert "its design and its form are the agent's, and you rework neither" in plan
+    # What the script or the repository's checks could not read is repaired, and never told.
+    assert "Two repairs are not a rework, and are not reported to the developer" in plan
+    assert "when the markers arrived escaped, `&lt;!--` for `<!--`, the whole return did" in plan
+    assert "every entity is written as its character, once" in plan
+    assert "a path of the machine becomes its path from the root of the repository" in plan
+    assert "or a neutral form such as `/path/to/...` when it lies outside it" in plan
+    assert "every path is written from the root of the repository" in _template("plan.md")
     for held in (
         "The acceptance criteria, numbered, those of the specs and the interview",
         "Each slice behind its `<!-- slice:N -->` marker, alone on its line",
