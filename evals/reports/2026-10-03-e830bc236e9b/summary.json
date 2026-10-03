@@ -1,0 +1,1033 @@
+{
+  "v": 1,
+  "at": "2026-10-03T21:09:36Z",
+  "chain": "e830bc236e9b",
+  "cases": {
+    "01-overdue-list": {
+      "shape": "one-behavior",
+      "runs": 3,
+      "outcomes": [
+        "conformant",
+        "conformant",
+        "conformant"
+      ],
+      "measures": {
+        "acceptance": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "acceptance_all": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "approvals": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "body_in_range": {
+          "mean": 0.6667,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "body_sections": {
+          "mean": 1.3333,
+          "low": 1.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "checks": {
+          "mean": 2.0,
+          "low": 1.0,
+          "high": 3.0,
+          "n": 3
+        },
+        "conformant": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "corrections": {
+          "mean": 1.0,
+          "low": 0.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "criteria": {
+          "mean": 8.0,
+          "low": 6.0,
+          "high": 10.0,
+          "n": 3
+        },
+        "cut_kept": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagram_as_expected": {
+          "mean": 0.6667,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "diagrams": {
+          "mean": 0.3333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "findings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "fixes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "gate": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "gate_runs_failed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "killed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "plan_drafts": {
+          "mean": 2.0,
+          "low": 1.0,
+          "high": 3.0,
+          "n": 3
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "questions": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "relaunches": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "reviews": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "usd": {
+          "mean": 2.3444,
+          "low": 1.4078,
+          "high": 3.6023,
+          "n": 3
+        },
+        "words": {
+          "mean": 984.3333,
+          "low": 669.0,
+          "high": 1545.0,
+          "n": 3
+        },
+        "zones_consistent": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "zones_files_listed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "zones_none_said": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 3.6667,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 3
+        },
+        "blueprint.decidable": {
+          "mean": 4.3333,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "blueprint.diagrams": {
+          "mean": 4.6667,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "blueprint.no-padding": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "following.no-noise": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "following.whose-turn": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 3
+        },
+        "following.why-stopped": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "interview.no-invented-rule": {
+          "mean": 4.0,
+          "low": 3.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "interview.not-already-answered": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "interview.questions-matter": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "interview.right-number": {
+          "mean": 3.3333,
+          "low": 2.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "messages.clear": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "messages.next-step": {
+          "mean": 3.3333,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 3
+        },
+        "messages.right-length": {
+          "mean": 3.3333,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 3
+        }
+      }
+    },
+    "03-overdue-reminders": {
+      "shape": "across-components",
+      "runs": 3,
+      "outcomes": [
+        "conformant",
+        "conformant",
+        "conformant"
+      ],
+      "measures": {
+        "acceptance": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "acceptance_all": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "approvals": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "body_in_range": {
+          "mean": 0.3333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "body_sections": {
+          "mean": 1.6667,
+          "low": 1.0,
+          "high": 3.0,
+          "n": 3
+        },
+        "checks": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "conformant": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "corrections": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "criteria": {
+          "mean": 10.0,
+          "low": 9.0,
+          "high": 12.0,
+          "n": 3
+        },
+        "cut_kept": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "diagram_as_expected": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "diagrams": {
+          "mean": 1.6667,
+          "low": 1.0,
+          "high": 3.0,
+          "n": 3
+        },
+        "findings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "fixes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "gate": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "gate_runs_failed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "killed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "plan_drafts": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "questions": {
+          "mean": 0.3333,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "relaunches": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 3
+        },
+        "reviews": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "usd": {
+          "mean": 2.8408,
+          "low": 2.6525,
+          "high": 3.1135,
+          "n": 3
+        },
+        "words": {
+          "mean": 1309.6667,
+          "low": 1235.0,
+          "high": 1425.0,
+          "n": 3
+        },
+        "zones_consistent": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "zones_files_listed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "zones_none_said": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 3
+        },
+        "blueprint.decidable": {
+          "mean": 4.6667,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "blueprint.diagrams": {
+          "mean": 3.6667,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 3
+        },
+        "blueprint.no-padding": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "following.no-noise": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "following.whose-turn": {
+          "mean": 4.3333,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "following.why-stopped": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 3
+        },
+        "interview.no-invented-rule": {
+          "mean": 3.0,
+          "low": 2.0,
+          "high": 4.0,
+          "n": 3
+        },
+        "interview.not-already-answered": {
+          "mean": 4.6667,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 3
+        },
+        "interview.questions-matter": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 3
+        },
+        "interview.right-number": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 3
+        },
+        "messages.clear": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 3
+        },
+        "messages.next-step": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 3
+        },
+        "messages.right-length": {
+          "mean": 3.6667,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 3
+        }
+      }
+    }
+  },
+  "all": {
+    "runs": 6,
+    "measures": {
+      "acceptance": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "acceptance_all": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "approvals": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "approved_by_sentence": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "body_in_range": {
+        "mean": 0.5,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "body_sections": {
+        "mean": 1.5,
+        "low": 1.0,
+        "high": 3.0,
+        "n": 6
+      },
+      "checks": {
+        "mean": 2.0,
+        "low": 1.0,
+        "high": 3.0,
+        "n": 6
+      },
+      "conformant": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "contaminated": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "corrections": {
+        "mean": 1.0,
+        "low": 0.0,
+        "high": 2.0,
+        "n": 6
+      },
+      "criteria": {
+        "mean": 9.0,
+        "low": 6.0,
+        "high": 12.0,
+        "n": 6
+      },
+      "cut_kept": {
+        "mean": 0.8,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 5
+      },
+      "diagram_as_expected": {
+        "mean": 0.8333,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "diagrams": {
+        "mean": 1.0,
+        "low": 0.0,
+        "high": 3.0,
+        "n": 6
+      },
+      "findings": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "fixes": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "frame": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "gate": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "gate_runs_failed": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "handed_over": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "killed": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "numbered_headings": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "omissions": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "plan_drafts": {
+        "mean": 2.0,
+        "low": 1.0,
+        "high": 3.0,
+        "n": 6
+      },
+      "plan_minimum": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "planning_passes": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "questions": {
+        "mean": 0.6667,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "relaunches": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 6
+      },
+      "reviews": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "usd": {
+        "mean": 2.5926,
+        "low": 1.4078,
+        "high": 3.6023,
+        "n": 6
+      },
+      "words": {
+        "mean": 1147.0,
+        "low": 669.0,
+        "high": 1545.0,
+        "n": 6
+      },
+      "zones_consistent": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "zones_files_listed": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "zones_none_said": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      }
+    },
+    "judge": {
+      "blueprint.cut": {
+        "mean": 3.8333,
+        "low": 3.0,
+        "high": 4.0,
+        "n": 6
+      },
+      "blueprint.decidable": {
+        "mean": 4.5,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "blueprint.diagrams": {
+        "mean": 4.1667,
+        "low": 3.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "blueprint.no-padding": {
+        "mean": 2.0,
+        "low": 2.0,
+        "high": 2.0,
+        "n": 6
+      },
+      "following.no-noise": {
+        "mean": 2.0,
+        "low": 2.0,
+        "high": 2.0,
+        "n": 6
+      },
+      "following.whose-turn": {
+        "mean": 4.1667,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "following.why-stopped": {
+        "mean": 5.0,
+        "low": 5.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "grounded": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 6
+      },
+      "interview.no-invented-rule": {
+        "mean": 3.5,
+        "low": 2.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "interview.not-already-answered": {
+        "mean": 4.8333,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "interview.questions-matter": {
+        "mean": 4.0,
+        "low": 3.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "interview.right-number": {
+        "mean": 2.6667,
+        "low": 2.0,
+        "high": 5.0,
+        "n": 6
+      },
+      "messages.clear": {
+        "mean": 2.5,
+        "low": 2.0,
+        "high": 3.0,
+        "n": 6
+      },
+      "messages.next-step": {
+        "mean": 3.6667,
+        "low": 3.0,
+        "high": 4.0,
+        "n": 6
+      },
+      "messages.right-length": {
+        "mean": 3.5,
+        "low": 3.0,
+        "high": 4.0,
+        "n": 6
+      }
+    }
+  },
+  "remarks": {
+    "blueprint.cut": {
+      "case": "01-overdue-list",
+      "score": 3,
+      "reason": "The body follows a generic template, and its one feature section, \"The overdue list\", restates the acceptance criteria. That section also mixes the visible ordering rule with an architecture choice, so the cut is not by what the developer decides.",
+      "passage": "## The overdue list",
+      "grounded": true
+    },
+    "blueprint.decidable": {
+      "case": "01-overdue-list",
+      "score": 4,
+      "reason": "Every interview answer is carried: the text tie-break, always exit 0, and empty or missing file. The one gap is that the days-late figure is defined only as whatever `fines.days_late` returns, so the developer must open `fines.py` to know the number printed for a loan due yesterday.",
+      "passage": "The number of days late on each line is the one the fine computation already uses (`fines.days_late`). Nothing new is computed about lateness.",
+      "grounded": true
+    },
+    "blueprint.diagrams": {
+      "case": "03-overdue-reminders",
+      "score": 3,
+      "reason": "The interval flowchart earns its place because the path branches. The sequence diagram is mostly a linear chain of internal reads and calls with one loop, and prose already states that order, so the diagram shows module plumbing rather than a shape the developer needs.",
+      "passage": "R->>L: load_loans L->>S: read loans.jsonl R->>N: load_notices (new) N->>S: read outbox.jsonl",
+      "grounded": true
+    },
+    "blueprint.no-padding": {
+      "case": "01-overdue-list",
+      "score": 2,
+      "reason": "Several facts are said more than once: `B10` before `B2` appears three times, the missing-file case is in criterion 5 and again in the body, and the member-id assumption is in the body and again in sensitive zones. A paragraph is also spent on which module holds the sort, an implementation detail that is not the developer's to decide.",
+      "passage": "By approving this, you accept that the sort lives in the command itself, in `lending/__main__.py`, not in the domain.",
+      "grounded": true
+    },
+    "following.no-noise": {
+      "case": "01-overdue-list",
+      "score": 2,
+      "reason": "Several facts recur across stops: the rule that only `/surface-execute` approves appears at stops 2, 3 and 4, the unchanged gate command at stops 2, 3 and 5, and the missing `gh` at stops 2 and 5. Steps of the chain are also narrated for their own sake, such as the redrawn blueprint, the cross-check, and the reviewer writing `conformity.md`.",
+      "passage": "The blueprint was redrawn and the cross-check found no omissions.",
+      "grounded": true
+    },
+    "following.whose-turn": {
+      "case": "01-overdue-list",
+      "score": 4,
+      "reason": "Every stop makes the developer's turn and expected action clear: answer Q1, amend or launch `/surface-execute`, or say whether the exit-2 reading is wrong. The one lapse is at the last stop, which says nothing is left for the developer yet tells them to mark a pull request ready to trigger 'your CI', when no pull request exists and an earlier stop said no CI is configured.",
+      "passage": "Mark it ready when you want, which triggers your CI.",
+      "grounded": true
+    },
+    "following.why-stopped": {
+      "case": "01-overdue-list",
+      "score": 5,
+      "reason": "Each stop names its reason: an open question, a drafted plan handed over for approval, an amended plan with one decision for the developer, a refusal to treat 'Looks fine' as approval, and finished work. No stop ends without saying why.",
+      "passage": "\"Looks fine\" doesn't approve the plan. Only launching `/surface-execute` does, so I'm recording nothing and starting no work.",
+      "grounded": true
+    },
+    "interview.no-invented-rule": {
+      "case": "03-overdue-reminders",
+      "score": 2,
+      "reason": "Several visible rules were decided without the developer and stated as settled, not as assumptions to confirm: the exact text of the notice members receive, skipping members whose reminder is dated after today, and reminding loans whose member is unknown. None comes from the need, an answer or the code.",
+      "passage": "The wording of the notice is fixed by the plan, since the specs leave it open: `Overdue books: B1, B3. Fine owed as of 2026-03-20: 1.75.`",
+      "grounded": true
+    },
+    "interview.not-already-answered": {
+      "case": "03-overdue-reminders",
+      "score": 4,
+      "reason": "The code largely settles the order already: `load_loans` and `overdue` return loans in file order, and the README says `loans` prints \"in the order of the file\". The question even cites that precedent in its recommendation. Only grouping by member was left open.",
+      "passage": "Recommended: A, it matches the precedent of `loans` (\"in the order of the file\") and needs no sort rule.",
+      "grounded": true
+    },
+    "interview.questions-matter": {
+      "case": "03-overdue-reminders",
+      "score": 3,
+      "reason": "No question was asked, so no question was wasted. But the only questions that would have changed the build, such as the reminder frequency and whether the mailer accepts a new notice kind, were never put to the developer.",
+      "passage": "None. The specs and the code settle every rule a user of the command, or the mailer, would see applied:",
+      "grounded": true
+    },
+    "interview.right-number": {
+      "case": "01-overdue-list",
+      "score": 2,
+      "reason": "The interview asked only about tie order. It asked nothing about extra arguments or about a missing or empty `loans.jsonl`. The plan guessed both, including an exit code of 2 for `overdue M1`, and the developer had to correct them in two amendments.",
+      "passage": "Don't make an extra argument such as `overdue M1` exit with code 2; criterion 6 and the edge-case paragraph say otherwise.",
+      "grounded": true
+    },
+    "messages.clear": {
+      "case": "01-overdue-list",
+      "score": 2,
+      "reason": "Several messages use the chain's internal vocabulary that the developer was never given, such as \"no cut\", \"Gate the loop will run\", \"cross-check found no omissions\", \"Slice 1\", \"critical-zone files\", and \"defects, deviations and breaks\". The final message is the heaviest offender: it reports the result almost entirely in pipeline terms.",
+      "passage": "**Review:** the reviewer found 0 defects, 0 deviations and 0 breaks (`reviews/pass-01.md`). It wrote `conformity.md`, and it lists no critical-zone files because the branch changed neither `lending/fines.py` nor `lending/loans.py`.",
+      "grounded": true
+    },
+    "messages.next-step": {
+      "case": "01-overdue-list",
+      "score": 3,
+      "reason": "Stop 1 ends on what the agent will do rather than on the developer answering Q1. Stop 5 ends on a status line, after a muddled step: running `pr-body` only prints text, and \"mark it ready\" refers to a pull request nobody has opened, since `gh` is missing.",
+      "passage": "To open the pull request, run `.claude/skills/surface-status/scripts/surface-status pr-body`, which prints the description. Mark it ready when you want, which triggers your CI.",
+      "grounded": true
+    },
+    "messages.right-length": {
+      "case": "01-overdue-list",
+      "score": 3,
+      "reason": "Stop 4 leaves out something the developer needs: it sends them to run an internal script for the pull request description instead of giving the text, as Stop 2 did. Stop 2 also spends lines on internals the developer won't act on, such as the circular-import placement and the blueprint cut.",
+      "passage": "If no pull request is open yet, open one with the description from `.claude/skills/surface-status/scripts/surface-status pr-body`.",
+      "grounded": true
+    }
+  },
+  "probes": [],
+  "judge_check": null,
+  "spent": {
+    "usd": 17.0652,
+    "points": 5.0,
+    "sessions": 67
+  },
+  "against": {
+    "chain": "6bf7c06609a6",
+    "at": "2026-10-03T17:35:40Z"
+  }
+}
