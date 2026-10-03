@@ -20,11 +20,14 @@ from chain_contract import (
     FORMER_LANGUAGE_RULE,
     LANGUAGE_SOURCES,
     PLAN,
+    PLAN_AGENT,
+    PLAN_MINIMUM,
     PLANNING_EVENTS,
     SEEN_BY,
 )
 from prompt_support import (
     AGENTS,
+    BUILT_IN_ROLES,
     ROLES,
     SKILLS,
     call_arguments,
@@ -243,6 +246,7 @@ def test_first_launch_follows_the_planning_sequence() -> None:
         # The step that creates it: the branch step names it earlier, for a question it holds.
         "in `interview.md` from",
         "interview-closed",
+        "`Plan` agent",
         "`plan.md`",
         "`surface-extractor`",
         "`surface-checker`",
@@ -319,9 +323,10 @@ def test_questions_come_one_at_a_time_with_options_and_a_recommendation() -> Non
     assert "Never invent a business rule to fill a gap" in asking
 
 
-def test_extraction_and_cross_check_go_to_fresh_agents_on_the_models_of_the_settings() -> None:
+def test_every_planning_step_goes_to_a_fresh_agent_on_the_models_of_the_settings() -> None:
     agents = section(_body(), "The agents")
-    assert "A fresh agent for each extraction and each cross-check" in agents
+    fresh = "A fresh agent for each draft of the plan, each extraction and each cross-check"
+    assert fresh in agents
     assert "`model` its value in `settings.models`" in agents
     assert "file paths only, never the conversation" in agents
     for role in ("surface-extractor", "surface-checker"):
@@ -329,6 +334,73 @@ def test_extraction_and_cross_check_go_to_fresh_agents_on_the_models_of_the_sett
         assert (AGENTS / f"{role}.md").is_file()
         assert f"`{ROLES[role]}`" in agents
         assert hasattr(Models(), ROLES[role])
+
+
+# The plan: drafted by the agent built into Claude Code, held to the minimum the chain reads.
+
+
+def test_the_plan_is_drafted_by_the_built_in_agent_on_the_model_of_the_settings() -> None:
+    agents = section(_body(), "The agents")
+    given = next(line for line in agents.splitlines() if line.startswith(f"- `{PLAN_AGENT}`"))
+    assert "the agent built into Claude Code, which the chain neither installs nor defines" in given
+    assert "`${CLAUDE_SKILL_DIR}/templates/plan.md`" in given
+    assert "that file is its whole mandate" in given
+    assert f"`{BUILT_IN_ROLES[PLAN_AGENT]}`" in agents
+    assert hasattr(Models(), BUILT_IN_ROLES[PLAN_AGENT])
+    opening = _body().split("\n## ", 1)[0]
+    assert "The plan is drafted by a fresh `Plan` agent, and you write it as returned" in opening
+
+
+def _plan_step() -> str:
+    steps = section(_body(), "First launch, with specs")
+    return steps[steps.index("6. Plan.") : steps.index("7. Extraction.")]
+
+
+def test_the_command_writes_the_plan_as_returned_and_checks_only_the_minimum() -> None:
+    plan = _plan_step()
+    positions = _positions(
+        plan,
+        [
+            "Launch a fresh `Plan` agent",
+            "Write that return to `plan.md` as it is",
+            "Then check the minimum the chain reads, below, and nothing else",
+            "launch a fresh agent once more; then tell the developer and stop",
+        ],
+    )
+    assert positions == sorted(positions)
+    assert "since it has no write tool" in plan
+    assert "its design and its form are the agent's, and you rework neither" in plan
+    for held in (
+        "The acceptance criteria, numbered, those of the specs and the interview",
+        "Each slice behind its `<!-- slice:N -->` marker, alone on its line",
+        "enough for an agent that starts fresh",
+        "A slice number the journal has seen is never reused",
+        "The `gates` block, which holds the gates you found and no other",
+        "The documents' language, and no code beyond a signature or a schema fragment",
+        "the slices already done kept under their numbers",
+    ):
+        assert held in plan, held
+
+
+def test_the_gates_are_the_commands_and_never_the_agents_choice() -> None:
+    gates = section(_body(), "The gates")
+    assert "write them in `exploration.md` as the gates of the plan" in gates
+    assert "You name the gates, the agent that drafts the plan does not choose them" in gates
+    assert "you correct it when the agent wrote others" in gates
+    assert "the agent does not choose them" in section(_template("plan.md"), "Gates")
+    rules = section(_template("exploration.md"), "Repository rules")
+    assert "Then the gates of the plan: the commands its `gates` block will hold" in rules
+
+
+def test_the_exploration_stops_at_what_the_interview_needs() -> None:
+    steps = section(_body(), "First launch, with specs")
+    exploration = next(line for line in steps.splitlines() if line.startswith("4. Exploration."))
+    assert "as far as the interview needs" in exploration
+    assert "so that no question is asked that the code answers" in exploration
+    assert "is left to the agent that drafts the plan" in exploration
+    touched = section(_template("exploration.md"), "What the feature touches")
+    assert "As far as the interview needs" in touched
+    assert "is read by the agent that drafts the plan" in touched
 
 
 def test_planning_stops_at_the_ceiling_and_asks_in_the_conversation() -> None:
@@ -650,28 +722,50 @@ def test_the_cited_templates_exist() -> None:
         assert (SKILLS / SKILL / path).is_file(), path
 
 
-def test_the_plan_template_has_the_sections_of_the_specs_and_readable_markers() -> None:
+def test_the_plan_template_holds_the_minimum_the_chain_reads_and_readable_markers() -> None:
     template = _template("plan.md")
-    assert _headings(template) == [
-        "1. Goal and scope",
-        "2. Architecture decisions",
-        "3. Slices",
-        "4. Tests",
-        "5. Definition of Done",
-        "6. Risks and assumptions",
-        "7. Gates",
-    ]
+    headings = _headings(template)
+    assert headings == list(PLAN_MINIMUM)
+    for heading in headings:
+        assert not heading[0].isdigit(), heading
     assert parse_slice_markers(template) == (1,)
     assert parse_gates(template) == ("<command>",)
+    criteria = section(template, "Acceptance criteria")
+    assert "Numbered, taken from the specs and the interview" in criteria
+    assert "cite them by number" in criteria
+    slices = section(template, "Slices")
+    fresh = "enough for an agent that starts fresh, which reads files and never a conversation"
+    assert fresh in slices
+    assert "A slice number is never reused" in slices
 
 
-def test_no_section_of_the_plan_is_filled_for_its_own_sake() -> None:
-    steps = section(_body(), "First launch, with specs")
-    plan = next(line for line in steps.splitlines() if line.startswith("6. Plan."))
-    assert "Each section as long as the feature needs, one screen at most" in plan
-    assert "none filled for its own sake" in plan
+def test_the_plan_template_leaves_the_rest_to_the_agent_that_drafts_it() -> None:
     opening = _template("plan.md").split("\n## ", 1)[0]
-    assert "Each section says what the feature needs and no more" in opening
+    assert "The agent that drafts the plan designs it and lays it out as it sees fit" in opening
+    assert "each as long as the feature needs, none filled for its own sake" in opening
+    assert "The chain reads three things only" in opening
+    assert "No code beyond a signature or a schema fragment" in opening
+    assert "it returns the plan whole as its answer, and nothing around it" in opening
+    assert "the command that launched it writes `plan.md`" in opening
+
+
+def test_the_plan_template_keeps_the_slices_already_done_across_revisions() -> None:
+    opening = _template("plan.md").split("\n## ", 1)[0]
+    assert "When `plan.md` already exists, the agent drafts its next revision" in opening
+    assert "every amendment and every accepted plan change of `interview.md`" in opening
+    built = "A slice that a `slice-done` line of `journal.jsonl` records is built"
+    assert f"{built}: it stays, under its number" in opening
+
+
+@pytest.mark.parametrize(
+    "path",
+    [*prompt_files(), *sorted(TEMPLATES.glob("*.md"))],
+    ids=lambda path: path.relative_to(SKILLS.parent).as_posix(),
+)
+def test_no_prompt_names_a_section_of_a_document_by_a_number(path: Path) -> None:
+    # A plan and a blueprint are laid out for the feature: a number would point elsewhere in the
+    # next one.
+    assert re.search(r"\bsections? [0-9]", path.read_text(encoding="utf-8"), re.IGNORECASE) is None
 
 
 def test_the_interview_template_holds_every_heading_the_skill_writes_under() -> None:

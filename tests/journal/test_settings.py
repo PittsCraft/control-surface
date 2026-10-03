@@ -28,7 +28,7 @@ def test_the_defaults_are_those_of_specs_section_11() -> None:
     assert settings.plans_dir == "docs/plans"
     assert settings.max_autonomous_passes == 3
     assert settings.models == Models(
-        extractor="opus", checker="opus", executor="sonnet", reviewer="opus"
+        planner="opus", extractor="opus", checker="opus", executor="sonnet", reviewer="opus"
     )
 
 
@@ -57,6 +57,7 @@ def test_the_other_models_keep_their_default_when_one_is_set() -> None:
 def test_the_effective_settings_print_in_the_shape_of_the_file() -> None:
     effective = Settings().to_dict()
     assert effective["models"] == {
+        "planner": "opus",
         "extractor": "opus",
         "checker": "opus",
         "executor": "sonnet",

@@ -107,6 +107,7 @@ def test_show_prints_the_effective_settings(project: Project) -> None:
     assert settings["plans_dir"] == "docs/plans"
     assert settings["max_autonomous_passes"] == 3
     assert settings["models"] == {
+        "planner": "opus",
         "extractor": "opus",
         "checker": "opus",
         "executor": "sonnet",

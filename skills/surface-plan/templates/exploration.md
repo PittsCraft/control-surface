@@ -7,7 +7,7 @@ What the exploration of the repository established, so that a relaunched session
 - Domain: the business concepts the feature touches, in the words of the repository's domain document.
 - Architecture: the style, the boundaries that must hold, and what enforces them.
 - Generated artifacts: what is derived from a source of truth and never edited by hand.
-- Gates: every check a change must pass, in the order they run, the command of each and where it was found, and the command that runs them all if there is one.
+- Gates: every check a change must pass, in the order they run, the command of each and where it was found, and the command that runs them all if there is one. Then the gates of the plan: the commands its `gates` block will hold, in their order, or that none was found and the interview asks.
 - Conventions: branches, commits, pull requests, reviews.
 - Decisions: where they are recorded, and in what form.
 - CI: what triggers it (a push, a pull request opened, marked ready for review, a merge).
@@ -17,10 +17,10 @@ If the repository states none of this, say so, and the minimum the plan will hol
 
 ## What the feature touches
 
+As far as the interview needs, so that no question is asked that the code answers. The path through the code, layer by layer, is read by the agent that drafts the plan, and is told there.
+
 - The domain objects it extends, and the precedent to copy: the last thing added the same way, or "none".
-- Every layer on the path, from the outermost interface down to persistence.
-- What the change forces to regenerate.
-- The tests around the precedent, whose shape the plan reuses.
+- What the code already settles of the need, and what it leaves open.
 
 ## Project declarations
 

@@ -23,6 +23,7 @@
     "plans_dir": "docs/plans",
     "max_autonomous_passes": 3,
     "models": {
+      "planner": "opus",
       "extractor": "opus",
       "checker": "opus",
       "executor": "sonnet",
