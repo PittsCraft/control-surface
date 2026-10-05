@@ -1,7 +1,8 @@
 """Does the chain meet its goals: measured from what a run left, by a script alone.
 
-Every measure is read from files: the journal, the plan folder, the streams of the sessions and
-the delivered code. A measure that does not apply to a run is None, and stays out of the means:
+Every measure is read from files: the journal, the plan folder, the streams of the sessions, the
+delivered code, and what the stand-in `gh` of the container kept of the pull request. A measure
+that does not apply to a run is None, and stays out of the means:
 the proof of conformity of a plan that never got there, the cut kept by a revision that was never
 asked for, and everything the execution gives when the run stopped at the hand over.
 """
@@ -11,9 +12,11 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
 
+import gh_stand_in
+
 from surface_evals import blueprint as form
 from surface_evals.corpus import Case, Diagram
-from surface_evals.runner import GATE, RECORD, stops_at_hand_over
+from surface_evals.runner import AWAITING, GATE, HANDED_BACK, OVER, RECORD, stops_at_hand_over
 from surface_evals.sessions import SessionLog, named_in_tool_calls, read_log
 from surface_status.plan_folder import PlanFolderError, parse_critical_files, parse_gates
 from surface_status.plan_folder import parse_slice_markers as parse_slices
@@ -26,6 +29,9 @@ HIDDEN = ("/clone/", "evals/cases")
 PLAN_AGENT = "Plan"
 # The stops that launch the loop: what their sessions cost is the cost of the execution.
 LAUNCHES = frozenset({"approval", "relaunch"})
+# The states a stop of the chain leaves the plan to the developer in: it pushed, and so
+# refreshed the description of the pull request.
+DEVELOPERS_TURN = frozenset({AWAITING}) | HANDED_BACK | OVER
 # What the execution gives, or adds to. A run that stops at the hand over holds none of it,
 # whatever its outcome, and each is None for it: a 0 or a False would read as a run that failed
 # to conform, and would join the spread of the runs played whole.
@@ -45,6 +51,12 @@ EXECUTION = (
     "critical_files",
     "zones_files_listed",
     "zones_consistent",
+    # The description at the stops of the loop, which such a run has none of.
+    "pr_refreshed",
+    # Never marked ready is a promise to the end of the chain, and the hand back at conformity,
+    # where a chain would break it, is never reached: a False would claim what was not played.
+    # What planning alone says of it is in `pr_draft_at_hand_over`.
+    "pr_marked_ready",
 )
 
 Measures = dict[str, float | bool | str | list[str] | None]
@@ -94,6 +106,51 @@ def _loop(journal: list[dict[str, object]], record: dict[str, object]) -> Measur
             1 for line in by_event.get("gates-run", []) if line.get("result") != "pass"
         ),
         "hand_back": str(blocked[-1].get("why")) if blocked else None,
+    }
+
+
+def _pull(stop: dict[str, object]) -> dict[str, bool] | None:
+    return cast("dict[str, bool] | None", stop["pull"])
+
+
+def _described(stops: Sequence[dict[str, object]]) -> bool | None:
+    """Say whether each of these stops that found a pull request left its description current."""
+    held = [pull for stop in stops if (pull := _pull(stop)) is not None]
+    return None if not held else all(pull["described"] for pull in held)
+
+
+def _pull_request(project: Path, record: dict[str, object]) -> Measures:
+    """Whether the pull request steps were played, from what the stand-in `gh` kept and recorded.
+
+    Planning opens a draft at the first `plan-drafted`, with the description the state script
+    prints, each stop of the loop refreshes that description, and nothing ever marks the pull
+    request ready. The description is read where the prompts push and refresh it: at a stop that
+    leaves the plan to the developer. A session that ends on a question while it drafts a
+    revision has pushed nothing yet, and one killed at the timeout, which `killed` counts,
+    reached no stop of the chain. A run played before the stops kept the pull request, in an
+    image with no `gh`, has none of these measures.
+    """
+    kept = [stop for stop in cast("list[dict[str, object]]", record["stops"]) if "pull" in stop]
+    if not kept:
+        return {}
+    stops = [stop for stop in kept if stop["ended"] and stop["state"] in DEVELOPERS_TURN]
+    planning = [stop for stop in stops if stop["kind"] not in LAUNCHES]
+    # The hand overs: where planning leaves a revision to the developer's approval.
+    handed = [_pull(stop) for stop in planning if stop["state"] == AWAITING]
+    calls = gh_stand_in.calls(project)
+    return {
+        # Opened at the first `plan-drafted`, and a draft still at every hand over after it.
+        "pr_draft_at_hand_over": (
+            None if not handed else all(pull is not None and pull["draft"] for pull in handed)
+        ),
+        # What planning gives: the description the state script prints, at its own stops.
+        "pr_described": _described(planning),
+        # What the execution gives: that description again, at the stops of the loop.
+        "pr_refreshed": _described([stop for stop in stops if stop["kind"] in LAUNCHES]),
+        "pr_marked_ready": any(call.marks_ready for call in calls),
+        # The calls the stand-in could not answer as `gh` would: what follows them is its doing.
+        # Like `contaminated`, it says how far to trust the run, whatever part of it was played.
+        "gh_not_played": sum(1 for call in calls if not call.played),
     }
 
 
@@ -213,6 +270,7 @@ def measure(root: Path, case: Case) -> Measures:
         "usd": round(cost_of(logs), 4),
     }
     measures.update(_loop(journal, record))
+    measures.update(_pull_request(project, record))
     measures.update(_plan(folder, logs))
     measures.update(_zones(case, kept[-1] if kept else None, folder, conformant=conformant))
     measures.update(_form(case, kept))

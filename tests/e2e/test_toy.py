@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+import gh_stand_in
 import pytest
 import toy
 
@@ -87,6 +88,16 @@ def test_the_nominal_path_reaches_conformant(tmp_path: Path) -> None:
     # The toy declares the CSV export a critical zone: its code is listed for the developer.
     assert "shelf/export.py" in toy.critical_files(project)
     assert not dirty(project, "shelf", "tests", "docs")
+    # The draft /surface-plan would have opened, kept by the stand-in `gh`: the stop refreshed
+    # its description, by an edit and no second opening, and nothing marked it ready.
+    pull = gh_stand_in.pull_of(project, toy.BRANCH)
+    assert pull is not None
+    assert pull.body.strip() == toy.pr_body(project).strip()
+    assert pull.draft
+    calls = gh_stand_in.calls(project)
+    assert {call.command for call in calls if call.pull is not None} == {"pr edit"}
+    assert not [call.argv for call in calls if call.command == "pr create"]
+    assert not [call.argv for call in calls if call.marks_ready]
 
 
 def test_a_session_killed_in_a_slice_resumes_it(tmp_path: Path) -> None:

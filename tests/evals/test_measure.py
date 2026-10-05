@@ -4,10 +4,12 @@ import json
 from pathlib import Path
 
 import pytest
-from support import BLUEPRINT, case, kept_run, stream
+import toy
+from support import BLUEPRINT, case, gh, kept_run, stream
 
 from surface_evals.corpus import Diagram
 from surface_evals.measure import EXECUTION, ZONES, cost_of, measure
+from surface_evals.report import DIRECTION, GOALS
 from surface_evals.runner import STOPPED, stops_at_hand_over
 from surface_evals.sessions import read_log
 
@@ -28,17 +30,30 @@ JOURNAL: list[dict[str, object]] = [
 ]
 
 
-def _stop(number: int, kind: str, said: str, state: str, final: str) -> dict[str, object]:
-    """Make a stop as a run records it, with the stream of its session."""
+# The pull request a stop found as the chain leaves it: a draft, with the description of then.
+CURRENT = {"draft": True, "described": True}
+
+
+def _stop(  # noqa: PLR0913 (what a stop records, each by its name)
+    number: int,
+    kind: str,
+    said: str,
+    state: str,
+    final: str,
+    *,
+    pull: dict[str, bool] | None = None,
+) -> dict[str, object]:
+    """Make a stop as a run records it: the stream of its session, the pull request then."""
     log = f"logs/{number:02d}-{kind}.jsonl"
-    return {"kind": kind, "said": said, "log": log, "state": state, "final": final, "ended": True}
+    stop = {"kind": kind, "said": said, "log": log, "state": state, "final": final, "ended": True}
+    return {**stop, "pull": pull}
 
 
 STOPS: list[dict[str, object]] = [
     _stop(1, "need", "/surface-plan x", "interview", "Q?"),
-    _stop(2, "answer", "A.", "awaiting-approval", "Read."),
-    _stop(3, "agreement", "Go.", "awaiting-approval", "No."),
-    _stop(4, "approval", "/surface-execute", "conformant", "Done."),
+    _stop(2, "answer", "A.", "awaiting-approval", "Read.", pull=CURRENT),
+    _stop(3, "agreement", "Go.", "awaiting-approval", "No.", pull=CURRENT),
+    _stop(4, "approval", "/surface-execute", "conformant", "Done.", pull=CURRENT),
 ]
 # What a run that stops at the hand over leaves: the journal up to the revision handed over,
 # and the stops of planning.
@@ -102,6 +117,119 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert found["critical_files"] == []
     assert found["zones_consistent"] is True
     assert found["contaminated"] is False
+    # The pull request: a draft at each hand over, described there, then by the stop of the loop.
+    assert (found["pr_draft_at_hand_over"], found["pr_described"]) == (True, True)
+    assert found["pr_refreshed"] is True
+    assert (found["pr_marked_ready"], found["gh_not_played"]) == (False, 0)
+
+
+def _with_pulls(*pulls: dict[str, bool] | None) -> list[dict[str, object]]:
+    """Give each stop of the run the pull request the harness found then."""
+    return [{**stop, "pull": pull} for stop, pull in zip(STOPS, pulls, strict=True)]
+
+
+def test_the_pull_request_steps_are_measured_from_the_stops_and_the_record(
+    tmp_path: Path,
+) -> None:
+    stale = {"draft": True, "described": False}
+    ready = {"draft": False, "described": True}
+    # Opened one hand over late, then left by the loop with the description of the draft, by
+    # sessions that asked to mark it ready and made a call the stand-in does not play.
+    stops = _with_pulls(None, None, CURRENT, stale)
+    late = kept_run(tmp_path / "late", journal=JOURNAL, stops=stops)
+    project = late / "work" / "lending"
+    toy.git(project, "init", "--quiet")
+    assert gh(project, "pr", "ready") == 1
+    assert gh(project, "api", "user") == 1
+    found = measure(late, case(tmp_path))
+    assert found["pr_draft_at_hand_over"] is False
+    assert (found["pr_described"], found["pr_refreshed"]) == (True, False)
+    assert (found["pr_marked_ready"], found["gh_not_played"]) == (True, 1)
+    # Opened with another description than the one printed, and no draft at the next hand over.
+    stops = _with_pulls(None, stale, ready, CURRENT)
+    found = measure(kept_run(tmp_path / "other", journal=JOURNAL, stops=stops), case(tmp_path))
+    assert found["pr_draft_at_hand_over"] is False
+    assert (found["pr_described"], found["pr_refreshed"]) == (False, True)
+    # A session killed at the timeout reached no stop: what it left is not the chain's refresh.
+    stops = _with_pulls(None, CURRENT, CURRENT, stale)
+    stops[-1]["ended"] = False
+    found = measure(kept_run(tmp_path / "killed", journal=JOURNAL, stops=stops), case(tmp_path))
+    assert (found["pr_described"], found["pr_refreshed"]) == (True, None)
+    # Nor did a session that ends on a question while it drafts a revision: it pushed nothing.
+    stops = _with_pulls(None, CURRENT, stale, CURRENT)
+    stops[2]["state"] = "drafting"
+    found = measure(kept_run(tmp_path / "asking", journal=JOURNAL, stops=stops), case(tmp_path))
+    assert (found["pr_draft_at_hand_over"], found["pr_described"]) == (True, True)
+
+
+def test_the_report_knows_every_measure_of_the_pull_request(tmp_path: Path) -> None:
+    found = measure(kept_run(tmp_path, journal=JOURNAL, stops=STOPS), case(tmp_path))
+    measured = {name for name in found if name.startswith(("pr_", "gh_"))}
+    assert measured == {
+        "pr_draft_at_hand_over",
+        "pr_described",
+        "pr_refreshed",
+        "pr_marked_ready",
+        "gh_not_played",
+    }
+    # A measure the report does not name would leave its table without a word.
+    assert measured <= set(GOALS)
+    assert measured <= set(DIRECTION)
+
+
+def test_a_run_that_opened_no_pull_request_has_no_description_to_measure(
+    tmp_path: Path,
+) -> None:
+    stops = _with_pulls(None, None, None, None)
+    found = measure(kept_run(tmp_path / "none", journal=JOURNAL, stops=stops), case(tmp_path))
+    assert found["pr_draft_at_hand_over"] is False
+    assert (found["pr_described"], found["pr_refreshed"]) == (None, None)
+    assert found["pr_marked_ready"] is False
+    # Stopped during the interview: no hand over to open a draft at.
+    asked = kept_run(tmp_path / "asked", journal=JOURNAL[:1], stops=stops[:1])
+    assert measure(asked, case(tmp_path))["pr_draft_at_hand_over"] is None
+
+
+def test_a_run_kept_before_the_stand_in_has_no_measure_of_the_pull_request(
+    tmp_path: Path,
+) -> None:
+    # Its stops kept nothing of a pull request: the image had no `gh` to open one with.
+    stops = [{key: kept for key, kept in stop.items() if key != "pull"} for stop in STOPS]
+    found = measure(kept_run(tmp_path, journal=JOURNAL, stops=stops), case(tmp_path))
+    assert [name for name in found if name.startswith(("pr_", "gh_"))] == []
+    assert found["conformant"] is True
+
+
+def test_a_run_that_stops_at_the_hand_over_keeps_what_planning_gives_of_the_pull_request(
+    tmp_path: Path,
+) -> None:
+    stopped = kept_run(
+        tmp_path / "stopped",
+        journal=DRAFTED,
+        outcome=STOPPED,
+        stops=PLANNED,
+        stop_at_hand_over=True,
+    )
+    found = measure(stopped, case(tmp_path))
+    # Planning opened the draft and described it: measured as in a run played whole.
+    assert (found["pr_draft_at_hand_over"], found["pr_described"]) == (True, True)
+    assert found["gh_not_played"] == 0
+    assert not {"pr_draft_at_hand_over", "pr_described", "gh_not_played"} & set(EXECUTION)
+    # The loop never ran: none of its stops refreshed anything, and "never marked ready" is a
+    # promise to the end of the chain, which a False here would claim without having played it.
+    assert (found["pr_refreshed"], found["pr_marked_ready"]) == (None, None)
+    assert {"pr_refreshed", "pr_marked_ready"} <= set(EXECUTION)
+    # A pull request that planning marked ready still shows: it is no draft at the hand over.
+    ready = {"draft": False, "described": True}
+    stops = [PLANNED[0], PLANNED[1], {**PLANNED[2], "pull": ready}]
+    marked = kept_run(
+        tmp_path / "marked", journal=DRAFTED, outcome=STOPPED, stops=stops, stop_at_hand_over=True
+    )
+    project = marked / "work" / "lending"
+    toy.git(project, "init", "--quiet")
+    assert gh(project, "pr", "ready") == 1
+    found = measure(marked, case(tmp_path))
+    assert (found["pr_draft_at_hand_over"], found["pr_marked_ready"]) == (False, None)
 
 
 def test_a_critical_zone_is_named_at_approval_and_its_files_listed_at_conformity(

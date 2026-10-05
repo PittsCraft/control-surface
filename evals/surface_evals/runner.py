@@ -24,6 +24,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import cast
 
+import gh_stand_in
 import toy
 
 from surface_evals import CLONE
@@ -57,6 +58,7 @@ class Stop:
     state: str | None  # the state of the plan once the session ended
     final: str  # the final message of the session
     ended: bool  # False when the session was killed at the timeout
+    pull: dict[str, bool] | None  # the pull request of the branch then, see `pull_of`
 
 
 def build_project(dest: Path) -> Path:
@@ -155,6 +157,23 @@ def stops_at_hand_over(root: Path) -> bool:
     return record.get("stop_at_hand_over") is True
 
 
+def pull_of(project: Path) -> dict[str, bool] | None:
+    """Tell the pull request of the branch of a project, as the stand-in `gh` keeps it.
+
+    Whether it is still a draft, and whether its description is what the state script prints now,
+    which is what a stop of the chain leaves. None when the branch has no open pull request, or
+    when the project can no longer tell: a stop is kept whatever a session left behind it.
+    """
+    try:
+        branch = toy.git(project, "branch", "--show-current").strip()
+        pull = gh_stand_in.pull_of(project, branch)
+    except (subprocess.CalledProcessError, OSError, ValueError, TypeError, KeyError):
+        return None
+    if pull is None:
+        return None
+    return {"draft": pull.draft, "described": pull.body.strip() == pr_body(project).strip()}
+
+
 @dataclass(slots=True)
 class Run:
     case: Case
@@ -188,6 +207,7 @@ class Run:
                 state=state_of(self.project),
                 final=session.final,
                 ended=session.ended,
+                pull=pull_of(self.project),
             )
         )
         self.save()
