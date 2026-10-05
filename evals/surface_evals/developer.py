@@ -6,14 +6,22 @@ words, and leaves to the session what the brief leaves to the implementer. Hande
 it reads it as the developer would and says what contradicts what they know, which the run gives
 back as an amendment. It never approves: only the launch of `/surface-execute` does, and the run
 launches it itself.
+
+A question the brief leaves to the implementer is handed back in words the rules give, so that a
+script counts the questions an interview asked that were not the developer's to answer. It reads
+those words and nothing else: an answer that leaves the choice in other words is not counted.
 """
 
+import re
 from pathlib import Path
 
 from surface_evals.corpus import Case
 from surface_evals.sessions import SessionLog, ask
 
 MODEL = "sonnet"
+# The words the rules give a developer for a question that is not theirs to decide, as the
+# answers kept so far say them: "the assistant's call", or "your call" said to the assistant.
+YOUR_CALL = re.compile(r"\b(?:your|the assistant['\u2019]s) call\b", re.IGNORECASE)
 
 RULES = """\
 You play a developer. You asked an assistant for a feature of your project, in the words under \
@@ -58,6 +66,11 @@ def _knowledge(case: Case) -> str:
 
 def system_prompt(case: Case) -> str:
     return f"{RULES}\n{_knowledge(case)}"
+
+
+def hands_back(said: str) -> bool:
+    """Say whether an answer hands its question back, whole or in part, as not the developer's."""
+    return YOUR_CALL.search(said) is not None
 
 
 def answer(case: Case, question: str, log: Path, *, model: str = MODEL) -> SessionLog:
