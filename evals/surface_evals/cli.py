@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 
-from surface_evals import REPORTS, developer, judge, judge_check, probes, report
+from surface_evals import REPORTS, count, developer, judge, judge_check, probes, report
 from surface_evals.budget import Ledger
 from surface_evals.corpus import load_cases
 from surface_evals.runner import RECORD, Run
@@ -98,22 +98,33 @@ def _judge(args: argparse.Namespace) -> int:
     for case in load_cases():
         for record in sorted((args.out / "runs" / case.name).glob(f"run-*/{RECORD}")):
             root = record.parent
-            if (root / judge.VERDICTS).is_file() and not args.again:
-                continue
-            stopped = ledger.exhausted()
-            if stopped is not None:
-                _say(f"stopped: {stopped}")
-                return 0
-            judge.judge_run(root, case, model=args.model, repeats=args.repeats, ledger=ledger)
-            _say(f"{case.name} {root.name}: judged")
+            # The scores, then the count of the blueprint, each kept in a file of its own: a run
+            # judged before the count existed is counted without being scored again.
+            for kept, play, done in (
+                (judge.VERDICTS, judge.judge_run, "judged"),
+                (count.COUNTED, count.count_run, "counted"),
+            ):
+                if (root / kept).is_file() and not args.again:
+                    continue
+                stopped = ledger.exhausted()
+                if stopped is not None:
+                    _say(f"stopped: {stopped}")
+                    return 0
+                play(root, case, model=args.model, repeats=args.repeats, ledger=ledger)
+                _say(f"{case.name} {root.name}: {done}")
     return 0
 
 
 def _judge_check(args: argparse.Namespace) -> int:
     kept = judge_check.check(args.out, model=args.model, repeats=args.repeats, ledger=_ledger(args))
-    for pair in json.loads(kept.read_text(encoding="utf-8"))["pairs"]:
+    found = json.loads(kept.read_text(encoding="utf-8"))
+    for pair in found["pairs"]:
         fell = "below its original" if pair["below"] else "NOT below its original"
         _say(f"{pair['name']}: {pair['spoiled']} against {pair['original']}, {fell}")
+    for pair in found["counts"]:
+        rose = "above its original" if pair["above"] else "NOT above its original"
+        counted = f"{pair['spoiled']} against {pair['original']}"
+        _say(f"{pair['name']}, `{pair['count']}`: {counted}, {rose}")
     return 0
 
 
@@ -161,10 +172,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     seeded.add_argument("--runs", type=int, default=1)
     seeded.set_defaults(play=_probes)
 
-    judged = commands.add_parser("judge", help="judge the runs against the rubric")
+    judged = commands.add_parser(
+        "judge", help="judge the runs against the rubric, and count their blueprints"
+    )
     judged.add_argument("--repeats", type=int, default=1)
     judged.add_argument("--model", default=judge.MODEL)
-    judged.add_argument("--again", action="store_true", help="judge again the runs already judged")
+    judged.add_argument(
+        "--again", action="store_true", help="judge and count again the runs already done"
+    )
     judged.set_defaults(play=_judge)
 
     checked = commands.add_parser("judge-check", help="check the judge on spoiled documents")

@@ -6,9 +6,13 @@ in one known way, with the criterion that way must lower. A pair may bring its o
 where the toy's would not do: a blueprint is padded from a lean one, since padding added to a
 page that already repeats itself shows nothing. A judge that scores the spoiled one as
 high as the original cannot be trusted on that criterion, and the report says so.
+
+The count of the blueprint is checked on the same documents, the other way up: the padded page
+must count more than the lean one, on each of its measures.
 """
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import fmean
@@ -18,6 +22,7 @@ import toy
 
 from surface_evals import JUDGE
 from surface_evals.budget import Ledger
+from surface_evals.count import BESIDE, COUNTS, count
 from surface_evals.judge import Dimension, JudgeError, Judgement, judge, load_rubric
 
 SPOILED = JUDGE / "spoiled"
@@ -71,6 +76,51 @@ def documents(pair: Pair, *, spoiled: bool) -> dict[str, str]:
     return given
 
 
+def check_counts(
+    pairs: Sequence[Pair], logs: Path, *, model: str, repeats: int, ledger: Ledger
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Count the pages of the pairs the count is checked on, the original then the spoiled one.
+
+    Those are the pairs of the criterion the count stands beside. Give, per measure of the
+    count, whether the spoiled page rose above its original, then the answers that were refused.
+    """
+    refused: list[str] = []
+
+    def counted(pair: Pair, tag: str, *, spoiled: bool) -> list[dict[str, int]]:
+        page = documents(pair, spoiled=spoiled)[pair.replaces]
+        found: list[dict[str, int]] = []
+        for repeat in range(1, repeats + 1):
+            if ledger.exhausted() is not None:
+                break
+            log = logs / f"count-{tag}-{pair.name}-{repeat:02d}.jsonl"
+            try:
+                found.append(count(page, log, model=model, ledger=ledger).numbers)
+            except JudgeError as error:
+                refused.append(str(error))
+        return found
+
+    results: list[dict[str, object]] = []
+    for pair in pairs:
+        if (pair.dimension, pair.criterion) != BESIDE:
+            continue
+        original = counted(pair, "original", spoiled=False)
+        spoiled = counted(pair, "spoiled", spoiled=True)
+        for name in COUNTS:
+            before = [found[name] for found in original]
+            after = [found[name] for found in spoiled]
+            results.append(
+                {
+                    "name": pair.name,
+                    "what": pair.what,
+                    "count": name,
+                    "original": before,
+                    "spoiled": after,
+                    "above": bool(before and after) and fmean(after) > fmean(before),
+                }
+            )
+    return results, refused
+
+
 def check(out: Path, *, model: str, repeats: int, ledger: Ledger) -> Path:
     """Judge each original and each spoiled document, and keep whether the spoiled one fell."""
     system, dimensions = load_rubric()
@@ -117,7 +167,16 @@ def check(out: Path, *, model: str, repeats: int, ledger: Ledger) -> Path:
                 "below": bool(before and after) and fmean(after) < fmean(before),
             }
         )
+    counts, uncounted = check_counts(
+        pairs, root / "logs", model=model, repeats=repeats, ledger=ledger
+    )
     path = out / RECORD
-    kept = {"v": 1, "model": model, "pairs": results, "refused": refused}
+    kept = {
+        "v": 1,
+        "model": model,
+        "pairs": results,
+        "counts": counts,
+        "refused": refused + uncounted,
+    }
     path.write_text(json.dumps(kept, indent=2) + "\n", encoding="utf-8")
     return path
