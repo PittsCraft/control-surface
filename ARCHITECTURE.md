@@ -60,7 +60,7 @@ host CI    --runs----> surface-status check --require conformant
 - Every agent is a leaf: no `Agent` tool, no `isolation`, no `permissionMode`. A role does its mandate itself, a slice's work must stay on the branch for the next step, and the host decides what runs unattended.
 - Every command sets `disable-model-invocation: true`: launching `/surface-execute` is an approval, which only the developer gives, and no sentence of a conversation approves a revision.
 - Each step goes to a fresh agent that reads files, never a conversation, one agent at a time.
-- Prompts run every command from the repository root as a plain command: no `cd`, no `git -C`, no `find -exec`, no `$(...)`, since a permission rule matches plain command text only.
+- Prompts run every command from the repository root, with paths from there: no `cd`, which would move the shell the dispatcher and its agents share, and no `git -C`. They say nothing else of how an agent writes a command, nor of the tool it changes a file with: a rule that general is not the chain's, the agent judges, and what stops for an approval is the permission mode's call ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)).
 - The chain never marks a pull request ready: that triggers the host's CI, so the developer does it, when they want, once the plan is conformant. `conformity.md` is the audit trail the `conformant` event cites, never a required reading.
 - No test asserts the prose of the README or of these documents ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)).
 - No file holds an em dash, and no commit message carries an attribution.
