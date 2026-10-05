@@ -699,8 +699,14 @@ def test_the_draft_pull_request_opens_at_the_first_plan_drafted() -> None:
     body = _body()
     steps = "\n".join(_git_steps())
     assert "opens as a draft at the first `plan-drafted`" in steps
-    assert "`gh pr create --draft`" in steps
     assert "`surface-status pr-body` prints, and nothing else" in steps
+    # The script's output goes to `gh` as it is, as at every refresh of `/surface-execute`: left
+    # to carry the text itself, a session wrote it to a file and added a line of its own.
+    assert "the output of the script is given to `gh` on its standard input" in steps
+    assert "so that no text of yours stands between the two" in steps
+    assert "`gh pr create --draft --body-file -`" in steps
+    assert "`gh pr edit --body-file -`" in steps
+    assert "`gh pr edit --body`" not in steps
     assert "Nothing else is written on the pull request" in steps
     assert "never mark it ready for review" in steps
     assert "read only when the developer asks for it explicitly" in steps
