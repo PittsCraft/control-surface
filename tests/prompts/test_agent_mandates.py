@@ -12,9 +12,11 @@ import pytest
 from chain_contract import (
     BLUEPRINT_ASPECTS,
     BLUEPRINT_CLOSING,
+    BLUEPRINT_ON_THE_COMMITS,
     BLUEPRINT_OPENING,
     BREAK_QUESTION,
     CHAIN_REPORTS,
+    COMMIT_FORM,
     CRITICAL_FILES_OF_THE_BRANCH,
     CRITICAL_ZONES_OF_THE_PLAN,
     DEFECT_QUESTION,
@@ -231,6 +233,24 @@ def test_extractor_draws_a_diagram_when_prose_would_flatten_a_shape() -> None:
     assert "Never to fill a section" in writing
     assert "wherever one applies" not in body
     assert "only when it shows what the prose" not in body
+
+
+def test_extractor_never_says_how_the_commits_of_the_work_are_written_or_signed() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # A commit is written after the blueprint is frozen, by an agent that follows the conventions
+    # of the repository: a page that promised its message or its author would be made false by it.
+    never = "The blueprint never shows the slices nor the distribution of tests"
+    rule = f"Nor does it say how the commits of the work are {COMMIT_FORM}"
+    assert writing.index(never) < writing.index(rule)
+    sentence = writing[writing.index(rule) :].split(". ", 1)[0]
+    assert "the rest follows the conventions of the repository" in sentence
+    assert "in the frozen contract a commit written another way would become a break" in sentence
+    # What must not be lost with it: what the developer asked of the commits, and what is no
+    # matter of how a commit is written, the branch the work lands on or what a push sets off.
+    assert sentence.startswith(f"{rule}, {BLUEPRINT_ON_THE_COMMITS}: ")
+    assert "branch" not in sentence
+    assert "push" not in sentence
 
 
 def test_checker_never_counts_a_cut_a_short_section_or_the_absence_of_a_diagram() -> None:

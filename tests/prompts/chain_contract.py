@@ -154,6 +154,19 @@ CLOSING_LINE = "No change:"
 PLAN_AGENT = "Plan"
 PLAN_MINIMUM = ("Acceptance criteria", "Slices", "Gates")
 
+# How a commit of the work is written or signed is known to the agent that writes it, which
+# follows the conventions of the host. That agent is not the one that drafts the plan, and the
+# blueprint is frozen before the commit exists: a line of either on it promises what another agent
+# decides, and in the blueprint a commit written another way is a contract break. So neither says
+# anything of its own on it. A slice carries what the conventions or the developer ask, since an
+# executor reads the plan and never the interview, and the blueprint only what the developer asked.
+COMMIT_FORM = "written or signed"
+SLICE_ON_ITS_COMMIT = "beyond what the conventions of the repository or the developer ask"
+BLUEPRINT_ON_THE_COMMITS = "beyond what the developer asked"
+# The prompts stop there. Whether the chain forbids an attribution in a commit or leaves it to the
+# host is a choice of the developer still to make, and no prompt takes it either way.
+ATTRIBUTION_WORDS = ("attribution", "co-authored")
+
 # The plan documents are written in the repository's language, not the conversation's.
 # `/surface-plan` finds it once and writes it in `exploration.md`, where every agent and template
 # names it, in these words; none of them follows the language of `specs.md` any more.

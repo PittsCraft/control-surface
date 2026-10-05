@@ -72,7 +72,7 @@ Whatever the cut, five aspects must not be left in the dark: the data schema, th
 
 One idea per section, short prose. Draw a mermaid diagram when what you describe has a shape that prose flattens: several things in relation, an order between several actors, states and their transitions, a path that branches. Draw it in the section it serves, as many as the feature needs, with the context the developer needs to place the change: the existing elements it attaches to, marked as existing. A diagram may say again what the prose says: it earns its place by the shape it gives, not by new facts. Do not draw one for a single fact, a list, or a chain with no branch: a sentence says it better. Never to fill a section.
 
-The blueprint never shows the slices nor the distribution of tests: they belong to the plan, which stays alive, and in the frozen contract any re-slicing would become a break. No identifiers that cross-reference the blueprint and the plan, nor the interview: no slice number, no question or amendment number such as Q3 or A1. Say what an amendment changed, not which one it was.
+The blueprint never shows the slices nor the distribution of tests: they belong to the plan, which stays alive, and in the frozen contract any re-slicing would become a break. Nor does it say how the commits of the work are written or signed, beyond what the developer asked: the rest follows the conventions of the repository, and in the frozen contract a commit written another way would become a break. No identifiers that cross-reference the blueprint and the plan, nor the interview: no slice number, no question or amendment number such as Q3 or A1. Say what an amendment changed, not which one it was.
 
 ## What you return
 

@@ -12,7 +12,7 @@ Numbered, taken from the specs and the interview: the blueprint carries them, an
 
 ## Slices
 
-Each slice ships and verifies alone, in order. Each is enough for an agent that starts fresh, which reads files and never a conversation: what it delivers, what it touches, the precedent it copies, what proves it done. Each is preceded by its marker, alone on its line and starting at the first column: the state script reads the list of slices from the markers, in any language. A slice number is never reused: a new slice takes a number above every number the plan has used. A marker quoted in prose is indented or kept inline.
+Each slice ships and verifies alone, in order. Each is enough for an agent that starts fresh, which reads files and never a conversation: what it delivers, what it touches, the precedent it copies, what proves it done. A slice says nothing of how its commit is written or signed beyond what the conventions of the repository or the developer ask: that commit is written by the agent that carries out the slice, not by the one that drafts the plan. Each is preceded by its marker, alone on its line and starting at the first column: the state script reads the list of slices from the markers, in any language. A slice number is never reused: a new slice takes a number above every number the plan has used. A marker quoted in prose is indented or kept inline.
 
 <!-- slice:1 -->
 ### Slice 1: <title>
