@@ -1,8 +1,12 @@
 """Shared builders of the evaluation tests: a stream as a session leaves it, a run as it is kept."""
 
 import json
+import subprocess
+import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+
+import gh_stand_in
 
 from surface_evals.corpus import Case, Diagram
 from surface_evals.runner import GATE, RECORD
@@ -88,6 +92,19 @@ def stream(  # noqa: PLR0913 (what a stream may hold, each by its name)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(json.dumps(event) for event in events) + "\n", encoding="utf-8")
     return path
+
+
+def gh(project: Path, *args: str, stdin: str = "") -> int:
+    """Call the stand-in `gh` in a project, as a session does in the container."""
+    done = subprocess.run(
+        [sys.executable, gh_stand_in.__file__, *args],
+        cwd=project,
+        input=stdin,
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+    return done.returncode
 
 
 def case(root: Path, **changes: object) -> Case:

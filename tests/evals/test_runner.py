@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 import toy
-from support import BLUEPRINT, PLAN, stream
+from support import BLUEPRINT, PLAN, gh, stream
 
 from surface_evals import developer, runner
 from surface_evals.budget import Ledger
@@ -23,6 +23,8 @@ from surface_evals.runner import (
     Run,
     build_project,
     plan_of,
+    pr_body,
+    pull_of,
     state_of,
     stops_at_hand_over,
 )
@@ -178,12 +180,42 @@ def test_a_run_keeps_what_was_said_the_blueprint_and_the_acceptance_of_the_code(
     assert (run.root / "blueprint-rev-01.md").read_text(encoding="utf-8") == BLUEPRINT
     assert record["stops"][0]["final"] == QUESTION
     assert (run.root / record["stops"][0]["log"]).is_file()
+    # The script opened no pull request: every stop says so.
+    assert [stop["pull"] for stop in record["stops"]] == [None] * 4
     assert (run.root / "logs" / "01-developer.jsonl").is_file()
     # The script built nothing: the acceptance tests ran on the host as it was, and say so.
     assert record["acceptance"]["ran"] > 0
     assert record["acceptance"]["failed"] > 0
     assert record["gate"] is True
     assert "conformant" in (run.root / "pr-body.md").read_text(encoding="utf-8")
+
+
+def test_a_stop_tells_the_pull_request_of_the_branch_as_the_stand_in_keeps_it(
+    tmp_path: Path,
+) -> None:
+    project = build_project(tmp_path)
+    toy.git(project, "switch", "--quiet", "--create", "feat/overdue")
+    toy.write(project, {f"{PLAN_FOLDER}/specs.md": "List the overdue loans.\n"})
+    toy.record(project, PLAN_FOLDER, "plan-opened")
+    _draft(project)
+    toy.commit(project, "plan: list the overdue loans", [PLAN_FOLDER])
+    toy.git(project, "push", "--quiet", "--set-upstream", "origin", "feat/overdue")
+    assert pull_of(project) is None
+    # A project a session left unreadable tells nothing, and its stop is kept all the same.
+    assert pull_of(tmp_path / "gone") is None
+    # What /surface-plan does at the first `plan-drafted`: a draft, with the description.
+    opening = ("pr", "create", "--draft", "--title", "Overdue list", "--body-file", "-")
+    assert gh(project, *opening, stdin=pr_body(project)) == 0
+    assert pull_of(project) == {"draft": True, "described": True}
+    # The plan moved on, and no stop refreshed the description yet.
+    toy.record(project, PLAN_FOLDER, "plan-approved")
+    assert pull_of(project) == {"draft": True, "described": False}
+    # What every stop does, here with the trailing line break a command substitution drops.
+    assert gh(project, "pr", "edit", "--body", pr_body(project).rstrip("\n")) == 0
+    assert pull_of(project) == {"draft": True, "described": True}
+    # What the chain never does.
+    assert gh(project, "pr", "ready") == 0
+    assert pull_of(project) == {"draft": False, "described": True}
 
 
 def test_a_blueprint_the_developer_corrects_is_drawn_again_before_the_launch(

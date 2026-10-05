@@ -3,7 +3,8 @@
 `build(state, dest)` makes `dest/shelf`, a git repository holding a small module, its tests and a
 gate command, with `dest/origin.git` as its bare remote. It installs the chain from this clone,
 then drives a plan folder to the chosen state: it writes the files the chain would have written
-and records each event through the installed state script, so the journal is a real one. Run as a
+and records each event through the installed state script, so the journal is a real one. A plan
+drafted has its draft pull request too, kept by the stand-in `gh` of `gh_stand_in.py`. Run as a
 script, it builds a project and prints its path, or runs one headless session in it:
 
     python3 tests/e2e/toy/toy.py build <state> <dest>
@@ -25,9 +26,12 @@ from enum import StrEnum
 from pathlib import Path
 from typing import IO
 
+import gh_stand_in
+
 CLONE = Path(__file__).resolve().parents[3]
 SLUG = "csv-export"
 BRANCH = f"feat/{SLUG}"
+PULL_TITLE = "Export the shelf as CSV"
 GATE_COMMAND = "python3 -m unittest discover -s tests -q"
 STATE_SCRIPT = Path(".claude/skills/surface-status/scripts/surface-status")
 SESSION_TIMEOUT = 30 * 60  # seconds: a session still running then is killed
@@ -62,7 +66,7 @@ class State(StrEnum):
     """The prepared states, each named after the scenario that starts from it."""
 
     SPECS = "specs"  # the main branch, the chain installed, no plan yet
-    AWAITING = "awaiting-approval"  # a plan drafted at revision 1, pushed
+    AWAITING = "awaiting-approval"  # a plan drafted at revision 1, pushed, its draft opened
     BLUEPRINT_MODIFIED = "blueprint-modified"  # approved, slice 1 done, then the blueprint edited
     DEVELOPER_BREAK = "developer-break"  # every slice done, then a commit against the schema
     CEILING = "ceiling"  # a defect, its review, a fix that missed it, a ceiling of one pass
@@ -631,6 +635,18 @@ def show(project: Path, plan: str) -> dict[str, object]:
     return answer
 
 
+def pr_body(project: Path) -> str:
+    """Give the pull request description the state script prints for the branch."""
+    done = subprocess.run(
+        [str(project / STATE_SCRIPT), "pr-body"],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return done.stdout
+
+
 def critical_files(project: Path) -> list[str]:
     """List the files the pull request description gives the developer to read themselves."""
     done = subprocess.run(
@@ -694,7 +710,12 @@ def _base(dest: Path, settings: Mapping[str, object]) -> Path:
 
 
 def _awaiting(project: Path) -> str:
-    """Draft a plan at revision 1 on its feature branch and push it, as /surface-plan would."""
+    """Draft a plan at revision 1 on its feature branch, push it and open its draft pull request.
+
+    As /surface-plan would: the pull request is the one it opens at the first `plan-drafted`,
+    kept by the stand-in `gh`, with the description of that moment. The later states leave it
+    as it is, since the loop they prepare has not stopped yet, and a stop is what refreshes it.
+    """
     plan = f"docs/plans/{plan_name()}"
     git(project, "switch", "--quiet", "--create", BRANCH)
     write(
@@ -714,6 +735,9 @@ def _awaiting(project: Path) -> str:
     record(project, plan, "plan-drafted")
     commit(project, "plan: export the shelf as CSV, revision 1", [plan])
     git(project, "push", "--quiet", "--set-upstream", "origin", BRANCH)
+    gh_stand_in.open_pull(
+        project, head=BRANCH, base="main", title=PULL_TITLE, body=pr_body(project), draft=True
+    )
     return plan
 
 

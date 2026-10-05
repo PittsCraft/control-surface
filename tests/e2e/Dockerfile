@@ -23,8 +23,16 @@ RUN python3 -m venv /opt/e2e \
 RUN userdel --remove node \
     && useradd --create-home --uid "$UID" tester
 
-# SURFACE_E2E_CONTAINER lets toy.py start a session; the clone is mounted read-only at /clone.
-ENV PATH=/opt/e2e/bin:$PATH \
+# No GitHub is reached from here, and a project pushes to a bare repository on disk: a stand-in
+# for `gh` plays the pull request steps of the chain and records every call in the git directory
+# of the project (tests/e2e/README.md). It is copied, and not run from the clone, so that a
+# session never meets a path of the clone it must not read.
+COPY toy/gh_stand_in.py /opt/gh-stand-in/gh
+RUN chmod 0755 /opt/gh-stand-in/gh
+
+# The stand-in comes first on the PATH. SURFACE_E2E_CONTAINER lets toy.py start a session; the
+# clone is mounted read-only at /clone.
+ENV PATH=/opt/gh-stand-in:/opt/e2e/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     SURFACE_E2E_CONTAINER=1
 USER tester
