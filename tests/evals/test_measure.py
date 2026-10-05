@@ -92,6 +92,7 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert [name for name in EXECUTION if found[name] is None] == []
     # The loop: one question, one rework in planning, one fix after a first review.
     assert found["questions"] == 1
+    assert found["questions_handed_back"] == 0
     assert found["corrections"] == 0
     assert (found["checks"], found["omissions"], found["planning_passes"]) == (2, 2, 1)
     assert (found["reviews"], found["findings"], found["fixes"]) == (2, 1, 1)
@@ -121,6 +122,26 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert (found["pr_draft_at_hand_over"], found["pr_described"]) == (True, True)
     assert found["pr_refreshed"] is True
     assert (found["pr_marked_ready"], found["gh_not_played"]) == (False, 0)
+
+
+def test_a_question_the_developer_hands_back_is_counted_among_the_questions(
+    tmp_path: Path,
+) -> None:
+    stops = [
+        _stop(1, "need", "/surface-plan x", "interview", "Q1?"),
+        _stop(2, "answer", "C. At most 3 books.", "interview", "Q2?"),
+        _stop(3, "answer", "That's your call, I take A.", "interview", "Q3?"),
+        _stop(4, "answer", "A bad value is the assistant's call.", "awaiting-approval", "Read."),
+        # Only an answer hands a question back: a correction that says the words is one still.
+        _stop(5, "correction", "The order is your call, the limit is 3.", "awaiting-approval", "."),
+    ]
+    root = kept_run(tmp_path, journal=DRAFTED, outcome=STOPPED, stops=stops, stop_at_hand_over=True)
+    found = measure(root, case(tmp_path))
+    assert (found["questions"], found["questions_handed_back"]) == (3, 2)
+    assert found["corrections"] == 1
+    # Planning gives it: a run that stops at the hand over holds it like a run played whole.
+    assert "questions_handed_back" not in EXECUTION
+    assert "questions_handed_back" in GOALS
 
 
 def _with_pulls(*pulls: dict[str, bool] | None) -> list[dict[str, object]]:

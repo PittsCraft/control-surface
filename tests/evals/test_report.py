@@ -70,6 +70,8 @@ def test_every_goal_with_a_better_way_is_a_measure_the_runs_give() -> None:
     assert DIRECTION["approved_by_sentence"] == -1
     assert DIRECTION["contaminated"] == -1
     assert "questions" not in DIRECTION
+    # A question asked is neither, one the developer hands back was not theirs: fewer is better.
+    assert (DIRECTION["questions_handed_back"], DIRECTION["corrections"]) == (-1, -1)
     # The pull request: a draft opened, described and refreshed is better, one marked ready worse.
     assert [DIRECTION[name] for name in ("pr_draft_at_hand_over", "pr_described")] == [1, 1]
     assert (DIRECTION["pr_refreshed"], DIRECTION["pr_marked_ready"]) == (1, -1)

@@ -16,6 +16,7 @@ import gh_stand_in
 
 from surface_evals import blueprint as form
 from surface_evals.corpus import Case, Diagram
+from surface_evals.developer import hands_back
 from surface_evals.runner import AWAITING, GATE, HANDED_BACK, OVER, RECORD, stops_at_hand_over
 from surface_evals.sessions import SessionLog, named_in_tool_calls, read_log
 from surface_status.plan_folder import PlanFolderError, parse_critical_files, parse_gates
@@ -89,6 +90,11 @@ def _loop(journal: list[dict[str, object]], record: dict[str, object]) -> Measur
         "approved_by_sentence": cast("bool | None", record["approved_by_sentence"]),
         "approvals": len(by_event.get("plan-approved", [])),
         "questions": sum(1 for stop in stops if stop["kind"] == "answer"),
+        # The questions the developer handed back: the interview asked what the brief leaves
+        # to the implementer, the opposite fault of a correction.
+        "questions_handed_back": sum(
+            1 for stop in stops if stop["kind"] == "answer" and hands_back(str(stop["said"]))
+        ),
         # What the developer had to send back once they read the blueprint: the interview and
         # the blueprint did not carry what they knew.
         "corrections": sum(1 for stop in stops if stop["kind"] == "correction"),
