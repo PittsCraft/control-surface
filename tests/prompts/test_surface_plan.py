@@ -12,10 +12,12 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
+    ATTRIBUTION_WORDS,
     BLUEPRINT_ASPECTS,
     BLUEPRINT_CLOSING,
     BLUEPRINT_OPENING,
     CLOSING_LINE,
+    COMMIT_FORM,
     DOCUMENTS_LANGUAGE,
     FORMER_LANGUAGE_RULE,
     LANGUAGE_SOURCES,
@@ -24,6 +26,7 @@ from chain_contract import (
     PLAN_MINIMUM,
     PLANNING_EVENTS,
     SEEN_BY,
+    SLICE_ON_ITS_COMMIT,
 )
 from prompt_support import (
     AGENTS,
@@ -788,6 +791,29 @@ def test_the_plan_template_leaves_the_rest_to_the_agent_that_drafts_it() -> None
     assert "No code beyond a signature or a schema fragment" in opening
     assert "it returns the plan whole as its answer, and nothing around it" in opening
     assert "the command that launched it writes `plan.md`" in opening
+
+
+def test_a_slice_says_of_its_commit_only_what_the_repository_or_the_developer_ask() -> None:
+    slices = section(_template("plan.md"), "Slices")
+    # The agent that drafts the plan writes no commit: a line of its own on how one is signed
+    # names the wrong author in the commit of another agent, on another model by default.
+    rule = f"A slice says nothing of how its commit is {COMMIT_FORM}"
+    holds, commit = _positions(slices, ["what proves it done", rule])
+    assert holds < commit
+    # What the repository or the developer ask of a commit stays: the executor reads it here.
+    assert f"{rule} {SLICE_ON_ITS_COMMIT}: " in slices
+    written = "that commit is written by the agent that carries out the slice"
+    assert f"{written}, not by the one that drafts the plan" in slices
+
+
+@pytest.mark.parametrize(
+    "path",
+    [*prompt_files(), *sorted(TEMPLATES.glob("*.md"))],
+    ids=lambda path: path.relative_to(SKILLS.parent).as_posix(),
+)
+def test_no_prompt_asks_for_an_attribution_nor_forbids_one(path: Path) -> None:
+    text = path.read_text(encoding="utf-8").lower()
+    assert [word for word in ATTRIBUTION_WORDS if word in text] == []
 
 
 def test_the_plan_template_keeps_the_slices_already_done_across_revisions() -> None:
