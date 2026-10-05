@@ -1,12 +1,14 @@
 """The measures of a run, computed from its folder (evals/surface_evals/measure.py)."""
 
+import json
 from pathlib import Path
 
 import pytest
 from support import BLUEPRINT, case, kept_run, stream
 
 from surface_evals.corpus import Diagram
-from surface_evals.measure import ZONES, cost_of, measure
+from surface_evals.measure import EXECUTION, ZONES, cost_of, measure
+from surface_evals.runner import STOPPED, stops_at_hand_over
 from surface_evals.sessions import read_log
 
 JOURNAL: list[dict[str, object]] = [
@@ -24,24 +26,24 @@ JOURNAL: list[dict[str, object]] = [
     {"event": "review-done", "defects": 0, "deviations": 0, "breaks": 0},
     {"event": "conformant"},
 ]
+
+
+def _stop(number: int, kind: str, said: str, state: str, final: str) -> dict[str, object]:
+    """Make a stop as a run records it, with the stream of its session."""
+    log = f"logs/{number:02d}-{kind}.jsonl"
+    return {"kind": kind, "said": said, "log": log, "state": state, "final": final, "ended": True}
+
+
 STOPS: list[dict[str, object]] = [
-    {"kind": "need", "said": "/surface-plan x", "state": "interview", "final": "Q?", "ended": True},
-    {"kind": "answer", "said": "A.", "state": "awaiting-approval", "final": "Read.", "ended": True},
-    {
-        "kind": "agreement",
-        "said": "Go.",
-        "state": "awaiting-approval",
-        "final": "No.",
-        "ended": True,
-    },
-    {
-        "kind": "approval",
-        "said": "/surface-execute",
-        "state": "conformant",
-        "final": "Done.",
-        "ended": True,
-    },
+    _stop(1, "need", "/surface-plan x", "interview", "Q?"),
+    _stop(2, "answer", "A.", "awaiting-approval", "Read."),
+    _stop(3, "agreement", "Go.", "awaiting-approval", "No."),
+    _stop(4, "approval", "/surface-execute", "conformant", "Done."),
 ]
+# What a run that stops at the hand over leaves: the journal up to the revision handed over,
+# and the stops of planning.
+DRAFTED: list[dict[str, object]] = JOURNAL[:5]
+PLANNED: list[dict[str, object]] = STOPS[:3]
 CONFORMITY = "# Conformity\n\n```critical-files\nlending/fines.py\n```\n"
 ZONED = BLUEPRINT.replace(
     "Critical zones touched, among those the repository's agent instructions declare: none.",
@@ -69,6 +71,10 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert found["acceptance"] == pytest.approx(0.75)
     assert found["acceptance_all"] is False
     assert found["usd"] == pytest.approx(1.5)
+    # Planning is the session resumed to the hand over, the launch apart.
+    assert found["planning_usd"] == pytest.approx(1.0)
+    # A run played whole gives every measure of the execution.
+    assert [name for name in EXECUTION if found[name] is None] == []
     # The loop: one question, one rework in planning, one fix after a first review.
     assert found["questions"] == 1
     assert found["corrections"] == 0
@@ -144,6 +150,43 @@ def test_a_run_that_never_handed_over_has_no_form_to_measure(tmp_path: Path) -> 
     assert "frame" not in found
     assert found["zones_named"] is None
     assert found["critical_files"] is None
+
+
+@pytest.mark.parametrize("outcome", [STOPPED, "planning-stuck"])
+def test_a_run_that_stops_at_the_hand_over_holds_no_measure_of_the_execution(
+    tmp_path: Path, outcome: str
+) -> None:
+    root = kept_run(
+        tmp_path, journal=DRAFTED, outcome=outcome, stops=PLANNED, stop_at_hand_over=True
+    )
+    stream(root / "logs" / "01-need.jsonl", session="plan", cost=0.2, agents=(("Plan", "opus"),))
+    stream(root / "logs" / "01-developer.jsonl", session="developer", cost=0.01)
+    stream(root / "logs" / "03-agreement.jsonl", session="plan", cost=1.0)
+    found = measure(root, case(tmp_path))
+    assert found["outcome"] == outcome
+    # Planning is measured as in a run played whole: the interview, the cross-check, the page.
+    assert found["handed_over"] is True
+    assert (found["questions"], found["corrections"]) == (1, 0)
+    assert (found["checks"], found["omissions"], found["planning_passes"]) == (2, 2, 1)
+    assert found["approved_by_sentence"] is False
+    assert found["plan_minimum"] is True
+    assert found["frame"] is True
+    assert found["zones_none_said"] is True
+    assert found["contaminated"] is False
+    assert found["planning_usd"] == pytest.approx(1.01)
+    # Nothing of the execution is a 0 or a False, which would read as a run that did not conform.
+    assert {name: found[name] for name in EXECUTION} == dict.fromkeys(EXECUTION)
+
+
+def test_a_record_older_than_the_option_is_a_run_played_whole(tmp_path: Path) -> None:
+    root = kept_run(tmp_path, journal=JOURNAL, stops=STOPS)
+    record = json.loads((root / "run.json").read_text(encoding="utf-8"))
+    del record["stop_at_hand_over"]
+    (root / "run.json").write_text(json.dumps(record), encoding="utf-8")
+    assert stops_at_hand_over(root) is False
+    found = measure(root, case(tmp_path))
+    assert found["conformant"] is True
+    assert found["approvals"] == 1
 
 
 def test_the_cut_of_a_revision_is_compared_with_the_one_before(tmp_path: Path) -> None:

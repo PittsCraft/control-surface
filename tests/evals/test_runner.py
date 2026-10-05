@@ -16,7 +16,16 @@ from support import BLUEPRINT, PLAN, stream
 from surface_evals import developer, runner
 from surface_evals.budget import Ledger
 from surface_evals.corpus import load_cases
-from surface_evals.runner import AGREEMENT, EXECUTE, Run, build_project, plan_of, state_of
+from surface_evals.runner import (
+    AGREEMENT,
+    EXECUTE,
+    STOPPED,
+    Run,
+    build_project,
+    plan_of,
+    state_of,
+    stops_at_hand_over,
+)
 from surface_evals.sessions import SessionLog, read_log
 
 PLAN_FOLDER = "docs/plans/2026-01-15-overdue"
@@ -163,6 +172,7 @@ def test_a_run_keeps_what_was_said_the_blueprint_and_the_acceptance_of_the_code(
     record = json.loads((run.root / "run.json").read_text(encoding="utf-8"))
     assert record["case"] == run.case.name
     assert record["plan"] == PLAN_FOLDER
+    assert record["stop_at_hand_over"] is False
     assert record["outcome"] == "conformant"
     assert record["blueprints"] == ["blueprint-rev-01.md"]
     assert (run.root / "blueprint-rev-01.md").read_text(encoding="utf-8") == BLUEPRINT
@@ -199,15 +209,64 @@ def test_a_blueprint_the_developer_corrects_is_drawn_again_before_the_launch(
     assert run.approved_by_sentence is False
 
 
-def test_a_run_stops_at_the_ceiling_before_it_starts_a_session(
+def test_a_run_that_stops_at_the_hand_over_plays_planning_and_launches_nothing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    said: list[str] = []
+    read: list[str] = []
+    answer, read_blueprint = _developer([], read, [CORRECTION])
+    monkeypatch.setattr(runner, "run_chain", _sessions(said))
+    monkeypatch.setattr(runner, "answer", answer)
+    monkeypatch.setattr(runner, "read_blueprint", read_blueprint)
+    (case,) = [case for case in load_cases() if case.shape == "one-behavior"]
+    ledger = Ledger.load(tmp_path, max_usd=None, max_points=None)
+    run = Run(
+        case=case,
+        root=tmp_path / "run-01",
+        ledger=ledger,
+        developer_model="sonnet",
+        stop_at_hand_over=True,
+    )
+    if run.plan():
+        run.execute()
+    run.close()
+    # Planning as in a run played whole: the answer, the blueprint read and sent back, the
+    # sentence that agrees. Then nothing: no launch.
+    assert said[1:] == [ANSWER, CORRECTION, AGREEMENT]
+    assert [stop.kind for stop in run.stops] == ["need", "answer", "correction", "agreement"]
+    assert len(read) == 2
+    assert run.outcome == STOPPED
+    assert run.approved_by_sentence is False
+    assert state_of(run.project) == "awaiting-approval"
+    # The ledger counts what was played: the planning session, one answer, two readings.
+    assert run.ledger.usd == pytest.approx(1.5 + 0.01 + 0.02)
+    record = json.loads((run.root / "run.json").read_text(encoding="utf-8"))
+    assert record["stop_at_hand_over"] is True
+    assert stops_at_hand_over(run.root) is True
+    assert record["outcome"] == STOPPED
+    assert record["blueprints"] == ["blueprint-rev-01.md", "blueprint-rev-02.md"]
+    # Nothing was built: no test ran, and the record holds no result of one.
+    assert record["acceptance"] is None
+    assert record["gate"] is None
+    assert "awaiting-approval" in (run.root / "pr-body.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("stop_at_hand_over", [False, True])
+def test_a_run_stops_at_the_ceiling_before_it_starts_a_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, stop_at_hand_over: bool
 ) -> None:
     said: list[str] = []
     monkeypatch.setattr(runner, "run_chain", _sessions(said))
     (case,) = [case for case in load_cases() if case.shape == "one-behavior"]
     ledger = Ledger.load(tmp_path, max_usd=1.0, max_points=None)
     ledger.note(read_log(stream(tmp_path / "earlier.jsonl", cost=2.0)))
-    run = Run(case=case, root=tmp_path / "run-01", ledger=ledger, developer_model="sonnet")
+    run = Run(
+        case=case,
+        root=tmp_path / "run-01",
+        ledger=ledger,
+        developer_model="sonnet",
+        stop_at_hand_over=stop_at_hand_over,
+    )
     assert run.plan() is False
     assert said == []
     assert run.outcome == "budget"
