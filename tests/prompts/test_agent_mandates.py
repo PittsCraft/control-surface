@@ -399,15 +399,6 @@ def test_executor_never_edits_a_report_it_does_not_own_and_stops_on_one() -> Non
     assert "`a report fails a gate`" in section(body, "What you return")
 
 
-def test_executor_runs_plain_commands_the_permission_rules_can_read() -> None:
-    _, body = read_agent("surface-executor")
-    never = section(body, "What you never do")
-    assert "Hide a command from the developer's permission rules" in never
-    assert "Write and edit files with Write and Edit" in never
-    assert "as plain commands" in never
-    assert "never echo it" in never
-
-
 # Commands run from the root of the repository: a `cd` moves the shell the dispatcher and its
 # agents share, and a `cd` followed by git stops for an approval nobody gives, as does `git -C`,
 # which the reviewer reached for in the trial.
@@ -445,7 +436,18 @@ def test_every_prompt_that_runs_commands_stays_at_the_root(path: Path) -> None:
         assert "from the root of the repository, with paths from there" in body
         assert "`cd`" in body
         assert "`git -C`" in body
-        assert "command run by another such as `find -exec`" in body
+
+
+# How an agent writes its other commands, and the tool it changes a file with, are its own
+# judgment: a rule that general is not the chain's, and what stops for an approval is the
+# permission mode's call (ADR 0032).
+
+
+@pytest.mark.parametrize("path", prompt_files(), ids=_prompt_id)
+def test_no_prompt_says_how_an_agent_writes_a_command(path: Path) -> None:
+    body = path.read_text(encoding="utf-8")
+    for rule in ("plain command", "here-document", "`find -exec`", "Write and edit files with"):
+        assert rule not in body
 
 
 def test_executor_commits_each_slice_with_its_journal_line_and_amendment() -> None:
