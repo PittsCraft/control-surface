@@ -27,6 +27,7 @@ VERDICTS = "judge.json"
 LOWEST, HIGHEST = 1, 5
 CODE_TOOLS = ("Read", "Glob", "Grep")
 SAID_LIMIT = 600  # characters of what the developer said, kept in the timeline of the stops
+MISSING = "(none)"  # what stands for a document a run did not leave
 # The documents that tell a run to its end: a run that stopped at the hand over holds only
 # their part of planning, where the interview and the blueprint are whole.
 TO_THE_END = frozenset({"stops", "pr-body"})
@@ -136,7 +137,7 @@ def prompt(dimension: Dimension, documents: Mapping[str, str]) -> str:
     )
 
 
-def _flat(text: str) -> str:
+def flat(text: str) -> str:
     return _SPACES.sub(" ", text).strip()
 
 
@@ -153,7 +154,7 @@ def parse(answer: str, dimension: Dimension, documents: Mapping[str, str]) -> li
     if criteria != dimension.criteria:
         message = f"{dimension.id}: judged {criteria}, the rubric asks {dimension.criteria}"
         raise JudgeError(message)
-    texts = [_flat(documents[name]) for name in dimension.reads]
+    texts = [flat(documents[name]) for name in dimension.reads]
     judgements: list[Judgement] = []
     for item in given:
         score = item.get("score")
@@ -162,13 +163,13 @@ def parse(answer: str, dimension: Dimension, documents: Mapping[str, str]) -> li
         if type(score) is not int or not LOWEST <= score <= HIGHEST:
             message = f"{dimension.id}: {item['criterion']} has the score {score!r}, not 1 to 5"
             raise JudgeError(message)
-        passage = _flat(str(item.get("passage", "")))
+        passage = flat(str(item.get("passage", "")))
         judgements.append(
             Judgement(
                 dimension=dimension.id,
                 criterion=str(item["criterion"]),
                 score=score,
-                reason=_flat(str(item.get("reason", ""))),
+                reason=flat(str(item.get("reason", ""))),
                 passage=passage,
                 grounded=bool(passage) and any(passage in text for text in texts),
             )
@@ -202,7 +203,7 @@ def documents_of(root: Path, case: Case) -> dict[str, str]:
         ("blueprint", folder / "blueprint.md"),
         ("pr-body", root / "pr-body.md"),
     ):
-        documents[name] = path.read_text(encoding="utf-8") if path.is_file() else "(none)"
+        documents[name] = path.read_text(encoding="utf-8") if path.is_file() else MISSING
     return documents
 
 

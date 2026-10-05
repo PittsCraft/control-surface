@@ -51,8 +51,8 @@ scripts/gate.sh evals probes                             # faults put there on p
 scripts/gate.sh evals corpus --runs 3 --jobs 3           # every case, three runs each
 scripts/gate.sh evals corpus --case 05-fine-cap          # one case
 scripts/gate.sh evals corpus --stop-at-hand-over         # planning alone: no execution
-scripts/gate.sh evals judge-check                        # is the judge to be trusted
-scripts/gate.sh evals judge                              # judge the runs not judged yet
+scripts/gate.sh evals judge-check                        # are the judge and its count to be trusted
+scripts/gate.sh evals judge                              # judge and count the runs not done yet
 python3 evals/run.py report                              # no session: runs anywhere
 python3 evals/run.py report --against evals/reports/<kept>/summary.json --keep
 ```
@@ -83,9 +83,27 @@ Judged by a model against `evals/judge/rubric.md`, each judgement with its score
 
 The judge is checked without a human (`surface_evals/judge_check.py`). `evals/judge/spoiled/` holds documents of the toy spoiled in one known way each, with the criterion that way must lower: a padded blueprint, one stripped of the rules the interview settled, an interview with questions the need and the code already answer. Each must score below its original. A spoiled document that does not is a criterion on which the judge is not to be trusted, and the report says so. The padded blueprint is padded from a lean one of its own, since padding added to a page that already repeats itself shows nothing.
 
+### What the developer would skip, counted
+
+A score from 1 to 5 is too coarse to follow a change of the blueprint: `blueprint.no-padding` gave the same score to pages on which a reader who counted found thirteen to fifteen facts said twice, then two to four. So the judge also counts (`surface_evals/count.py`), in a call of its own that leaves the criteria of the rubric as they are asked. It is given the blueprint alone and the method of `evals/judge/count.md`, the one that reader followed by hand. Per run:
+
+- `repeated_in_prose`: the facts the page states more than once in prose. A later passage that adds a reason, a consequence, an edge case or a worked example is not a repeat, nor is a pointer to a criterion. A fact that only a diagram draws again is listed and not counted, since a diagram may draw what the prose says.
+- `implementation_details`: the details of implementation that are not the developer's to decide: the name of a function, a constant or a helper, a call to a library, where a piece of code sits in a file.
+- `skippable_percent`: the share of the words of the page the developer could skip, the judge's estimate, to the nearest five. It tells what the two counts cannot, a page padded with whole sections: the padded page of the check says fewer facts twice than a long blueprint does, and holds far more to skip.
+
+Lower is better for each. The two counts are made by the script, from lists: the judge gives each fact with every statement of it, its place on the page and the passage that makes it, and each detail with its passage, never a total. `count.json`, in the folder of the run, keeps them: a count is checked by reading its passages against the page. The script holds the rest of what it can. An answer that is not the lists and the share asked for is refused. A passage that is not on the page is marked, one given twice for the same fact counts twice only where the page holds it twice, and `count_grounded` is the share of the passages that stand. A passage that only a diagram of the page holds is a statement in a diagram, whatever place the judge gave it, so that a diagram's line is never a repeat in prose. A run that handed no blueprint over has no count, where a zero would read as the best of pages. A run that stopped at the hand over has its blueprint, whole: it is counted like any other, under the same names, and its counts join the same spread.
+
+The count is checked on the lean blueprint and its padded version: each of the three must be higher on the padded page. One that is not is a measure on which the judge is not to be trusted.
+
+To read them: a fact has no sharp edge, and two readings of the same page by hand differed by one fact in seven, so one or two facts between two runs say nothing. For scale, by hand and by this method: 0, 0 and 0% on the lean page; 6 or 7 facts, 7 details and 60% on the padded one; 7 to 18 facts, 4 to 9 details and 25 to 40% on the blueprints of the second campaign; 2 to 6, 1 to 5 and 10 to 25% once the extractor was told to say a fact once.
+
+Not counted, of what that reader gave: a score of its own, which would be a second score of `blueprint.no-padding`; what is missing to decide, which `blueprint.decidable` asks with the need and the interview in hand, and which no passage of the page can show; the facts only a diagram repeats, as a measure, which it called coarser and which the check cannot hold, since it found none on the padded page.
+
 ## The report
 
-`report` measures every run of the campaign folder and writes `summary.json` and `report.md` in it. A measure is kept per case as its mean, its lowest and its highest value over the runs, since a model does not take the same path twice. Under the scores of the judge, it gives the lowest judgement of each criterion with its reason and its passage: that is where to start reading. With `--against`, it lists what moved since an earlier campaign: a measure moved when its values lie wholly outside those of the campaign before, so that the spread between runs is not read as a change, and it is called better or worse when it has a better way.
+`report` measures every run of the campaign folder and writes `summary.json` and `report.md` in it. A measure is kept per case as its mean, its lowest and its highest value over the runs, since a model does not take the same path twice. Under the scores of the judge, it gives the lowest judgement of each criterion with its reason and its passage: that is where to start reading. The counts of the blueprint follow, measures like the others. With `--against`, it lists what moved since an earlier campaign: a measure moved when its values lie wholly outside those of the campaign before, so that the spread between runs is not read as a change, and it is called better or worse when it has a better way.
+
+A campaign judged before the judge counted holds no count. Compared with one that does, the report says that the counts are not compared, where "nothing moved" would read as counts that stayed where they were. Its runs can still be counted: `judge` keeps the scores in `judge.json` and the counts in `count.json`, and makes only the one a run lacks, so the scores of an old campaign stay as they were.
 
 `--keep` copies both files to `evals/reports/<date>-<version of the chain>/`, to commit: that is what the next campaign is compared with. The version is a hash of `agents/` and `skills/`. The streams and the projects stay in the campaign folder, out of git.
 

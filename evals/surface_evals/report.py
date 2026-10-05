@@ -20,6 +20,7 @@ from typing import cast
 from surface_evals import CLONE
 from surface_evals.budget import LEDGER
 from surface_evals.corpus import load_cases
+from surface_evals.count import COUNTS, GROUNDED, counts_of
 from surface_evals.judge import IN_PLANNING, VERDICTS
 from surface_evals.judge_check import RECORD as JUDGE_CHECK
 from surface_evals.measure import Measures, measure
@@ -60,6 +61,9 @@ DIRECTION = {
     "planning_usd": -1,
     "usd": -1,
 }
+# What a summary folds per case and over all the runs: the measures of the script, the scores
+# of the judge, and its counts of the blueprint. A summary kept before the counts has no `count`.
+KINDS = ("measures", "judge", "count")
 # The measures of the goals table, in the order of the questions the evaluation answers.
 GOALS = (
     "handed_over",
@@ -174,6 +178,7 @@ def summarize(out: Path) -> dict[str, object]:
     cases: dict[str, object] = {}
     every: list[Measures] = []
     judged: list[dict[str, float | bool]] = []
+    counted: list[dict[str, float]] = []
     remarks: dict[str, dict[str, object]] = {}
     stopped = 0
     for case in load_cases():
@@ -183,10 +188,12 @@ def summarize(out: Path) -> dict[str, object]:
         stopped += sum(1 for root in roots if stops_at_hand_over(root))
         measures = [measure(root, case) for root in roots]
         verdicts = [folded for root in roots if (folded := _verdicts(root))]
+        counts = [found for root in roots if (found := counts_of(root))]
         for root, measured in zip(roots, measures, strict=True):
             (root / "measures.json").write_text(json.dumps(measured, indent=2) + "\n", "utf-8")
         every.extend(measures)
         judged.extend(verdicts)
+        counted.extend(counts)
         for root in roots:
             _lowest(root, case.name, remarks)
         cases[case.name] = {
@@ -195,6 +202,7 @@ def summarize(out: Path) -> dict[str, object]:
             "outcomes": [str(found["outcome"]) for found in measures],
             "measures": _spreads(measures),
             "judge": _spreads(verdicts),
+            "count": _spreads(counts),
         }
     probes = [
         cast("dict[str, object]", json.loads(path.read_text(encoding="utf-8")))
@@ -212,6 +220,7 @@ def summarize(out: Path) -> dict[str, object]:
             "stopped_at_hand_over": stopped,
             "measures": _spreads(every),
             "judge": _spreads(judged),
+            "count": _spreads(counted),
         },
         "remarks": dict(sorted(remarks.items())),
         "probes": probes,
@@ -231,6 +240,15 @@ class Move:
     verdict: str  # better, worse, or moved when the measure has no better way
 
 
+def _way(kind: str, name: str) -> int:
+    """Say which way is better: a score the higher, a count the lower, a measure as listed."""
+    if kind == "judge" and name != "grounded":
+        return 1
+    if kind == "count":
+        return -1 if name in COUNTS else 0
+    return DIRECTION.get(name, 0)
+
+
 def _moves(scope: str, kind: str, after: object, before: object) -> list[Move]:
     new = cast("dict[str, dict[str, float]]", cast("dict[str, object]", after).get(kind, {}))
     old = cast("dict[str, dict[str, float]]", cast("dict[str, object]", before).get(kind, {}))
@@ -239,7 +257,7 @@ def _moves(scope: str, kind: str, after: object, before: object) -> list[Move]:
         now, then = Spread.from_dict(new[name]), Spread.from_dict(old[name])
         if now.low <= then.high and then.low <= now.high:
             continue  # the two campaigns overlap: within the spread between runs
-        way = 1 if kind == "judge" and name != "grounded" else DIRECTION.get(name, 0)
+        way = _way(kind, name)
         rose = now.mean > then.mean
         verdict = "moved" if way == 0 else "better" if rose == (way > 0) else "worse"
         moves.append(Move(scope, name, then, now, verdict))
@@ -252,11 +270,26 @@ def compare(after: Mapping[str, object], before: Mapping[str, object]) -> list[M
     new = cast("dict[str, object]", after["cases"])
     old = cast("dict[str, object]", before["cases"])
     for name in sorted(set(new) & set(old)):
-        for kind in ("measures", "judge"):
+        for kind in KINDS:
             moves.extend(_moves(name, kind, new[name], old[name]))
-    for kind in ("measures", "judge"):
+    for kind in KINDS:
         moves.extend(_moves("all", kind, after["all"], before["all"]))
     return moves
+
+
+def uncompared(after: Mapping[str, object], before: Mapping[str, object]) -> list[str]:
+    """Say what two summaries cannot be compared on: the counts, when one of them holds none.
+
+    A campaign judged before the judge counted has no count. Left unsaid, "nothing moved" would
+    read as a count that stayed where it was.
+    """
+    now, then = (
+        bool(cast("dict[str, object]", summary["all"]).get("count")) for summary in (after, before)
+    )
+    if now == then:
+        return []
+    without = "the campaign before" if now else "this campaign"
+    return [f"Not compared: the counts of the blueprint, which {without} does not hold."]
 
 
 def _cell(spread: Mapping[str, float] | None) -> str:
@@ -316,6 +349,27 @@ def _judged(summary: Mapping[str, object]) -> list[str]:
     return lines
 
 
+def _counted(summary: Mapping[str, object]) -> list[str]:
+    counted = cast("dict[str, object]", summary["all"]).get("count")
+    if not counted:
+        return []
+    return [
+        "",
+        "## What the developer would skip on the blueprint",
+        "",
+        (
+            "Counted by the judge on the blueprint alone, lower being better: the facts the page"
+            " says more than once in prose, the details of implementation that are not the"
+            " developer's to decide, and the share of its words they could skip, in percent,"
+            f" which is an estimate. `{GROUNDED}` is the share of the passages these counts rest"
+            " on that stand on the page. The facts, the details and their passages are in the"
+            " `count.json` of each run."
+        ),
+        "",
+        *_table(summary, "count", (*COUNTS, GROUNDED)),
+    ]
+
+
 def _checked(summary: Mapping[str, object]) -> list[str]:
     check = cast("dict[str, object] | None", summary["judge_check"])
     if check is None:
@@ -328,6 +382,16 @@ def _checked(summary: Mapping[str, object]) -> list[str]:
         f" {pair['spoiled']} | {'yes' if pair['below'] else 'no'} |"
         for pair in cast("list[dict[str, object]]", check["pairs"])
     ]
+    # A check kept before the judge counted has no counts.
+    counts = cast("list[dict[str, object]]", check.get("counts", []))
+    if counts:
+        lines += ["", "| Spoiled document | Count | Original | Spoiled | Above |"]
+        lines.append("|---|---|---|---|---|")
+        lines += [
+            f"| {pair['what']} | `{pair['count']}` | {pair['original']} |"
+            f" {pair['spoiled']} | {'yes' if pair['above'] else 'no'} |"
+            for pair in counts
+        ]
     return lines
 
 
@@ -347,7 +411,7 @@ def _spent(summary: Mapping[str, object]) -> list[str]:
     ]
 
 
-def _moved(moves: Sequence[Move] | None) -> list[str]:
+def _moved(moves: Sequence[Move] | None, left_out: Sequence[str]) -> list[str]:
     if moves is None:
         return []
     lines = ["", "## What moved since the campaign before", ""]
@@ -358,6 +422,8 @@ def _moved(moves: Sequence[Move] | None) -> list[str]:
         f" {_cell(move.after.to_dict())}, {move.verdict}."
         for move in moves
     ]
+    for line in left_out:
+        lines += ["", line]
     return lines
 
 
@@ -377,8 +443,15 @@ def _stopped(everything: Mapping[str, object]) -> list[str]:
     ]
 
 
-def render(summary: Mapping[str, object], moves: Sequence[Move] | None = None) -> str:
-    """Write the report: the goals, the probes, the judge and its check, the cost, what moved."""
+def render(
+    summary: Mapping[str, object],
+    moves: Sequence[Move] | None = None,
+    left_out: Sequence[str] = (),
+) -> str:
+    """Write the report: the goals, the probes, the judge and its check, the cost, what moved.
+
+    `left_out` is what the two campaigns could not be compared on, told under what moved.
+    """
     cases = cast("dict[str, dict[str, object]]", summary["cases"])
     everything = cast("dict[str, object]", summary["all"])
     outcomes = "; ".join(
@@ -402,9 +475,10 @@ def render(summary: Mapping[str, object], moves: Sequence[Move] | None = None) -
         f"Outcomes: {outcomes}.",
         *_probes(summary),
         *_judged(summary),
+        *_counted(summary),
         *_checked(summary),
         *_spent(summary),
-        *_moved(moves),
+        *_moved(moves, left_out),
     ]
     return "\n".join(lines).replace(EM_DASH, ", ") + "\n"
 
@@ -413,11 +487,13 @@ def write(out: Path, against: Path | None) -> tuple[Path, Path]:
     """Summarize an output folder and write `summary.json` and `report.md` in it."""
     summary = summarize(out)
     moves = None
+    left_out: list[str] = []
     if against is not None:
         before = cast("dict[str, object]", json.loads(against.read_text(encoding="utf-8")))
         moves = compare(summary, before)
+        left_out = uncompared(summary, before)
         summary["against"] = {"chain": before["chain"], "at": before["at"]}
     out.mkdir(parents=True, exist_ok=True)
     (out / SUMMARY).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    (out / REPORT).write_text(render(summary, moves), encoding="utf-8")
+    (out / REPORT).write_text(render(summary, moves, left_out), encoding="utf-8")
     return out / SUMMARY, out / REPORT
