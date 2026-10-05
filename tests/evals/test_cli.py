@@ -10,6 +10,7 @@ import toy
 
 from surface_evals import cli
 from surface_evals.report import REPORT, SUMMARY
+from surface_evals.runner import Run
 
 RUN = Path(__file__).resolve().parents[2] / "evals" / "run.py"
 
@@ -46,6 +47,24 @@ def test_the_corpus_starts_no_session_outside_the_container(
     record = tmp_path / "runs" / "01-overdue-list" / "run-01"
     assert (record / "work" / "lending" / "lending" / "fines.py").is_file()
     assert not (record / "logs").exists() or not list((record / "logs").glob("*.jsonl"))
+
+
+def test_the_corpus_tells_its_runs_to_stop_at_the_hand_over_only_when_asked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    told: list[bool] = []
+
+    def play(run: Run) -> str:
+        told.append(run.stop_at_hand_over)
+        return run.root.name
+
+    monkeypatch.setattr(cli, "_play", play)
+    corpus = ["--out", str(tmp_path), "corpus", "--case", "01-overdue-list"]
+    assert cli.main(corpus) == 0
+    assert cli.main([*corpus, "--stop-at-hand-over"]) == 0
+    assert told == [False, True]
+    # The other options hold: the second run takes the next folder of the same case.
+    assert capsys.readouterr().out.split() == ["run-01", "run-02"]
 
 
 def test_the_script_finds_the_harness_from_any_folder(tmp_path: Path) -> None:

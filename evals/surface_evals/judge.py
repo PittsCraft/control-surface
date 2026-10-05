@@ -11,14 +11,14 @@ import re
 import shutil
 import tempfile
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import cast
 
 from surface_evals import HOST, JUDGE
 from surface_evals.budget import Ledger
 from surface_evals.corpus import Case
-from surface_evals.runner import RECORD
+from surface_evals.runner import RECORD, stops_at_hand_over
 from surface_evals.sessions import ask
 
 MODEL = "opus"
@@ -27,6 +27,15 @@ VERDICTS = "judge.json"
 LOWEST, HIGHEST = 1, 5
 CODE_TOOLS = ("Read", "Glob", "Grep")
 SAID_LIMIT = 600  # characters of what the developer said, kept in the timeline of the stops
+# The documents that tell a run to its end: a run that stopped at the hand over holds only
+# their part of planning, where the interview and the blueprint are whole.
+TO_THE_END = frozenset({"stops", "pr-body"})
+IN_PLANNING = "-in-planning"
+STOPPED_AT_HAND_OVER = (
+    "This run was played to the hand over of the blueprint and no further, on purpose: nothing"
+    " was approved and nothing was built. Judge what you are given as it stood then, and fault"
+    " nothing for a step that comes after."
+)
 
 _DIMENSION = re.compile(r"## (?P<id>[a-z-]+): (?P<title>.+)")
 _READS = re.compile(r"Reads: (?P<documents>.+)")
@@ -83,6 +92,23 @@ def load_rubric(path: Path = RUBRIC) -> tuple[str, tuple[Dimension, ...]]:
             )
         )
     return head.strip(), tuple(dimensions)
+
+
+def in_planning(dimension: Dimension) -> Dimension:
+    """Give the dimension a run that stopped at the hand over is judged on.
+
+    A dimension that reads the interview and the blueprint is asked as it is: its scores compare
+    with those of a run played whole. One that reads the stops is asked of planning alone,
+    which is another question: it is told so, and takes another name, so that its scores never
+    join those of the runs played whole.
+    """
+    if TO_THE_END.isdisjoint(dimension.reads):
+        return dimension
+    return replace(
+        dimension,
+        id=f"{dimension.id}{IN_PLANNING}",
+        text=f"{dimension.text}\n\n{STOPPED_AT_HAND_OVER}",
+    )
 
 
 def prompt(dimension: Dimension, documents: Mapping[str, str]) -> str:
@@ -212,6 +238,8 @@ def judge(  # noqa: PLR0913 (what one judgement is given, each by its name)
 def judge_run(root: Path, case: Case, *, model: str, repeats: int, ledger: Ledger) -> Path:
     """Judge a run on every dimension, `repeats` times, and keep the verdicts in its folder."""
     system, dimensions = load_rubric()
+    if stops_at_hand_over(root):
+        dimensions = tuple(in_planning(dimension) for dimension in dimensions)
     documents = documents_of(root, case)
     verdicts: list[dict[str, object]] = []
     refused: list[str] = []

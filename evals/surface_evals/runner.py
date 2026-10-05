@@ -8,6 +8,10 @@ has one, replies with a sentence that agrees, which must approve nothing, then l
 loop hands back, runs the acceptance tests the agents never saw, and writes `run.json`: what was
 said at each stop, and what the files held then. Nothing is judged here: `measure` and `judge`
 read the folder a run leaves.
+
+A run may stop at the hand over, when a campaign measures a change of planning alone: it plays
+planning as above, the sentence that agrees included, then launches nothing and runs no
+acceptance test. Its record says so, since nothing of the execution may be read from it.
 """
 
 import json
@@ -39,6 +43,8 @@ AWAITING = "awaiting-approval"
 AGENTS_TURN = frozenset({"executing", "reviewing", "fixing"})
 OVER = frozenset({"conformant", "abandoned"})
 HANDED_BACK = frozenset({"blocked", "plan-change-proposed"})
+# The outcome of a run that stops at the hand over and got there: no run played whole has it.
+STOPPED = "stopped-at-hand-over"
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,12 +146,22 @@ def pr_body(project: Path) -> str:
     return done.stdout if done.returncode == 0 else ""
 
 
+def stops_at_hand_over(root: Path) -> bool:
+    """Say whether the run kept in a folder was played to the hand over and no further.
+
+    A record older than the option does not say: its run was played whole.
+    """
+    record = cast("dict[str, object]", json.loads((root / RECORD).read_text(encoding="utf-8")))
+    return record.get("stop_at_hand_over") is True
+
+
 @dataclass(slots=True)
 class Run:
     case: Case
     root: Path
     ledger: Ledger
     developer_model: str
+    stop_at_hand_over: bool = False  # play planning alone: no launch, no acceptance test
     project: Path = field(init=False)
     stops: list[Stop] = field(default_factory=list[Stop])
     blueprints: list[str] = field(default_factory=list[str])
@@ -265,7 +281,13 @@ class Run:
         return True
 
     def execute(self) -> None:
-        """Launch the loop, which the launch approves, and once more if a session ends early."""
+        """Launch the loop, which the launch approves, and once more if a session ends early.
+
+        A run that stops at the hand over launches nothing: having got there is its outcome.
+        """
+        if self.stop_at_hand_over:
+            self.outcome = STOPPED
+            return
         for launch in range(MAX_LAUNCHES):
             if self.ledger.exhausted() is not None:
                 self.outcome = "budget"
@@ -282,9 +304,14 @@ class Run:
             self.outcome = "execution-stuck"
 
     def close(self) -> None:
-        """Run what the agents never saw, and keep what the branch says of itself."""
-        self.acceptance = run_acceptance(self.case, self.project)
-        self.gate = gate_passes(self.project)
+        """Run what the agents never saw, and keep what the branch says of itself.
+
+        A run that stops at the hand over built nothing: no test is run on it, whose result
+        would read as that of a delivery.
+        """
+        if not self.stop_at_hand_over:
+            self.acceptance = run_acceptance(self.case, self.project)
+            self.gate = gate_passes(self.project)
         (self.root / "pr-body.md").write_text(pr_body(self.project), encoding="utf-8")
         self.save()
 
@@ -294,6 +321,7 @@ class Run:
             "case": self.case.name,
             "project": self.project.relative_to(self.root).as_posix(),
             "plan": plan_of(self.project),
+            "stop_at_hand_over": self.stop_at_hand_over,
             "outcome": self.outcome,
             "approved_by_sentence": self.approved_by_sentence,
             "stops": [asdict(stop) for stop in self.stops],

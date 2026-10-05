@@ -39,6 +39,10 @@ The sessions run in the container, where this clone is mounted at `/clone`: a se
 
 A run plays the developer's side of the README: the need, an answer to each question, then a reading of the blueprint handed over, whose corrections go back as amendments, twice at most. It gives the amendment of the case when it has one, replies with a sentence that agrees, "Looks fine to me, go ahead.", which must approve nothing, then launches `/surface-execute`, which approves. It stops when the plan is conformant or the loop hands back, runs the acceptance tests, and keeps everything under `runs/<case>/run-NN/`: the project, the stream of every session, each blueprint handed over, and `run.json`, what was said at each stop and the state of the plan then.
 
+`corpus --stop-at-hand-over` stops each run at the hand over, for a campaign that measures a change of planning alone, the interview or the blueprint, without paying for the execution. The run plays planning as above, the sentence that agrees included, since it is one cheap turn and `approved_by_sentence` is a measure of planning. It then launches nothing and runs no acceptance test. Its outcome is `stopped-at-hand-over`, which no run played whole has, and its `run.json` says `stop_at_hand_over`.
+
+Nothing of the execution is read from such a run, whatever its outcome. Every measure the execution gives or adds to is empty for it, not 0 or false, so that it is never read as a run that failed to conform, nor counted with the runs played whole: `conformant`, `acceptance`, `gate`, the approvals, the reviews and their findings, the fixes, the failed gate runs, the sessions killed or relaunched, the files of the critical zones, and `usd`. `planning_usd`, what planning cost, is the one cost both kinds of runs have. The judge is asked the blueprint and the interview as for any run, since both are whole at the hand over: those scores compare with a campaign played whole. It is asked the messages and following along of planning alone, and told that the run stops there; it keeps those scores under names of their own, `messages-in-planning` and `following-in-planning`, since they answer another question than those of a run judged to its end. The report says how many runs played planning alone, and compares with another campaign only what both measured.
+
 ## The commands
 
 ```sh
@@ -46,6 +50,7 @@ export CLAUDE_CODE_OAUTH_TOKEN=...                       # or ANTHROPIC_API_KEY
 scripts/gate.sh evals probes                             # faults put there on purpose, on the toy
 scripts/gate.sh evals corpus --runs 3 --jobs 3           # every case, three runs each
 scripts/gate.sh evals corpus --case 05-fine-cap          # one case
+scripts/gate.sh evals corpus --stop-at-hand-over         # planning alone: no execution
 scripts/gate.sh evals judge-check                        # is the judge to be trusted
 scripts/gate.sh evals judge                              # judge the runs not judged yet
 python3 evals/run.py report                              # no session: runs anywhere

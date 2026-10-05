@@ -1,6 +1,6 @@
 """The evaluations from the command line: run the corpus, the probes and the judge, then report.
 
-    evals/run.py corpus [--case NAME]... [--runs N] [--jobs N]
+    evals/run.py corpus [--case NAME]... [--runs N] [--jobs N] [--stop-at-hand-over]
     evals/run.py probes [--only NAME]... [--runs N]
     evals/run.py judge [--repeats N] [--again]
     evals/run.py judge-check [--repeats N]
@@ -56,7 +56,13 @@ def _corpus(args: argparse.Namespace) -> int:
             root = folder / f"run-{number:02d}"
             root.mkdir(parents=True)
             runs.append(
-                Run(case=case, root=root, ledger=ledger, developer_model=args.developer_model)
+                Run(
+                    case=case,
+                    root=root,
+                    ledger=ledger,
+                    developer_model=args.developer_model,
+                    stop_at_hand_over=args.stop_at_hand_over,
+                )
             )
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         for line in pool.map(_play, runs):
@@ -143,6 +149,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     corpus.add_argument("--runs", type=int, default=1, help="runs per case")
     corpus.add_argument("--jobs", type=int, default=1, help="runs played at the same time")
     corpus.add_argument("--developer-model", default=developer.MODEL)
+    corpus.add_argument(
+        "--stop-at-hand-over",
+        action="store_true",
+        help="play planning alone: stop once the blueprint is handed over and read",
+    )
     corpus.set_defaults(play=_corpus)
 
     seeded = commands.add_parser("probes", help="faults put there on purpose, on the toy")

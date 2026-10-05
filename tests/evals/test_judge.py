@@ -4,18 +4,25 @@ import json
 from pathlib import Path
 
 import pytest
-from support import case, kept_run
+from support import case, kept_run, stream
 
-from surface_evals import judge_check
+from surface_evals import judge, judge_check
+from surface_evals.budget import Ledger
 from surface_evals.judge import (
+    IN_PLANNING,
+    STOPPED_AT_HAND_OVER,
     Dimension,
     JudgeError,
     documents_of,
+    in_planning,
+    judge_run,
     load_rubric,
     parse,
     prompt,
     timeline,
 )
+from surface_evals.runner import STOPPED
+from surface_evals.sessions import SessionLog, read_log
 
 DOCUMENTS = {"need": "List the overdue loans.", "blueprint": "It prints one line per late loan."}
 DIMENSION = Dimension(
@@ -133,6 +140,76 @@ def test_the_judge_reads_a_run_as_the_developer_lived_it(tmp_path: Path) -> None
     assert "x" * 600 + " [...]" in told
     assert "in the state `awaiting-approval`, on this message:\n\nRead it." in told
     assert told == timeline({"stops": stops})
+
+
+def test_a_dimension_that_reads_the_stops_is_asked_of_planning_when_the_run_stopped() -> None:
+    _, dimensions = load_rubric()
+    by_id = {dimension.id: dimension for dimension in dimensions}
+    # The interview and the blueprint are whole at the hand over: the rubric as written.
+    for name in ("blueprint", "interview"):
+        assert in_planning(by_id[name]) == by_id[name]
+    # The stops and the pull request description go no further than planning: the judge is told
+    # so, and judges the same criteria on the same documents under another name.
+    for name in ("messages", "following"):
+        dimension = by_id[name]
+        planned = in_planning(dimension)
+        assert planned.id == f"{name}{IN_PLANNING}"
+        assert planned.text == f"{dimension.text}\n\n{STOPPED_AT_HAND_OVER}"
+        assert (planned.reads, planned.criteria, planned.code) == (
+            dimension.reads,
+            dimension.criteria,
+            dimension.code,
+        )
+        assert f"{STOPPED_AT_HAND_OVER}\n\n## The documents" in prompt(
+            planned, dict.fromkeys(planned.reads, "x")
+        )
+
+
+def test_the_verdicts_of_a_run_that_stopped_at_the_hand_over_never_take_the_names_of_a_whole_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    asked: list[str] = []
+
+    def ask(question: str, log: Path, **_: object) -> SessionLog:
+        """Play the judge: a 4 on each criterion the question names."""
+        asked.append(question)
+        named = question.rsplit(" rubric (", 1)[1].split(")", 1)[0].split(", ")
+        given = [{"criterion": name, "score": 4, "reason": "", "passage": ""} for name in named]
+        return read_log(stream(log, final=json.dumps({"judgements": given})))
+
+    _, dimensions = load_rubric()
+
+    def judged(root: Path) -> set[str]:
+        """Judge a run, and name the dimensions its verdicts are kept under."""
+        ledger = Ledger.load(root, max_usd=None, max_points=None)
+        verdicts = judge_run(root, case(tmp_path), model="opus", repeats=1, ledger=ledger)
+        kept = json.loads(verdicts.read_text(encoding="utf-8"))
+        assert kept["refused"] == []
+        # Every criterion of the rubric is judged, whatever the run.
+        assert len(kept["judgements"]) == sum(len(dimension.criteria) for dimension in dimensions)
+        return {item["dimension"] for item in kept["judgements"]}
+
+    monkeypatch.setattr(judge, "ask", ask)
+    (tmp_path / "need.md").write_text("List the overdue loans.\n", encoding="utf-8")
+    stopped = kept_run(
+        tmp_path / "stopped", journal=[], outcome=STOPPED, stops=[], stop_at_hand_over=True
+    )
+    names = judged(stopped)
+    assert {"blueprint", "interview", f"messages{IN_PLANNING}", f"following{IN_PLANNING}"} <= names
+    assert names.isdisjoint({"messages", "following"})
+    # The judge is asked in the order of the rubric, and told of the stop where it reads the stops.
+    told = {
+        dimension.id: STOPPED_AT_HAND_OVER in question
+        for dimension, question in zip(dimensions, asked, strict=True)
+    }
+    assert (told["blueprint"], told["interview"]) == (False, False)
+    assert (told["messages"], told["following"]) == (True, True)
+    assert (stopped / "logs-judge" / f"messages{IN_PLANNING}-01.jsonl").is_file()
+    # A run played whole is asked the rubric as written, under its names.
+    asked.clear()
+    whole = kept_run(tmp_path / "whole", journal=[], stops=[])
+    assert judged(whole) == {dimension.id for dimension in dimensions}
+    assert not any(STOPPED_AT_HAND_OVER in question for question in asked)
 
 
 def test_each_spoiled_document_lowers_a_criterion_of_the_rubric_and_differs_from_its_original() -> (

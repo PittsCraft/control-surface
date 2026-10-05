@@ -114,6 +114,7 @@ def kept_run(  # noqa: PLR0913 (what a run may have left, each by its name)
     blueprints: Sequence[str] = (BLUEPRINT,),
     conformity: str | None = None,
     acceptance: Mapping[str, object] | None = None,
+    stop_at_hand_over: bool = False,
 ) -> Path:
     """Write the folder a run leaves: its record, its blueprints, its plan folder."""
     folder = root / "work" / "lending" / "docs" / "plans" / "2026-01-15-overdue"
@@ -135,12 +136,14 @@ def kept_run(  # noqa: PLR0913 (what a run may have left, each by its name)
         "case": "01-overdue-list",
         "project": "work/lending",
         "plan": "docs/plans/2026-01-15-overdue",
+        "stop_at_hand_over": stop_at_hand_over,
         "outcome": outcome,
         "approved_by_sentence": False,
         "stops": list(stops),
         "blueprints": names,
         "acceptance": acceptance,
-        "gate": True,
+        # A run that stops at the hand over runs no gate on a code it never asked for.
+        "gate": None if stop_at_hand_over else True,
     }
     (root / RECORD).write_text(json.dumps(record), encoding="utf-8")
     (root / "pr-body.md").write_text("## Plans on this branch\n", encoding="utf-8")

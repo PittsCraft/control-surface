@@ -3,7 +3,7 @@
 Every measure is read from files: the journal, the plan folder, the streams of the sessions and
 the delivered code. A measure that does not apply to a run is None, and stays out of the means:
 the proof of conformity of a plan that never got there, the cut kept by a revision that was never
-asked for.
+asked for, and everything the execution gives when the run stopped at the hand over.
 """
 
 import json
@@ -13,7 +13,7 @@ from typing import cast
 
 from surface_evals import blueprint as form
 from surface_evals.corpus import Case, Diagram
-from surface_evals.runner import GATE, RECORD
+from surface_evals.runner import GATE, RECORD, stops_at_hand_over
 from surface_evals.sessions import SessionLog, named_in_tool_calls, read_log
 from surface_status.plan_folder import PlanFolderError, parse_critical_files, parse_gates
 from surface_status.plan_folder import parse_slice_markers as parse_slices
@@ -24,6 +24,28 @@ ZONES = ("fine computation", "loans.jsonl")
 # with their acceptance tests and their reference implementations.
 HIDDEN = ("/clone/", "evals/cases")
 PLAN_AGENT = "Plan"
+# The stops that launch the loop: what their sessions cost is the cost of the execution.
+LAUNCHES = frozenset({"approval", "relaunch"})
+# What the execution gives, or adds to. A run that stops at the hand over holds none of it,
+# whatever its outcome, and each is None for it: a 0 or a False would read as a run that failed
+# to conform, and would join the spread of the runs played whole.
+EXECUTION = (
+    "conformant",
+    "acceptance",
+    "acceptance_all",
+    "gate",
+    "usd",
+    "approvals",
+    "killed",
+    "relaunches",
+    "reviews",
+    "findings",
+    "fixes",
+    "gate_runs_failed",
+    "critical_files",
+    "zones_files_listed",
+    "zones_consistent",
+)
 
 Measures = dict[str, float | bool | str | list[str] | None]
 
@@ -175,6 +197,8 @@ def measure(root: Path, case: Case) -> Measures:
     failed = 0 if acceptance is None else _number(acceptance, "failed")
     conformant = record["outcome"] == "conformant"
     hidden = {needle for log in logs for needle in named_in_tool_calls(log.path, HIDDEN)}
+    stops = cast("list[dict[str, object]]", record["stops"])
+    launched = {root / str(stop["log"]) for stop in stops if stop["kind"] in LAUNCHES}
     measures: Measures = {
         "outcome": str(record["outcome"]),
         "handed_over": bool(kept),
@@ -183,10 +207,16 @@ def measure(root: Path, case: Case) -> Measures:
         "acceptance_all": ran > 0 and failed == 0 if acceptance is not None else None,
         "gate": cast("bool | None", record["gate"]),
         "contaminated": bool(hidden),
+        # What planning cost, the developer's sessions included: the one cost a run stopped at
+        # the hand over and a run played whole both have.
+        "planning_usd": round(cost_of([log for log in logs if log.path not in launched]), 4),
         "usd": round(cost_of(logs), 4),
     }
     measures.update(_loop(journal, record))
     measures.update(_plan(folder, logs))
     measures.update(_zones(case, kept[-1] if kept else None, folder, conformant=conformant))
     measures.update(_form(case, kept))
+    if stops_at_hand_over(root):
+        for name in EXECUTION:
+            measures[name] = None
     return measures

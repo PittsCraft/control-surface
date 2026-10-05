@@ -20,11 +20,12 @@ from typing import cast
 from surface_evals import CLONE
 from surface_evals.budget import LEDGER
 from surface_evals.corpus import load_cases
-from surface_evals.judge import VERDICTS
+from surface_evals.judge import IN_PLANNING, VERDICTS
 from surface_evals.judge_check import RECORD as JUDGE_CHECK
 from surface_evals.measure import Measures, measure
 from surface_evals.probes import RECORD as PROBE
 from surface_evals.runner import RECORD as RUN
+from surface_evals.runner import stops_at_hand_over
 
 SUMMARY = "summary.json"
 REPORT = "report.md"
@@ -56,6 +57,7 @@ DIRECTION = {
     "body_in_range": 1,
     "diagram_as_expected": 1,
     "cut_kept": 1,
+    "planning_usd": -1,
     "usd": -1,
 }
 # The measures of the goals table, in the order of the questions the evaluation answers.
@@ -81,6 +83,7 @@ GOALS = (
     "cut_kept",
     "plan_minimum",
     "contaminated",
+    "planning_usd",
     "usd",
 )
 
@@ -172,10 +175,12 @@ def summarize(out: Path) -> dict[str, object]:
     every: list[Measures] = []
     judged: list[dict[str, float | bool]] = []
     remarks: dict[str, dict[str, object]] = {}
+    stopped = 0
     for case in load_cases():
         roots = sorted(path.parent for path in (out / "runs" / case.name).glob(f"run-*/{RUN}"))
         if not roots:
             continue
+        stopped += sum(1 for root in roots if stops_at_hand_over(root))
         measures = [measure(root, case) for root in roots]
         verdicts = [folded for root in roots if (folded := _verdicts(root))]
         for root, measured in zip(roots, measures, strict=True):
@@ -202,7 +207,12 @@ def summarize(out: Path) -> dict[str, object]:
         "at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "chain": chain_version(),
         "cases": cases,
-        "all": {"runs": len(every), "measures": _spreads(every), "judge": _spreads(judged)},
+        "all": {
+            "runs": len(every),
+            "stopped_at_hand_over": stopped,
+            "measures": _spreads(every),
+            "judge": _spreads(judged),
+        },
         "remarks": dict(sorted(remarks.items())),
         "probes": probes,
         "judge_check": json.loads(check.read_text(encoding="utf-8")) if check.is_file() else None,
@@ -351,6 +361,22 @@ def _moved(moves: Sequence[Move] | None) -> list[str]:
     return lines
 
 
+def _stopped(everything: Mapping[str, object]) -> list[str]:
+    """Say how many runs played planning alone, so that no empty cell reads as a failure."""
+    stopped = cast("int", everything.get("stopped_at_hand_over", 0))  # not in an older summary
+    if not stopped:
+        return []
+    return [
+        "",
+        (
+            f"{stopped} of these runs played planning alone, on purpose: they went no further"
+            " than the hand over, and nothing was approved or built in them. No measure of the"
+            " execution counts them, here or against another campaign, and what the judge says"
+            f" of their stops is kept apart, under the dimensions that end in `{IN_PLANNING}`."
+        ),
+    ]
+
+
 def render(summary: Mapping[str, object], moves: Sequence[Move] | None = None) -> str:
     """Write the report: the goals, the probes, the judge and its check, the cost, what moved."""
     cases = cast("dict[str, dict[str, object]]", summary["cases"])
@@ -367,6 +393,7 @@ def render(summary: Mapping[str, object], moves: Sequence[Move] | None = None) -
             f" over {len(cases)} cases. A value is the mean over the runs of a case, with its"
             " lowest and highest when they differ; a truth counts 1. An empty cell does not apply."
         ),
+        *_stopped(everything),
         "",
         "## Does it meet its goals",
         "",
