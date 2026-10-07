@@ -36,11 +36,12 @@ The states, from the need to the review:
 | `ceiling` | that defect and that review, then a fix that missed it, `max_autonomous_passes: 1` |
 | `blocked` | the same, then a second review that finds the defect again, and `blocked`, pushed |
 | `done`, `defect`, `deviation` | both slices done and nothing reviewed yet: as planned, with that same defect, or with the tests of slice 1 in another file than the plan names. The evaluations review them (`evals/README.md`) |
-| `slow-gate` | `done`, with a test on the main branch that sleeps 20 seconds, so that the gate lasts |
 | `review-unrecorded` | `done`, the gates run green and committed, then a clean review and `conformity.md` written, neither recorded nor committed |
 | `conformant-unpushed` | `done`, then the gates, a clean review and `conformant`, all committed, and the branch not pushed since the slices |
 
 A state that holds work not committed or not pushed, `plan-written`, `slice-uncommitted`, `suspected-break`, `review-unrecorded`, `conformant-unpushed` and their like, is what a session leaves when it dies at that point: the files are the whole state of a plan, so a state built there is the one a kill would leave, without the luck a kill needs to fall between a record and its commit.
+
+`build` takes `--slow`, whatever the state: the main branch then holds a test that sleeps 20 seconds. The gate, and the tests an agent runs before it commits, last long enough for a session to be killed in them, even when the agent writes, tests, records and commits in one command.
 
 `toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
 
@@ -93,14 +94,14 @@ Some scenarios need the developer's answers. No model plays the developer here: 
 
 ### Killed sessions
 
-A scenario kills a session at a moment it reads in the files of the project or in the stream of the session: its process group first, then whatever it left at work in the project, since a gate runs in a process group of its own and would go on to record its run while the next session works. The relaunch is a fresh session, without `--resume`. Where the moment is too short to hit, between a record and its commit or between a commit and its push, the scenario starts from a prepared state that holds what a death there leaves.
+A scenario kills a session at a moment it reads in the files of the project or in the stream of the session: its process group first, then whatever it left at work in the project, since a gate runs in a process group of its own and would go on to record its run while the next session works. The relaunch is a fresh session, without `--resume`. Where the moment is uncommitted code or a gate under way, the project is built slow, so that it lasts whatever the agent does. Where the moment is too short to hit, between a record and its commit or between a commit and its push, the scenario starts from a prepared state that holds what a death there leaves.
 
 ### The loop
 
 | Test | Start | Sessions | What must hold |
 |---|---|---|---|
 | `test_the_nominal_path_reaches_conformant` | `awaiting-approval` | `/surface-execute` | `conformant`, one approval, each slice done once, `conformity.md`, and `shelf/export.py` among the files of the critical zone the description lists. The pull request: its description is the one `surface-status pr-body` prints, set by an edit and no second opening, it is still a draft, and no call marked it ready |
-| `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conformant` |
+| `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval`, built slow | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conformant` |
 | `test_a_modified_blueprint_stops_the_loop` | `blueprint-modified` | `/surface-execute` | nothing recorded, still `executing`, the final message names the blueprint |
 | `test_the_ceiling_hands_back_to_the_developer` | `ceiling` | `/surface-execute` | `blocked` after a second review with findings, and no second fix |
 
@@ -135,8 +136,8 @@ A scenario kills a session at a moment it reads in the files of the project or i
 
 | Test | Start | Sessions | What must hold |
 |---|---|---|---|
-| `test_a_session_killed_in_a_fix_resumes_it` | `fixing` | `/surface-execute`, killed once the fixer has changed code, then relaunched | the journal of the killed session kept as is, a `fix-done`, `conformant`, nothing left uncommitted |
-| `test_a_session_killed_in_a_gate_run_runs_the_gates_again` | `slow-gate` | `/surface-execute`, killed with its gate while the gate runs, then relaunched | the kill leaves neither a `gates-run` nor a report. Then a first run, green, and `conformant` |
+| `test_a_session_killed_in_a_fix_resumes_it` | `fixing`, built slow | `/surface-execute`, killed once the fixer has changed code, then relaunched | the journal of the killed session kept as is, a `fix-done`, `conformant`, nothing left uncommitted |
+| `test_a_session_killed_in_a_gate_run_runs_the_gates_again` | `done`, built slow | `/surface-execute`, killed with its gate while the gate runs, then relaunched | the kill leaves neither a `gates-run` nor a report. Then a first run, green, and `conformant` |
 | `test_a_session_killed_in_a_review_launches_it_again` | `done` | `/surface-execute`, killed while the reviewer works, then relaunched | the journal of the killed session kept as is, one gate run before the first review, `conformant` |
 | `test_a_review_written_and_not_recorded_is_recorded_at_the_relaunch` | `review-unrecorded` | `/surface-execute` | the first event recorded is a `review-done` that cites the report left, which stays as it was; no reviewer is launched; `conformant`, pushed, the description refreshed |
 | `test_a_slice_recorded_and_not_committed_is_committed_at_the_relaunch` | `slice-uncommitted` | `/surface-execute` | the first commit holds the work of slice 1 and the journal, and nothing else; each slice done once; `conformant` |

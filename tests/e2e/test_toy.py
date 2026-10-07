@@ -247,7 +247,6 @@ UNCOMMITTED = frozenset(
         (toy.State.DONE, "reviewing"),
         (toy.State.DEFECT, "reviewing"),
         (toy.State.DEVIATION, "reviewing"),
-        (toy.State.SLOW_GATE, "reviewing"),
         (toy.State.REVIEW_UNRECORDED, "reviewing"),
         (toy.State.CONFORMANT_UNPUSHED, "conformant"),
     ],
@@ -268,6 +267,13 @@ def test_a_prepared_state_without_a_plan_is_on_the_main_branch(
     assert toy.git(project, "branch", "--show-current").strip() == "main"
     assert not list(project.glob("docs/plans/*"))
     assert (project / toy.CI_PATH).is_file() is (prepared is toy.State.SPECS_CI)
+    assert not dirty(project)
+
+
+def test_a_prepared_state_built_slow_holds_a_test_that_lasts(tmp_path: Path) -> None:
+    project = toy.build(toy.State.DONE, tmp_path, slow=True)
+    assert (project / "tests" / "test_slow.py").is_file()
+    assert state(project) == "reviewing"
     assert not dirty(project)
 
 
@@ -329,7 +335,9 @@ def test_the_nominal_path_reaches_conformant(tmp_path: Path) -> None:
 
 
 def test_a_session_killed_in_a_slice_resumes_it(tmp_path: Path) -> None:
-    project = toy.build(toy.State.AWAITING, tmp_path)
+    # Built slow: an executor that writes, tests, records and commits in one command still
+    # leaves its code uncommitted for as long as its tests run.
+    project = toy.build(toy.State.AWAITING, tmp_path, slow=True)
     logs = tmp_path / "logs"
     logs.mkdir()
     started = time.monotonic()
@@ -341,7 +349,7 @@ def test_a_session_killed_in_a_slice_resumes_it(tmp_path: Path) -> None:
                 break
             time.sleep(POLL)
         assert session.poll() is None, "the session ended before any slice was under way"
-        toy.kill(session)
+        toy.kill(session, project)
     at_kill = events(project)
     (logs / "journal-at-kill.jsonl").write_text(
         "\n".join(json.dumps(line) for line in journal(project)) + "\n", encoding="utf-8"
@@ -713,9 +721,10 @@ def test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch(tmp_path: 
 
 
 def test_a_session_killed_in_a_fix_resumes_it(tmp_path: Path) -> None:
-    project = toy.build(toy.State.FIXING, tmp_path)
+    project = toy.build(toy.State.FIXING, tmp_path, slow=True)
     logs = tmp_path / "logs"
-    # Killed as soon as the fixer has changed code it has not committed yet.
+    # Killed as soon as the fixer has changed code it has not committed yet: built slow, the
+    # project keeps that code uncommitted for as long as the gates of the fix run.
     kill_when(
         project,
         "/surface-execute",
@@ -733,7 +742,7 @@ def test_a_session_killed_in_a_fix_resumes_it(tmp_path: Path) -> None:
 
 
 def test_a_session_killed_in_a_gate_run_runs_the_gates_again(tmp_path: Path) -> None:
-    project = toy.build(toy.State.SLOW_GATE, tmp_path)
+    project = toy.build(toy.State.DONE, tmp_path, slow=True)
     logs = tmp_path / "logs"
     before = events(project)
     # Killed while the gate of the plan runs: the state script started it, in a group of its own.

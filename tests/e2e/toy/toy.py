@@ -7,7 +7,7 @@ and records each event through the installed state script, so the journal is a r
 drafted has its draft pull request too, kept by the stand-in `gh` of `gh_stand_in.py`. Run as a
 script, it builds a project and prints its path, or runs one headless session in it:
 
-    python3 tests/e2e/toy/toy.py build <state> <dest>
+    python3 tests/e2e/toy/toy.py build <state> <dest> [--slow]
     python3 tests/e2e/toy/toy.py run <project> <log> <prompt> [--resume <session id>]
 
 A session is launched the way ADR 0025 describes, by the end to end tests and by hand
@@ -92,7 +92,6 @@ class State(StrEnum):
     DONE = "done"  # the work as planned
     DEFECT = "defect"  # a defect the tests do not see: lines sorted by title only
     DEVIATION = "deviation"  # the tests of slice 1 in another file than the plan names
-    SLOW_GATE = "slow-gate"  # the work as planned, and a gate that lasts
     REVIEW_UNRECORDED = "review-unrecorded"  # gates green, a clean review written, not recorded
     CONFORMANT_UNPUSHED = "conformant-unpushed"  # conformant, committed, and never pushed
 
@@ -255,8 +254,9 @@ jobs:
       - run: python3 -m unittest discover -s tests -q
 """
 
-# A test that lasts, on the main branch: the gate then runs long enough for a session to be
-# killed in it, and no review meets the file, which the branch does not change.
+# A test that lasts, on the main branch of a project built slow. The gate, and the tests an
+# agent runs before it commits, then last long enough for a session to be killed in them,
+# however the agent cuts its commands. No review meets the file: the branch leaves it alone.
 SLOW_SECONDS = 20
 TEST_SLOW = f"""\
 import time
@@ -1394,8 +1394,6 @@ def _more(state: State) -> dict[str, str]:
     """Give the files a state adds to the project before the feature."""
     if state in {State.SPECS_CI, State.UNPUSHED_CI}:
         return {CI_PATH: CI}
-    if state is State.SLOW_GATE:
-        return {"tests/test_slow.py": TEST_SLOW}
     if state is State.SUSPECTED_BREAK:
         return {
             "README.md": README_WITH_JSON_EXPORT,
@@ -1405,10 +1403,16 @@ def _more(state: State) -> dict[str, str]:
     return {}
 
 
-def build(state: State, dest: Path) -> Path:
-    """Build the toy project under `dest` in `state` and return its path."""
+def build(state: State, dest: Path, *, slow: bool = False) -> Path:
+    """Build the toy project under `dest` in `state` and return its path.
+
+    Built slow, its tests last: a session can be killed while a gate or an agent runs them.
+    """
     settings: dict[str, object] = {"max_autonomous_passes": 1} if state in _ONE_PASS else {}
-    project = _base(dest, settings, _more(state))
+    more = _more(state)
+    if slow:
+        more["tests/test_slow.py"] = TEST_SLOW
+    project = _base(dest, settings, more)
     if state in {State.SPECS, State.SPECS_CI}:
         return project
     if state in _UNDRAFTED:
@@ -1531,6 +1535,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     builder = commands.add_parser("build", help="build the toy project in a chosen state")
     builder.add_argument("state", type=State, choices=list(State))
     builder.add_argument("dest", type=Path, help="an empty or missing folder")
+    builder.add_argument("--slow", action="store_true", help="with a test that lasts")
     runner = commands.add_parser("run", help="run one headless session to its end")
     runner.add_argument("project", type=Path)
     runner.add_argument("log", type=Path, help="where the stream of the session goes")
@@ -1543,7 +1548,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         dest: Path = args.dest.resolve()
         if dest.exists() and any(dest.iterdir()):
             parser.error(f"{dest} is not empty")
-        sys.stdout.write(f"{build(args.state, dest)}\n")
+        sys.stdout.write(f"{build(args.state, dest, slow=args.slow)}\n")
         return 0
     code = run_session(args.project.resolve(), args.prompt, args.log, resume=args.resume)
     result = session_result(args.log)
