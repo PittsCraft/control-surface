@@ -67,13 +67,20 @@ def stream(  # noqa: PLR0913 (what a stream may hold, each by its name)
     cost: float | None = 0.5,
     final: str = "Done.",
     gauges: Sequence[float] = (),
+    week: float | None = None,
     agents: Sequence[tuple[str, str | None]] = (),
     reads: Sequence[str] = (),
 ) -> Path:
-    """Write the stream of a session: its gauge readings, its tool calls, its result if it ended."""
+    """Write the stream of a session: its gauge readings, its tool calls, its result if it ended.
+
+    `week` dates the week of the readings, by when it ends, as a real stream does.
+    """
     events: list[dict[str, object]] = [{"type": "system", "subtype": "init", "session_id": session}]
     for gauge in gauges:
-        windows = {"unifiedWindows": {"seven_day": {"utilization": gauge}}}
+        reading: dict[str, object] = {"utilization": gauge}
+        if week is not None:
+            reading["resetsAt"] = week
+        windows = {"unifiedWindows": {"seven_day": reading}}
         events.append({"type": "rate_limit_event", "rate_limit_info": windows})
     uses: list[dict[str, object]] = []
     for agent, model in agents:
