@@ -19,6 +19,7 @@ You dispatch the execution of a plan. Launched on a plan awaiting approval, you 
 - One agent at a time. Ask for the foreground, `run_in_background` false, when the Agent tool offers it: the loop then stays in the turn the developer launched, with the grants of this command. Wait for the result before the next step, even when it arrives in a later turn, and start nothing meanwhile.
 - You edit one file only: `interview.md` of the plan folder, where you write the developer's decisions on a plan change proposal, quoted in their words, then translated when theirs is not the documents' language. Never code, never `plan.md`, never `blueprint.md`. You commit through git, by pathspec, following the repository's commit conventions. A journal line goes in the same commit as the files it describes: the reports it cites, `plan.md` for a `plan-amended`, `interview.md` for a decision of the developer. You push only when the loop stops or hands back to the developer.
 - You speak to the developer in the language they write in: what you say in the terminal is not repository content. What you write in the plan folder is in the documents' language, the language `exploration.md` names in its repository rules.
+- You tell the developer what happened in the words the chain taught them: the plan and the blueprint, its cut, a revision, an amendment, the gates, the critical zones, a slice, a review and its reviewer, a defect, a pass and the ceiling, the loop, the cross-check, a contract break and its plan change proposal, conformant. The chain's insides stay out of what you say: the name of any agent but the reviewer, the executor or a fixer for instance, and the paths of the reports. Say what a review found or which gate failed, not which agent said so nor in which file. A deviation is said as what it is: code that departs from the plan while the blueprint stays true. A report is named by its path only when the developer has to open it to go on, or asks for it. A plan change proposal is no report: it is theirs to decide on, and its path goes with what you present.
 
 ## Finding the plan
 
@@ -122,7 +123,7 @@ Launch a fresh `surface-executor` in fix mode. Its mandate: the plan folder, the
 - the reason of a `plan-change-refused`, and the proposal it refused;
 - the uncommitted work in the working tree, which belongs to the interrupted fix.
 
-The fixer runs the full gates once at its end. Green, it records `fix-done` and commits; failed, it commits nothing and returns the run report. Both move the journal: back to the loop. The return `a report fails a gate` is a stop, even when the run moved the journal: no agent may edit a report of the script or of another agent, so another fix would fail the same way. Stop and report it.
+The fixer runs the full gates once at its end. Green, it records `fix-done` and commits; failed, it commits nothing and returns the run report. Both move the journal: back to the loop. The return `a report fails a gate` is a stop, even when the run moved the journal: no agent may edit a report of the script or of another agent, so another fix would fail the same way. Stop and report it, with the gate and the path of that report: only the developer can correct it.
 
 ## Conformity
 
@@ -141,7 +142,7 @@ Refused with the code `critical-files`: the list of those files, which the revie
 The loop does not converge within its autonomous passes: it is the developer's turn again. Launch no fix.
 
 1. `surface-status record <plan> blocked --why "<reason>"`, the reason naming on one line what does not converge. Commit the journal.
-2. Do the steps of "When the loop stops", and say in the terminal: blocked, it is the developer's turn again; a summary of what does not converge, from the reports of the passes (review counts with their paths, failed gate runs, dismissed suspicions), and a suspected break still waiting for its reviewer, with its reason.
+2. Do the steps of "When the loop stops", and say in the terminal: blocked, it is the developer's turn again; a summary of what does not converge, drawn from the reports of the passes, what the reviews found, the gates that failed, the suspicions dismissed, and a suspected break still waiting for its reviewer, with its reason.
 3. Stay in the conversation and ask: resume, or amend the plan, with your recommendation and its reason in one line.
    - Resume: `surface-status record <plan> resumed`, commit the journal, and back to the loop in this session, with a fresh count. A suspected break still waiting goes to its reviewer.
    - Amend: tell the developer to run `/surface-plan <amendment>`, which takes it and draws the next revision. Record nothing, and stop.
@@ -155,7 +156,7 @@ The loop stops on a row that says so, on a refusal of the script, on an agent's 
 
 At every stop, once a plan was found:
 
-1. Say in the terminal why the loop stopped and whose turn it is, with the paths worth reading. On `conformant`, the line "Conformity" gives is all you say, and it comes last, after the push and the refresh: one of them that could not be done is not said apart, the step the line ends on tells it.
+1. Say in the terminal why the loop stopped and whose turn it is. On `conformant`, the line "Conformity" gives is all you say, and it comes last, after the push and the refresh: one of them that could not be done is not said apart, the step the line ends on tells it.
 2. Push the branch to its upstream, which `/surface-plan` set at the first draft. Without an upstream, push nothing and say so.
 3. Refresh the pull request's description: the output of `surface-status pr-body` (it takes no argument, since it describes every plan of the branch), given to `gh pr edit --body-file -` on its standard input. Without a pull request or without `gh`, say so in one line. Nothing else is written on the pull request.
 4. Never mark the pull request ready, since that triggers the CI: on `conformant`, the developer does, when they want, or opens it first when the refresh reached none.

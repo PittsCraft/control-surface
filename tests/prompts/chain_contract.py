@@ -194,6 +194,17 @@ LANGUAGE_SOURCES = (
     "Otherwise the language of the repository's own documentation",
     "Otherwise the language the specs are written in",
 )
+# What a command tells the developer is said in the words the README and the guide teach them,
+# listed here as the rubric of the judge lists them. The names of the other agents and the
+# paths of the reports are the chain's insides, and stay out of a message: it is to be acted
+# on, not to narrate the chain. A report is named when the developer has to open it or asks for
+# it, and a plan change proposal is no report: it is theirs to decide on.
+TAUGHT_WORDS = (
+    "the plan and the blueprint, its cut, a revision, an amendment, the gates, the critical"
+    " zones, a slice, a review and its reviewer, a defect, a pass and the ceiling, the loop, the"
+    " cross-check, a contract break and its plan change proposal, conformant"
+)
+INSIDES = "The chain's insides stay out of what you say: the name of any agent but the reviewer"
 # The developer's own words stay as given and come with a translation; the agents read the
 # translation and hold to the original when the two disagree.
 WORK_FROM_TRANSLATION = "work from its translation: the original is the reference"
