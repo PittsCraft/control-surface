@@ -34,7 +34,9 @@ EM_DASH = chr(0x2014)  # a code point, so this file holds no literal em dash
 PASSAGE_LIMIT = 240  # characters of a passage kept in a report
 
 # Which way is better, for the measures that have one: +1 the higher, -1 the lower. The others
-# are told and compared, never called better or worse.
+# are told and compared, never called better or worse. A question the developer hands back is
+# one of them, like a question asked: a developer may leave a choice to the session, and the
+# brief of a case may play one who does.
 DIRECTION = {
     "handed_over": 1,
     "conformant": 1,
@@ -43,7 +45,6 @@ DIRECTION = {
     "gate": 1,
     "contaminated": -1,
     "approved_by_sentence": -1,
-    "questions_handed_back": -1,
     "corrections": -1,
     "killed": -1,
     "relaunches": -1,
