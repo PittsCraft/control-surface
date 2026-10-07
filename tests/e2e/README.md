@@ -2,7 +2,7 @@
 
 The chain run for real, headless, on a toy project: does a session driven by the prompts do what the README promises? The strategy, and why the sessions bypass permissions in a container, is in `docs/adr/0025-end-to-end-on-a-toy-project.md`.
 
-Every scenario is billed and takes minutes: run them on demand, before a release or after a change of the prompts, never in CI.
+Every scenario is billed and takes minutes: run them on demand, before a release or after a change of the prompts, never in CI. `docs/e2e/` keeps the verdicts and the cost of the set when it is played on one version.
 
 ## What you need
 
@@ -146,7 +146,7 @@ A scenario kills a session at a moment it reads in the files of the project or i
 
 | `test_a_conformant_plan_committed_and_never_pushed_is_pushed_at_the_relaunch` | `conformant-unpushed` | `/surface-execute` | nothing recorded, the branch pushed, the description refreshed |
 
-The push of a stop of `/surface-execute` that never came is played twice. `test_an_accepted_plan_change_goes_back_to_planning` starts from a proposal committed and not pushed, which the relaunch pushes before it asks. The last test of the table starts from a conformity committed and not pushed, and fails as the chain stands: `/surface-execute` finds no plan once the only one of the branch is conformant, so its relaunch stops before any push, and the pull request keeps the description of a plan in progress. No scenario plays the same death after `/surface-status` recorded an abandonment.
+The push of a stop of `/surface-execute` that never came is played twice. `test_an_accepted_plan_change_goes_back_to_planning` starts from a proposal committed and not pushed, which the relaunch pushes before it asks. The last test of the table starts from a conformity committed and not pushed, and fails as the chain stands: `/surface-execute` finds no plan once the only one of the branch is conformant, so its relaunch stops before any push, and the pull request keeps the description of a plan in progress. The test is marked as expected to fail, strictly: the day the chain takes that push up, it passes, the mark fails, and the mark goes. No scenario plays the same death after `/surface-status` recorded an abandonment.
 
 ### The ceiling in planning, and a break an executor suspects
 
