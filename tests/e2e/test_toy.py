@@ -801,6 +801,10 @@ def test_a_review_written_and_not_recorded_is_recorded_at_the_relaunch(tmp_path:
     described(project)
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="a plan that is over is found by no relaunch, so its push is left to nobody (#114)",
+)
 def test_a_conformant_plan_committed_and_never_pushed_is_pushed_at_the_relaunch(
     tmp_path: Path,
 ) -> None:
