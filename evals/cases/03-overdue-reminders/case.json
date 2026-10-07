@@ -5,5 +5,9 @@
   "diagram": "some",
   "critical_zones": [],
   "critical_files": [],
-  "amendment": null
+  "amendment": null,
+  "expected_correction": {
+    "why": "Its need states a rule the developer did not mean, on purpose: no member reminded twice on the same day, where they mean 7 days or more between two reminders of a member. A session that takes the need at its word plans the first, and what the case evaluates is that the error is caught when the developer reads the blueprint.",
+    "says": "7 days"
+  }
 }

@@ -68,6 +68,10 @@ DIRECTION = {
     "planning_usd": -1,
     "usd": -1,
 }
+# The blueprints the developer sent back. A summary kept before a case said that it expects a
+# correction counts that one with the others: against it, the measure is not compared.
+CORRECTIONS = "corrections"
+EXPECTED = "expected_correction"
 # What a summary folds per case and over all the runs: the measures of the script, the scores
 # of the judge, and its counts of the blueprint. A summary kept before the counts has no `count`.
 KINDS = ("measures", "judge", "count")
@@ -80,6 +84,7 @@ GOALS = (
     "questions",
     "questions_handed_back",
     "corrections",
+    "expected_correction",
     "planning_passes",
     "reviews",
     "fixes",
@@ -209,8 +214,11 @@ def summarize(out: Path) -> dict[str, object]:
         counted.extend(counts)
         for root in roots:
             _lowest(root, case.name, remarks)
+        expected = case.expected_correction
         cases[case.name] = {
             "shape": case.shape,
+            # Why the developer of this case is expected to send a blueprint back, if they are.
+            EXPECTED: None if expected is None else expected.why,
             "runs": len(roots),
             "outcomes": [str(found["outcome"]) for found in measures],
             "measures": _spreads(measures),
@@ -277,6 +285,22 @@ def _moves(scope: str, kind: str, after: object, before: object) -> list[Move]:
     return moves
 
 
+def _recounted(after: Mapping[str, object], before: Mapping[str, object]) -> list[str]:
+    """Name the cases whose corrections two summaries do not count alike.
+
+    A case whose need states the wrong rule expects a correction, which a summary leaves out of
+    `corrections`. A summary kept before the case said so counts it there: 1 then 0 would read
+    as an interview that got better.
+    """
+    new = cast("dict[str, dict[str, object]]", after["cases"])
+    old = cast("dict[str, dict[str, object]]", before["cases"])
+    return [
+        name
+        for name in sorted(set(new) & set(old))
+        if bool(new[name].get(EXPECTED)) != bool(old[name].get(EXPECTED))
+    ]
+
+
 def compare(after: Mapping[str, object], before: Mapping[str, object]) -> list[Move]:
     """List what moved between two summaries, case by case, then over all the runs."""
     moves: list[Move] = []
@@ -287,22 +311,38 @@ def compare(after: Mapping[str, object], before: Mapping[str, object]) -> list[M
             moves.extend(_moves(name, kind, new[name], old[name]))
     for kind in KINDS:
         moves.extend(_moves("all", kind, after["all"], before["all"]))
-    return moves
+    # Where the two summaries do not count the corrections alike, and over all the runs then,
+    # nothing is said of them.
+    recounted = _recounted(after, before)
+    apart = {*recounted, "all"} if recounted else set[str]()
+    return [move for move in moves if move.measure != CORRECTIONS or move.scope not in apart]
 
 
 def uncompared(after: Mapping[str, object], before: Mapping[str, object]) -> list[str]:
-    """Say what two summaries cannot be compared on: the counts, when one of them holds none.
+    """Say what two summaries cannot be compared on, where silence would read as "unchanged".
 
-    A campaign judged before the judge counted has no count. Left unsaid, "nothing moved" would
-    read as a count that stayed where it was.
+    The counts, when one of them holds none: a campaign judged before the judge counted has no
+    count. The corrections of a case that expects one, when one of the two summaries was kept
+    before the case said so and counts it with the others.
     """
+    left_out: list[str] = []
     now, then = (
         bool(cast("dict[str, object]", summary["all"]).get("count")) for summary in (after, before)
     )
-    if now == then:
-        return []
-    without = "the campaign before" if now else "this campaign"
-    return [f"Not compared: the counts of the blueprint, which {without} does not hold."]
+    if now != then:
+        without = "the campaign before" if now else "this campaign"
+        left_out.append(
+            f"Not compared: the counts of the blueprint, which {without} does not hold."
+        )
+    recounted = _recounted(after, before)
+    if recounted:
+        named = ", ".join(f"`{name}`" for name in recounted)
+        left_out.append(
+            f"Not compared: `{CORRECTIONS}` of {named} and of all the runs. One of the two"
+            " campaigns counts there the correction the case expects, which the other tells"
+            f" apart as `{EXPECTED}`."
+        )
+    return left_out
 
 
 def _cell(spread: Mapping[str, float] | None) -> str:
@@ -440,6 +480,20 @@ def _moved(moves: Sequence[Move] | None, left_out: Sequence[str]) -> list[str]:
     return lines
 
 
+def _expecting(cases: Mapping[str, Mapping[str, object]]) -> list[str]:
+    """Say which cases expect a correction, and why: it is no slip of the corpus."""
+    lines: list[str] = []
+    for name, found in cases.items():
+        why = found.get(EXPECTED)  # not in an older summary
+        if why:
+            told = (
+                f"`{name}` expects one correction, which `{EXPECTED}` tells and `{CORRECTIONS}`"
+                f" leaves out. {why}"
+            )
+            lines += ["", told]
+    return lines
+
+
 def _stopped(everything: Mapping[str, object]) -> list[str]:
     """Say how many runs played planning alone, so that no empty cell reads as a failure."""
     stopped = cast("int", everything.get("stopped_at_hand_over", 0))  # not in an older summary
@@ -486,6 +540,7 @@ def render(
         *_table(summary, "measures", GOALS),
         "",
         f"Outcomes: {outcomes}.",
+        *_expecting(cases),
         *_probes(summary),
         *_judged(summary),
         *_counted(summary),

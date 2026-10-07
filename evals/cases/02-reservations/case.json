@@ -5,5 +5,6 @@
   "diagram": "some",
   "critical_zones": [],
   "critical_files": [],
-  "amendment": "A hold lasts 5 days, not 3."
+  "amendment": "A hold lasts 5 days, not 3.",
+  "expected_correction": null
 }

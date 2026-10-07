@@ -3,6 +3,10 @@
 A case is a folder of `evals/cases/`: the need the developer types, the brief of what they know
 and did not write, the acceptance tests of the delivered code, a reference implementation that
 proves those tests fair, and `case.json`, what a good run of this need looks like.
+
+A need may state a rule its developer did not mean, on purpose: the case then evaluates that the
+error is caught when the developer reads the blueprint, and says in `case.json` that this
+correction is expected, so that nothing counts it against the interview.
 """
 
 import json
@@ -38,6 +42,7 @@ KEYS = (
     "critical_zones",
     "critical_files",
     "amendment",
+    "expected_correction",
 )
 _RAN = re.compile(r"^Ran (?P<ran>[0-9]+) tests?", re.MULTILINE)
 _FAILED = re.compile(r"(?P<kind>failures|errors)=(?P<count>[0-9]+)")
@@ -56,6 +61,18 @@ class Diagram(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class ExpectedCorrection:
+    """The blueprint the developer of a case sends back because its need says the wrong rule.
+
+    The need states a rule the developer did not mean, on purpose, and no interview could spare
+    the correction: a session that takes the need at its word plans that rule.
+    """
+
+    why: str  # what the need states, what the developer means, and what the case evaluates
+    says: str  # the words that tell this correction among those the developer sends back
+
+
+@dataclass(frozen=True, slots=True)
 class Case:
     root: Path
     shape: str
@@ -65,6 +82,7 @@ class Case:
     critical_zones: tuple[str, ...]  # key phrases of the declared zones the feature touches
     critical_files: tuple[str, ...]  # the files of those zones it must change
     amendment: str | None  # what the developer asks for after reading the blueprint
+    expected_correction: ExpectedCorrection | None  # when the need states the wrong rule
 
     @property
     def name(self) -> str:
@@ -122,6 +140,23 @@ def _sections(name: str, value: object) -> tuple[int, int]:
     return low, high
 
 
+def _expected(name: str, value: object) -> ExpectedCorrection | None:
+    if value is None:
+        return None
+    given = cast("dict[str, object]", value) if isinstance(value, dict) else {}
+    why, says = given.get("why"), given.get("says")
+    if (
+        tuple(given) != ("why", "says")
+        or not isinstance(why, str)
+        or not isinstance(says, str)
+        or not why.strip()
+        or not says.strip()
+    ):
+        message = f"{name}: expected_correction must be null, or hold a why and what it says"
+        raise CaseError(message)
+    return ExpectedCorrection(why=why, says=says)
+
+
 def load_case(root: Path) -> Case:
     """Read a case folder, refusing one that is not whole: a missing piece would skew a run."""
     name = root.name
@@ -161,6 +196,7 @@ def load_case(root: Path) -> Case:
         critical_zones=_texts(name, "critical_zones", raw["critical_zones"]),
         critical_files=_texts(name, "critical_files", raw["critical_files"]),
         amendment=amendment,
+        expected_correction=_expected(name, raw["expected_correction"]),
     )
 
 
