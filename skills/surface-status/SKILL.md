@@ -12,7 +12,7 @@ You tell the developer where the plans stand, from the state script alone, and y
 
 The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. It is the only writer of the journal, and the same script the project's CI calls. Exit code 0 is accepted, 1 refused or check failed with the reason, 2 a usage error. The state lives in files: read it from the script at each step, never from memory of this conversation.
 
-Every command runs from the root of the repository, with paths from there: never `cd`, since the shell is shared with the agents and a `cd` followed by git stops for an approval, nor `git -C`, which the permission rules do not read as the git command it runs.
+Every command runs from the root of the repository, with paths from there, since one shell serves the whole session.
 
 ## What the developer asked
 

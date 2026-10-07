@@ -13,7 +13,7 @@ Several tests asserted the README's sentences and snippets. They held the text e
 
 The chain ships no permission rule and checks none at launch. The installer never writes the host's Claude Code settings. The commands keep their `allowed-tools` for their first turn.
 
-The prompts still run every command from the root of the repository, with no `cd` and no `git -C`, since the dispatcher and its agents share one shell and that serves a developer on the default mode. They say nothing else of how an agent writes a command, nor of the tool it changes a file with: a rule that general is not the chain's, and the agent judges.
+The prompts still run every command from the root of the repository, with paths from there, since the dispatcher and its agents share one shell. They ban neither `cd` nor `git -C`, since a ban gave a session a breach to report to a developer who could do nothing with it, and say nothing else of how an agent writes a command, nor of the tool it changes a file with: a rule that general is not the chain's, and the agent judges.
 
 No test asserts the README's prose. A test may still read it as an input the product handles, such as the installer that must not copy it.
 

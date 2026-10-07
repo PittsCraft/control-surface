@@ -419,11 +419,16 @@ def test_executor_never_edits_a_report_it_does_not_own_and_stops_on_one() -> Non
     assert "`a report fails a gate`" in section(body, "What you return")
 
 
-# Commands run from the root of the repository: a `cd` moves the shell the dispatcher and its
-# agents share, and a `cd` followed by git stops for an approval nobody gives, as does `git -C`,
-# which the reviewer reached for in the trial.
+# Commands run from the root of the repository, since the dispatcher and its agents share one
+# shell. The prompts say what the rule is for and ban nothing: a ban on `cd` and on `git -C`, with
+# its reason of permissions, gave a session a breach to tell the developer, who could do nothing
+# with it. The commands the prompts spell themselves still change no directory.
 
 _CODE = re.compile(r"```.*?```|`[^`\n]+`", re.DOTALL)
+# A ban said in prose, whatever its words: "never `cd`", "do not change directory".
+_BAN = re.compile(
+    r"\b(never|not|no|nor)\b[^.]*\b(cd|git -C|chang\w+ (of )?director)", re.IGNORECASE
+)
 _CD = re.compile(r"(?:^|[\s;&|(!])cd |\bgit -C ")
 
 
@@ -453,9 +458,24 @@ def test_every_prompt_that_runs_commands_stays_at_the_root(path: Path) -> None:
     fields, body = split_agent(path.read_text(encoding="utf-8"))
     runs_bash = "Bash" in fields.get("tools", "") or "Bash(" in fields.get("allowed-tools", "")
     if runs_bash:
-        assert "from the root of the repository, with paths from there" in body
-        assert "`cd`" in body
-        assert "`git -C`" in body
+        rule = "Every command runs from the root of the repository, with paths from there, since"
+        assert rule in body
+        reason = body.split(rule, 1)[1].split(".", 1)[0]
+        assert "shell" in reason
+
+
+@pytest.mark.parametrize("path", prompt_files(), ids=_prompt_id)
+def test_no_prompt_bans_a_change_of_directory(path: Path) -> None:
+    body = path.read_text(encoding="utf-8")
+    for banned in ("`cd`", "`git -C`", "stops for an approval", "the permission rules"):
+        assert banned not in body
+    assert _BAN.search(body) is None
+
+
+def test_the_ban_check_sees_a_ban_in_prose() -> None:
+    for text in ("never `cd`, since the shell is shared", "Do not change directory.", "nor git -C"):
+        assert _BAN.search(text)
+    assert not _BAN.search("Every command runs from the root of the repository.")
 
 
 # How an agent writes its other commands, and the tool it changes a file with, are its own
