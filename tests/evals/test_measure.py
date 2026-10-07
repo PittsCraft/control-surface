@@ -60,9 +60,10 @@ STOPS: list[dict[str, object]] = [
 DRAFTED: list[dict[str, object]] = JOURNAL[:5]
 PLANNED: list[dict[str, object]] = STOPS[:3]
 CONFORMITY = "# Conformity\n\n```critical-files\nlending/fines.py\n```\n"
-ZONED = BLUEPRINT.replace(
-    "Critical zones touched, among those the repository's agent instructions declare: none.",
-    "Critical zone touched: the fine computation (`lending/fines.py`).",
+NONE = "Critical zones touched, among those the repository's agent instructions declare: none."
+ZONED = BLUEPRINT.replace(NONE, "Critical zone touched: the fine computation (`lending/fines.py`).")
+UNTOUCHED = BLUEPRINT.replace(
+    NONE, f"{NONE} The fine computation (`lending/fines.py`) is called, not changed."
 )
 
 
@@ -117,7 +118,7 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert found["zones_named"] is None
     assert found["zones_none_said"] is True
     assert found["critical_files"] == []
-    assert found["zones_consistent"] is True
+    assert found["zones_announced"] is True
     assert found["contaminated"] is False
     # The pull request: a draft at each hand over, described there, then by the stop of the loop.
     assert (found["pr_draft_at_hand_over"], found["pr_described"]) == (True, True)
@@ -306,13 +307,19 @@ def test_a_critical_zone_is_named_at_approval_and_its_files_listed_at_conformity
     assert found["zones_none_said"] is None
     assert found["critical_files"] == ["lending/fines.py"]
     assert found["zones_files_listed"] is True
-    assert found["zones_consistent"] is True
+    assert found["zones_announced"] is True
     # The blueprint said none, and the proof of conformity lists a file of a zone all the same.
     silent = kept_run(tmp_path / "silent", journal=JOURNAL, conformity=CONFORMITY)
     found = measure(silent, zone)
     assert found["zones_named"] is False
     assert found["zones_files_listed"] is True
-    assert found["zones_consistent"] is False
+    assert found["zones_announced"] is False
+    # So did a blueprint that speaks of the zone to say the plan leaves it alone: a zone the
+    # closing section mentions is not a zone it names as touched.
+    spoken = kept_run(
+        tmp_path / "spoken", journal=JOURNAL, blueprints=(UNTOUCHED,), conformity=CONFORMITY
+    )
+    assert measure(spoken, zone)["zones_announced"] is False
 
 
 def test_the_host_declares_the_zones_the_measures_look_for() -> None:

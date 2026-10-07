@@ -51,7 +51,7 @@ EXECUTION = (
     "gate_runs_failed",
     "critical_files",
     "zones_files_listed",
-    "zones_consistent",
+    "zones_announced",
     # The description at the stops of the loop, which such a run has none of.
     "pr_refreshed",
     # Never marked ready is a promise to the end of the chain, and the hand back at conformity,
@@ -192,7 +192,7 @@ def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant
     zones = "" if drawn is None else drawn.zones.lower()
     # The section opens on the critical zones, or on the statement that the plan touches none.
     opening = zones.split("\n\n", 1)[0]
-    named = [phrase for phrase in ZONES if phrase.lower() in zones]
+    said_none = form.NONE_TOUCHED.search(opening) is not None
     expected = [phrase.lower() in zones for phrase in case.critical_zones]
     listed: list[str] | None = None
     if conformant:
@@ -203,15 +203,15 @@ def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant
             listed = None
     return {
         "zones_named": None if drawn is None or not expected else all(expected),
-        "zones_none_said": (
-            None if drawn is None or expected else form.NONE_TOUCHED.search(opening) is not None
-        ),
+        "zones_none_said": None if drawn is None or expected else said_none,
         "critical_files": listed,
         "zones_files_listed": (
             None if listed is None else all(path in listed for path in case.critical_files)
         ),
-        # A file listed at conformity belongs to a zone the blueprint named at approval.
-        "zones_consistent": None if listed is None or drawn is None else not listed or bool(named),
+        # The code the developer is sent to read at conformity was announced at approval: no
+        # file is listed under a blueprint that said the plan touches no critical zone. A zone
+        # the section speaks of is not a zone it names as touched: it may say "not changed".
+        "zones_announced": None if listed is None or drawn is None else not (listed and said_none),
     }
 
 
