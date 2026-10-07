@@ -169,6 +169,12 @@ def test_the_method_names_what_is_counted_and_every_place_a_statement_may_stand_
     assert "in percent of its words" in asked
     for place in PLACES:
         assert f"`{place}`" in asked
+    # What the frame asks for is not counted: its two lines, and the boundaries the page shows.
+    assert "Two lines of the frame are not statements of it" in asked
+    assert "and the closing line that names what does not change" in asked
+    assert "These are not such details" in asked
+    assert "the boundaries between components" in asked.split("These are not such details")[1]
+    assert "are not to skip" in asked
     # A count, beside the scores: the method gives no scale, and the rubric is asked as before.
     assert "score" not in system + asked
     head, dimensions = load_rubric()

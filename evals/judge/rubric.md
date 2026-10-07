@@ -19,9 +19,9 @@ Reads: `need`, `interview`, `blueprint`
 The blueprint is the page the developer approves, then the contract the work is judged against. They read all of it. Is this the level of precision they need to decide?
 
 - **decidable**: nothing is missing to decide. Every rule, visible behavior, data shape and irreversible effect the feature brings is stated, with the answers of the interview carried, so that the developer has nothing to guess and no other file to open.
-- **no-padding**: nothing they would skip. No fact said twice, no detail of implementation that is not theirs to decide, no section or diagram that is there for its own sake, no restating of the need without adding to it.
+- **no-padding**: nothing they would skip. No fact said twice, no detail of implementation that is not theirs to decide, no section or diagram that is there for its own sake, no restating of the need without adding to it. Three things the frame of a blueprint asks for are not padding: the closing line that names what the feature leaves alone, the statement of the critical zones the plan touches, or that it touches none, and the boundaries between components, which component calls which and what each answers for, since they are the developer's to decide. The first two are bare lines, and say no fact twice even when a criterion says the same; the rule of a zone told again in full still does. Nor is a diagram that draws what the prose says a fact said twice.
 - **cut**: the body is cut by what the developer decides separately, one section for one behavior, otherwise by flow, by component or by decision, with titles in the words of the feature and in the order they would discover it.
-- **diagrams**: a diagram stands where what it shows has a shape that prose flattens, several things in relation, an order between actors, states and transitions, a path that branches, and nowhere else: not for a single fact, a list or a chain with no branch.
+- **diagrams**: a diagram stands where what it shows has a shape that prose flattens, several things in relation, an order between several actors, states and their transitions, a path that forks more than once, and nowhere else: not for a single fact, a list, a chain with no branch or a chain with a single fork, which a sentence says better. Where the shape is real, a diagram may draw what the prose already says: do not fault it for that alone.
 
 ## interview: the interview, which frames the need
 
@@ -40,7 +40,7 @@ Reads: `stops`, `pr-body`
 
 `stops` tells the run in order: what the developer said, the state of the plan when the session it went to ended, and the final message of that session, which is all the developer sees of it. `pr-body` is the pull request description the chain keeps. Judge the final messages and the description.
 
-- **clear**: each message says what happened in words the developer can act on, without the vocabulary of the chain's insides, and nothing in it contradicts the state the plan is in.
+- **clear**: each message says what happened in words the developer can act on, without the vocabulary of the chain's insides, and nothing in it contradicts the state the plan is in. The words of the chain that its README and its guide teach are the developer's, and a message may use them: the plan and the blueprint, its cut, a revision, an amendment, the gates, the critical zones, a slice, a review and its reviewer, a defect, a pass and the ceiling, the loop, the cross-check, a contract break and its plan change proposal, conformant. The insides are the names of its other agents, such as the checker, the extractor or the executor, and the paths of its reports: a final message keeps them out. The blueprint is no report, and its path is where the developer is sent to read. The description of the pull request is written by a script, which links the files it lists: fault none of them.
 - **right-length**: each message is as long as what it has to say. Nothing the developer needs is left out, and nothing is repeated from a file they are sent to read.
 - **next-step**: each message ends on what the developer does next, and that step is the right one for the state the plan is in.
 
@@ -52,4 +52,4 @@ Read `stops` as the developer who lived the run and nothing else.
 
 - **whose-turn**: at every stop, the developer knows whether it is their turn, and what is expected of them.
 - **why-stopped**: every stop says why the session stopped there: a question, a hand over, a hand back with its reason, the work done.
-- **no-noise**: nothing is told that the developer does not need: steps of the chain narrated for their own sake, the same fact at several stops, reassurance.
+- **no-noise**: nothing is told that the developer does not need: steps of the chain narrated for their own sake, the same fact at several stops, reassurance. One thing said at every hand over, and in reply to a sentence that agrees, is not noise: that only the launch of `/surface-execute` approves. It is the developer's next step, and what keeps a sentence of the conversation from approving a plan.
