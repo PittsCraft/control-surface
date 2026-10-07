@@ -13,14 +13,31 @@ Every scenario is billed and takes minutes: run them on demand, before a release
 
 `toy/toy.py build <state> <dest>` makes `<dest>/shelf`, a git repository holding a small module (`shelf`, a list of books read from a JSON Lines file), its tests, an `AGENTS.md` that declares the CSV export a critical zone, and a gate command, `python3 -m unittest discover -s tests -q`, with `<dest>/origin.git` as its bare remote. It installs the chain from this clone, then drives one plan folder, `docs/plans/<date>-csv-export/`, to the state asked for, recording each event through the installed state script. It prints the path of the project.
 
+The states, from the need to the review:
+
 | State | What the project holds |
 |---|---|
 | `specs` | the main branch, the chain installed, no plan |
+| `specs-ci` | the same, with a CI workflow that runs the gate on every push, of any branch, and on every pull request |
+| `plan-written` | the branch `feat/csv-export`, the interview closed and `plan.md` written, no blueprint yet. Nothing of the plan folder is committed |
+| `blueprint-drawn` | the same, with `blueprint.md` drawn and not cross-checked yet |
+| `planning-ceiling` | specs that ask to rewrite the shelf file once the CSV is printed, a plan that does it, a blueprint that says the file is never written, and two cross-checks that count that omission, `max_autonomous_passes: 1`. Nothing committed |
 | `awaiting-approval` | the branch `feat/csv-export`, a plan drafted at revision 1 (two slices), pushed, and its draft pull request, open in the stand-in `gh` |
+| `unpushed` | that plan drafted and committed, the branch never pushed, no pull request |
+| `unpushed-ci` | the same, under the CI of `specs-ci`, which `exploration.md` names |
+| `two-plans` | a second plan, `<date>-count-books`, drafted on the same branch: both await their approval |
+| `slice-uncommitted` | revision 1 approved, the work of slice 1 written and `slice-done` recorded, neither committed |
 | `blueprint-modified` | revision 1 approved, slice 1 done, then a commit of the developer that edits `blueprint.md` |
 | `developer-break` | both slices done, then a commit of the developer that adds an `isbn` column the blueprint leaves out |
-| `ceiling` | both slices done with a defect the tests do not see (lines sorted by title only), a first review that found it, then a fix that missed it, `max_autonomous_passes: 1` |
+| `plan-change-proposed` | that commit raised as a contract break by a review, with its proposal under `plan-changes/`, committed and not pushed |
+| `fixing` | both slices done with a defect the tests do not see (lines sorted by title only), and the review that found it: a fix is due |
+| `ceiling` | that defect and that review, then a fix that missed it, `max_autonomous_passes: 1` |
+| `blocked` | the same, then a second review that finds the defect again, and `blocked`, pushed |
 | `done`, `defect`, `deviation` | both slices done and nothing reviewed yet: as planned, with that same defect, or with the tests of slice 1 in another file than the plan names. The evaluations review them (`evals/README.md`) |
+| `slow-gate` | `done`, with a test on the main branch that sleeps 20 seconds, so that the gate lasts |
+| `review-unrecorded` | `done`, the gates run green and committed, then a clean review and `conformity.md` written, neither recorded nor committed |
+
+A state named after a death, `plan-written`, `slice-uncommitted` or `review-unrecorded`, holds what a session leaves when it dies at that point: the files are the whole state of a plan, so a state built there is the one a kill would leave, without the luck a kill needs to fall between a record and its commit.
 
 `toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
 
@@ -41,7 +58,7 @@ It answers the calls the prompts make, as `gh` 2.78.0 does when its output is no
 
 What it keeps of a project lives in its git directory, `.git/gh-stand-in/`: `pulls.json`, the pull requests, and `calls.jsonl`, one line per call with its arguments, its standard input when the call reads it, the description it gave, its exit code and what it printed. The git directory, and not a folder next to the bare remote, for three reasons. Every repository has one, with or without a remote, so a call refused for want of a remote is recorded too. It belongs to one project, where several run at the same time in one container. And it is out of the work tree: nothing shows in `git status`, nothing can be committed, and a session that explores the code does not meet it. A `gh pr ready` that is not an `--undo` has `marks_ready` true in its line, whatever became of it: the chain must never make one. A call reads its standard input before it holds that folder, so one `gh` may feed another. `gh_stand_in.calls(project)` and `gh_stand_in.pulls(project)` read both.
 
-A prepared state with a drafted plan holds its draft pull request, as `/surface-plan` leaves it at the first `plan-drafted`: `toy.py` opens it in the stand-in, with the description `surface-status pr-body` prints then, and no call is recorded for it. Without it, `/surface-execute` would find no pull request at any stop and take the path of a branch that has none, the only one the runs took before the stand-in. A state past the approval keeps that first description, since the loop it prepares has not stopped yet, and a stop is what refreshes it.
+A prepared state with a drafted plan holds its draft pull request, as `/surface-plan` leaves it at the first `plan-drafted`: `toy.py` opens it in the stand-in, with the description `surface-status pr-body` prints then, and no call is recorded for it. Without it, `/surface-execute` would find no pull request at any stop and take the path of a branch that has none, the only one the runs took before the stand-in. A state past the approval keeps that first description, since the loop it prepares has not stopped yet, and a stop is what refreshes it. The states never pushed, `unpushed` and `unpushed-ci`, have none: the push and the opening are what their scenarios wait for.
 
 What the stand-in does not imitate:
 
@@ -65,20 +82,54 @@ E2E_OUT=/some/folder scripts/gate.sh e2e     # logs somewhere else than .e2e/
 
 The gate builds the image, mounts this clone read-only at `/clone` and the output folder at `/out`, then runs pytest in the container. The arguments after `e2e` go to pytest. The output folder is `.e2e/` at the root of the clone, ignored by git, or the one `E2E_OUT` names. Each test builds its own project and its bare remote under `basetemp/` in that folder, one folder per test, and keeps the streams of its sessions in `logs/` next to the project. pytest empties `basetemp/` at the start of each run: to keep a run, choose another `E2E_OUT` for the next one.
 
-| Test | Start | Session | What must hold |
+A scenario asserts what the project holds once its sessions ended: the journal, the files of the plan folder, what git committed and what the bare remote holds, the record of the stand-in `gh`. Of what a session says it holds one word at most, such as the command it must name. A model may take another valid path from one run to the next: read the logs before blaming the chain.
+
+### The developer's answers
+
+Some scenarios need the developer's answers. No model plays the developer here: that is what the evaluations do (`evals/README.md`). Each answer is written in the test and given in a session of its own, which `--resume` ties to the conversation. Every question of the chain is lettered and carries a recommendation, so one reply, "I take the option you recommend.", answers any question of an interview, whatever the session asked. Where the scenario turns on what is said, the reply is its own: an amendment, a refusal with its reason, "Fine, go.".
+
+### Killed sessions
+
+A scenario kills a session at a moment it reads in the files of the project or in the stream of the session: its process group first, then whatever it left at work in the project, since a gate runs in a process group of its own and would go on to record its run while the next session works. The relaunch is a fresh session, without `--resume`. Where the moment is too short to hit, between a record and its commit or between a commit and its push, the scenario starts from a prepared state that holds what a death there leaves.
+
+### The loop
+
+| Test | Start | Sessions | What must hold |
 |---|---|---|---|
 | `test_the_nominal_path_reaches_conformant` | `awaiting-approval` | `/surface-execute` | `conformant`, one approval, each slice done once, `conformity.md`, and `shelf/export.py` among the files of the critical zone the description lists. The pull request: its description is the one `surface-status pr-body` prints, set by an edit and no second opening, it is still a draft, and no call marked it ready |
 | `test_a_session_killed_in_a_slice_resumes_it` | `awaiting-approval` | `/surface-execute`, killed once an executor has written code, then relaunched | the journal of the killed session kept as is, one approval, each slice done once, `conformant` |
 | `test_a_modified_blueprint_stops_the_loop` | `blueprint-modified` | `/surface-execute` | nothing recorded, still `executing`, the final message names the blueprint |
 | `test_the_ceiling_hands_back_to_the_developer` | `ceiling` | `/surface-execute` | `blocked` after a second review with findings, and no second fix |
 
-`test_a_prepared_state_is_the_one_named` builds each state, and `test_a_session_bypasses_permissions_in_the_container_only` checks the command line of a session and its refusal outside the container: both cost nothing, and run without a token (`scripts/gate.sh e2e -k "prepared or bypasses"`).
+### Planning with the developer
 
-A model may take another valid path from one run to the next: read the logs before blaming the chain.
+| Test | Start | Sessions | What must hold |
+|---|---|---|---|
+| `test_planning_killed_in_the_interview_resumes_at_the_next_question` | `specs` | `/surface-plan` with the need; the session that takes the first answer of the interview killed once `interview.md` holds it; then `/surface-plan` alone, and the recommendation at every question | the journal of the killed session kept as is, `exploration.md` untouched, no question that had its answer written a second time, one `plan-drafted` with the gate of the toy, the plan committed and pushed, and one draft pull request with the description `surface-status pr-body` prints |
+| `test_an_amendment_killed_once_recorded_is_drafted_at_the_relaunch` | `awaiting-approval` | `/surface-plan` with an amendment, killed once the journal holds `amendment-received`, then `/surface-plan` alone | the amendment in `interview.md` at the kill, one `amendment-received`, revision 2 of the plan and of the blueprint with the header in its new order, pushed, the description refreshed and no second opening |
+| `test_a_conversation_after_the_hand_over_amends_and_approves_nothing` | `awaiting-approval` | `/surface-plan`, then in its conversation a question, an amendment and "Fine, go." | the question records nothing. The amendment is in `interview.md` and in the journal, revision 2 is drafted and pushed. The sentence that agrees records nothing, and the session names `/surface-execute` |
 
-## The interactive scenarios, by hand
+### The developer's turn in the loop
 
-Some scenarios need the developer's answers. Play them one session per answer: `run` prints the session id, and `--resume <session id>` gives the next answer to the same conversation. A fresh session, without `--resume`, is how a relaunch after a dead session is tested. To kill a session mid-way, run it in the background and kill its process group (`kill -9 -<pid>`), watching the plan folder to choose the moment.
+| Test | Start | Sessions | What must hold |
+|---|---|---|---|
+| `test_a_break_on_a_commit_of_the_developer_is_raised_then_refused` | `developer-break` | `/surface-execute`, then the refusal with its reason | a review with a break and its proposal, `plan-change-proposed`, the branch pushed and the description refreshed. Then one `plan-change-refused`, the reason in `interview.md`, no later review with a break, `conformant`, and an export back to its three columns |
+| `test_an_accepted_plan_change_goes_back_to_planning` | `plan-change-proposed` | `/surface-execute`, then the acceptance | the first session records nothing, pushes the commit the state left unpushed and refreshes the description. Then `plan-change-accepted`, `drafting`, the decision in `interview.md`, committed and pushed, and the session names `/surface-plan` |
+| `test_a_resumption_in_the_session_goes_on_past_the_ceiling` | `ceiling` | `/surface-execute`, then "Resume." | `blocked`, then `resumed` right after it and once, a gate run after it, and `conformant` or `blocked` again |
+| `test_a_relaunch_resumes_a_plan_blocked_at_the_ceiling` | `blocked` | `/surface-execute` | the same, in a fresh session |
+| `test_an_amendment_takes_a_plan_blocked_at_the_ceiling_back_to_planning` | `blocked` | `/surface-plan` with an amendment | `amendment-received` right after `blocked`, no approval, revision 2 drafted with slices 1 and 2 kept, pushed, the description refreshed |
+
+### Without a session
+
+`test_a_prepared_state_is_the_one_named` and its two neighbours build each state, `test_a_session_bypasses_permissions_in_the_container_only` checks the command line of a session and its refusal outside the container, and `test_a_kill_takes_what_a_session_left_at_work` kills a process started in a group of its own. They cost nothing, and run without a token:
+
+```sh
+scripts/gate.sh e2e -k "prepared or bypasses or left_at_work"
+```
+
+## Playing a scenario by hand
+
+To look into a scenario that failed, or to play a path no test covers yet, run the sessions yourself, one session per answer: `run` prints the session id, and `--resume <session id>` gives the next answer to the same conversation. A fresh session, without `--resume`, is how a relaunch after a dead session is tested. To kill a session mid-way, run it in the background and kill its process group (`kill -9 -<pid>`), watching the plan folder to choose the moment.
 
 They are played in the container too, from a shell in it, at the root of the clone:
 
@@ -93,47 +144,10 @@ docker run --rm -it --init --name e2e-manual \
 
 A second shell, to watch a plan folder or kill a session, is `docker exec -it e2e-manual bash`. The files stay on the host under `.e2e/`, and so do the projects the automated scenarios left under `.e2e/basetemp/`, at the same `/out` path, so their bare remotes still resolve.
 
-The commands below run in the container and assume `toy=tests/e2e/toy/toy.py` and a scratch folder `work=/out/manual`.
-
-### Planning from the specs, killed during the interview
-
-```sh
-p=$(python3 $toy build specs $work/plan)
-python3 $toy run $p $work/plan-1.jsonl "/surface-plan Export the shelf as CSV for the bookshop: title, author and year, sorted by author then title."
-```
-
-The toy shows no branch practice, no pull request and no merge commit, so the session first asks how to name the branch, recommending `feature/<slug>`, and stops. Answer it with `--resume`: it creates the branch, explores and writes `exploration.md`, then opens `interview.md` with the branch question and its answer under "Git", asks its first interview question and stops. Answer it with `--resume` too. Kill the session that takes the answer as soon as the answer is in `interview.md`. Then relaunch without `--resume`, with `/surface-plan` alone:
-
-- it must not explore again, nor ask again a question that has an answer: it asks the next open one;
-- answered to the end, it has the plan drafted by the `Plan` agent and writes it as returned, with the three headings the chain reads and the gate of the toy in its `gates` block, has the blueprint drawn and cross-checked, records `plan-drafted`, commits and pushes to the bare remote, then opens a draft pull request in the stand-in `gh`, with the description `surface-status pr-body` prints: from the project, `gh pr view` shows it, and `.git/gh-stand-in/calls.jsonl` holds the calls the sessions made, with no `gh pr ready` among them. The hand over must not say that `gh` is missing.
-
-### An amendment, killed right after it was recorded
+In the container, with `toy=tests/e2e/toy/toy.py` and a scratch folder `work=/out/manual`:
 
 ```sh
 p=$(python3 $toy build awaiting-approval $work/amend)
 python3 $toy run $p $work/amend-1.jsonl "/surface-plan Put the year first: year, title, author."
+python3 $toy run $p $work/amend-2.jsonl "I take the option you recommend." --resume <session id>
 ```
-
-Run it in the background and kill it as soon as `journal.jsonl` holds `amendment-received`. Then relaunch with `/surface-plan` alone. The amendment must be under "Amendments" in `interview.md` and in the journal, and revision 2 of `plan.md` and `blueprint.md` must carry it.
-
-### An amendment in the conversation
-
-```sh
-p=$(python3 $toy build specs $work/converse)
-python3 $toy run $p $work/converse-1.jsonl "/surface-plan Export the shelf as CSV for the bookshop: title, author and year, sorted by author then title."
-```
-
-Answer the questions with `--resume` until the session hands over the blueprint and asks: amend, or approve with `/surface-execute`. Answer with `--resume` a question, "why this order?": it is answered and the journal does not move. Then answer "put the year first": it goes under "Amendments" in `interview.md`, the journal holds `amendment-received`, revision 2 is drawn, cross-checked and pushed, and the same question comes back. Answer "fine, go": the journal must hold no `plan-approved`, and the session says that the launch of `/surface-execute` approves.
-
-### A break raised on a commit of the developer, then refused
-
-```sh
-p=$(python3 $toy build developer-break $work/break)
-python3 $toy run $p $work/break-1.jsonl /surface-execute
-```
-
-The review must raise a contract break on the `isbn` column, with a proposal under `plan-changes/`, and the loop hands back in `plan-change-proposed`: the session pushes, presents the proposal and asks accept or decline. Answer with `--resume` that you decline it, and why: the reason goes under "Plan change decisions" in `interview.md`, the journal holds `plan-change-refused`, and the same session goes on: the fix brings the code back to the blueprint, and no later review raises the same break again. Played again with an acceptance instead, the journal holds `plan-change-accepted`, the plan is in `drafting`, and the session tells you to run `/surface-plan`.
-
-### The ceiling, then both ways on
-
-The ceiling test ends on the question: resume, or amend. From the project it leaves blocked, under `/out/basetemp/`, copy the toy folder three times into `$work`. In the first, answer resume with `--resume` on the session of its log: it records `resumed` and goes on with a fresh count in the same session. In the second, relaunch `/surface-execute` in a new session: it records `resumed` too. In the third, give an amendment with `/surface-plan`: it records `amendment-received` and drafts revision 2.
