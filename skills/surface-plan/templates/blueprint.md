@@ -16,7 +16,7 @@ What the feature explicitly does not do. What it does stands in the criteria and
 
 ## <A section of the body, titled in the words of the feature>
 
-What will be built there that no criterion states, as behavior and not as code, and what the developer decides by approving it.
+What will be built there that no criterion states, as behavior and not as code, and what the developer decides by approving it. In a section longer than a glance, a short title in bold opens each thing they would come back for on its own.
 
 ## Sensitive zones
 

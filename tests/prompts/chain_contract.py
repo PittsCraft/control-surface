@@ -135,9 +135,10 @@ BLUEPRINT_OPENING = (
 )
 BLUEPRINT_CLOSING = "Sensitive zones"
 # Between them the extractor cuts the body by what the developer decides separately, and keeps
-# the cut of the previous revision. Whatever the cut, it goes through these aspects, and one
-# closing line names those the plan leaves alone, since silence must not read as "unchanged". A
-# diagram is drawn where what it shows has a shape that prose flattens. The cross-check never
+# the cut of the previous revision. Inside a section, a title in bold opens each thing the
+# developer would come back for on its own. Whatever the cut, it goes through these aspects, and
+# one closing line names those the plan leaves alone, since silence must not read as "unchanged".
+# A diagram is drawn where what it shows has a shape that prose flattens. The cross-check never
 # counts a cut, a short section or the absence of a diagram as an omission, only what the
 # blueprint does not show.
 BLUEPRINT_ASPECTS = (
