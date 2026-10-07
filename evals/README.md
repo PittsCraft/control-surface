@@ -61,7 +61,7 @@ python3 evals/run.py report --against evals/reports/<kept>/summary.json --keep
 
 The gate builds the image, mounts this clone read-only at `/clone` and the campaign folder at `/out`, and runs `evals/run.py` in the container. The campaign folder is `.evals/` at the root of the clone, ignored by git, or the one `EVALS_OUT` names. Commands add to it: run them one at a time, and choose another folder for another campaign.
 
-`--max-usd` and `--max-week-points` stop a command before it starts a session past a ceiling. The folder keeps `ledger.json`: the cost at list price, which the stream of a session reports, and, on a subscription, how far the weekly gauge rose while sessions ran. That gauge moves by whole points and counts every use of the account meanwhile: it is a ceiling on the safe side, not a bill.
+`--max-usd` and `--max-week-points` stop a command before it starts a session past a ceiling. The folder keeps `ledger.json`: the cost at list price, which the stream of a session reports, and, on a subscription, how far the weekly gauge rose while sessions ran. That gauge moves by whole points and counts every use of the account meanwhile: it is a ceiling on the safe side, not a bill. Runs played together note their sessions as each one ends, so a reading of the gauge may be older than the last one counted: a reading counts for what it stands above the highest of its week, which a stream dates, and a point is counted once.
 
 ## Does it meet its goals
 
@@ -120,6 +120,8 @@ A campaign judged before the judge counted holds no count. Compared with one tha
 The campaigns kept before the stand-in `gh`, `evals/reports/2026-10-03-*`, were played in an image with no `gh`: every hand over said so, and the judge scored it. Against one of them, a move of the scores of the messages may come from the stand-in, which the hash of the chain does not show, and not from the prompts.
 
 The four campaigns kept in `evals/reports/2026-10-03-*` and `2026-10-05-*` were judged before the rubric drew the four lines above, and the one that holds counts, `2026-10-05-*`, was counted before the method set aside what the frame asks for. Against one of them, a move of `blueprint.no-padding`, `blueprint.diagrams`, `messages.clear`, `following.no-noise` or of a count may come from the judge, which the hash of the chain does not show either.
+
+The four campaigns kept in `evals/reports/2026-10-03-*` and `2026-10-05-*` counted a point of the weekly gauge again each time runs played together reported it out of order, since a lower reading was taken for a week that turned. Read again in their streams, the gauge rose by 1, 2 and 1 points while the three campaigns of `2026-10-03-*` ran, where their reports say 3, 5 and 5.
 
 The summaries kept before `03-overdue-reminders` said that it expects a correction count that one among its `corrections`. Against one of them, the report compares neither the `corrections` of that case nor those of all the runs, and says so.
 

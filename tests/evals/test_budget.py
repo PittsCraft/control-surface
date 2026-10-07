@@ -24,12 +24,32 @@ def test_a_resumed_session_reports_its_total_and_is_paid_once(tmp_path: Path) ->
 
 def test_the_rise_of_the_weekly_gauge_is_summed_and_a_reset_starts_again(tmp_path: Path) -> None:
     ledger = _ledger(tmp_path)
-    ledger.note(read_log(stream(tmp_path / "a.jsonl", session="a", gauges=(0.36, 0.37))))
-    ledger.note(read_log(stream(tmp_path / "b.jsonl", session="b", gauges=(0.39,))))
+    ledger.note(read_log(stream(tmp_path / "a.jsonl", session="a", gauges=(0.36, 0.37), week=1)))
+    ledger.note(read_log(stream(tmp_path / "b.jsonl", session="b", gauges=(0.39,), week=1)))
     assert ledger.points == pytest.approx(3.0)
     # The week turned: the gauge fell, and the count goes on from where it now stands.
-    ledger.note(read_log(stream(tmp_path / "c.jsonl", session="c", gauges=(0.02, 0.03))))
+    ledger.note(read_log(stream(tmp_path / "c.jsonl", session="c", gauges=(0.02, 0.03), week=2)))
     assert ledger.points == pytest.approx(4.0)
+    # A session of the week before, noted late, moves nothing: neither a rise nor a fall.
+    ledger.note(read_log(stream(tmp_path / "d.jsonl", session="d", gauges=(0.39, 0.4), week=1)))
+    ledger.note(read_log(stream(tmp_path / "e.jsonl", session="e", gauges=(0.04,), week=2)))
+    assert ledger.points == pytest.approx(5.0)
+
+
+def test_readings_that_runs_played_together_note_out_of_order_count_once(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path)
+    # Four runs at once: each session is noted when it ends, with the readings it met on its way,
+    # so the point from 0.06 to 0.07 comes back in every stream that crossed it.
+    ledger.note(read_log(stream(tmp_path / "a.jsonl", session="a", gauges=(0.06, 0.07), week=1)))
+    ledger.note(read_log(stream(tmp_path / "b.jsonl", session="b", gauges=(0.06, 0.07), week=1)))
+    ledger.note(read_log(stream(tmp_path / "c.jsonl", session="c", gauges=(0.06,), week=1)))
+    ledger.note(read_log(stream(tmp_path / "d.jsonl", session="d", gauges=(0.07, 0.08), week=1)))
+    assert ledger.points == pytest.approx(2.0)
+    # A stream that does not date its week reads the same: a lower reading is an older one.
+    undated = _ledger(tmp_path / "undated")
+    undated.note(read_log(stream(tmp_path / "e.jsonl", session="e", gauges=(0.36, 0.37))))
+    undated.note(read_log(stream(tmp_path / "f.jsonl", session="f", gauges=(0.36, 0.38))))
+    assert undated.points == pytest.approx(2.0)
 
 
 def test_a_session_killed_before_its_result_costs_nothing_known(tmp_path: Path) -> None:

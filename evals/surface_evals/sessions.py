@@ -27,6 +27,14 @@ class Launch:
 
 
 @dataclass(frozen=True, slots=True)
+class Gauge:
+    """A reading of the weekly use of the subscription, and the week it belongs to."""
+
+    used: float  # from 0 to 1
+    week: float | None  # when that week ends, as the stream dates it, None when it does not
+
+
+@dataclass(frozen=True, slots=True)
 class SessionLog:
     """What the stream of a session says, read after it ended or was killed."""
 
@@ -35,7 +43,7 @@ class SessionLog:
     ended: bool  # the stream closes with a result: the session was not killed
     final: str  # its final message
     cost: float  # USD at list price, summed over the session since its first launch
-    gauges: tuple[float, ...]  # the weekly use of the subscription, from 0 to 1, as it went
+    gauges: tuple[Gauge, ...]  # the weekly use of the subscription, as it went
     launches: tuple[Launch, ...]
 
 
@@ -63,16 +71,19 @@ def _tool_uses(event: dict[str, object]) -> list[dict[str, object]]:
     ]
 
 
-def _gauge(event: dict[str, object]) -> float | None:
+def _gauge(event: dict[str, object]) -> Gauge | None:
     week = _get(_get(event.get("rate_limit_info"), "unifiedWindows"), "seven_day")
     used = _get(week, "utilization")
-    return float(used) if isinstance(used, int | float) else None
+    ends = _get(week, "resetsAt")
+    if not isinstance(used, int | float):
+        return None
+    return Gauge(float(used), float(ends) if isinstance(ends, int | float) else None)
 
 
 def read_log(path: Path) -> SessionLog:
     """Read the stream a session left."""
     result: dict[str, object] = {}
-    gauges: list[float] = []
+    gauges: list[Gauge] = []
     launches: list[Launch] = []
     session_id: str | None = None
     for event in _events(path):
