@@ -40,6 +40,21 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 The loop runs until a command needs an approval your rules or mode do not give, then waits for you. How much it does alone is your call: auto mode on your machine, `bypassPermissions` only in a container or a VM you can throw away, or the default mode with your own allow rules.
 
+### Attribution
+
+Claude Code ends every commit a session makes with a `Co-Authored-By` line by default, and the commits of the chain's agents carry it like any other. The chain says nothing of it: its agents write a commit after your repository's conventions, and whether your history names an assistant is your call, in your Claude Code settings. To turn it off for every session of your project, add this to your `.claude/settings.json`:
+
+```json
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
+}
+```
+
+`commit` hides the line on the commits, and `pr` the one Claude Code adds to a pull request description. Do it before your first plan when a commit hook of yours refuses an attribution: each agent would otherwise meet that refusal at its commit. The chain does not do it for you, since its installer never writes your Claude Code settings.
+
 ### 3. Let the agents work
 
 `/surface-execute` hands each slice of the plan to a fresh agent. Then it runs the gates of the plan, in order, stopping at the first that fails, has a fresh agent review everything the branch changes against the blueprint, and has defects fixed, pass after pass. When the code departs from the plan but the blueprint stays true, the plan is amended and the work goes on.

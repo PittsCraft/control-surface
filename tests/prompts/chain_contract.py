@@ -163,8 +163,8 @@ PLAN_MINIMUM = ("Acceptance criteria", "Slices", "Gates")
 COMMIT_FORM = "written or signed"
 SLICE_ON_ITS_COMMIT = "beyond what the conventions of the repository or the developer ask"
 BLUEPRINT_ON_THE_COMMITS = "beyond what the developer asked"
-# The prompts stop there. Whether the chain forbids an attribution in a commit or leaves it to the
-# host is a choice of the developer still to make, and no prompt takes it either way.
+# The prompts stop there. The attribution Claude Code adds to a commit is left to the settings of
+# the host, and the guide names the one that turns it off: no prompt asks for one or forbids one.
 ATTRIBUTION_WORDS = ("attribution", "co-authored")
 
 # The plan documents are written in the repository's language, not the conversation's.
