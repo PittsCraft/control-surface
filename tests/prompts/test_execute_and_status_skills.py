@@ -16,6 +16,7 @@ import pytest
 from chain_contract import (
     CONFORMANT_EXCEPTION,
     CONFORMANT_HAND_BACK,
+    CONFORMANT_STEP,
     CONFORMANT_WITHOUT_PULL_REQUEST,
     CORRECTIONS_CEILING,
     DOCUMENTS_LANGUAGE,
@@ -486,18 +487,27 @@ def test_every_stop_pushes_and_refreshes_the_pr_description() -> None:
 def test_conformant_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_developer() -> None:
     body = _execute()
     conformity = section(body, "Conformity")
-    assert f"hand back in one line: {CONFORMANT_HAND_BACK}" in conformity
+    # The refresh tells whether a pull request can be reached: it comes before the line.
+    assert f"its push and its refresh first, then {CONFORMANT_HAND_BACK}" in conformity
+    # The line, in its order: conformant, the code left to read, and the developer's step last.
+    conformant, files, step = _positions(
+        conformity,
+        [
+            "It says, in this order: that the plan is conformant",
+            "those files by name, as the code left for the developer to read themselves",
+            f"and last, the developer's step: {CONFORMANT_STEP}, which triggers their CI",
+        ],
+    )
+    assert conformant < files < step
     without, fitting, absurd = _positions(
         conformity,
         [
             "When the refresh reached no pull request, for want of one, of `gh` or of a remote",
-            f"that line names the step that fits instead: {CONFORMANT_WITHOUT_PULL_REQUEST}",
+            f"the line ends on the step that fits instead: {CONFORMANT_WITHOUT_PULL_REQUEST}",
             "Nobody marks ready, or refreshes, a pull request that does not exist",
         ],
     )
-    assert conformity.index(CONFORMANT_HAND_BACK) < without < fitting < absurd
-    # The refresh tells whether a pull request can be reached: it comes before the line.
-    assert "its push and its refresh first, then hand back in one line" in conformity
+    assert step < without < fitting < absurd
     assert "or opens it first when the refresh reached none" in section(body, "When the loop stops")
     assert "one it cannot prove is a finding" in conformity
     assert "nothing asks the developer to read it" in conformity
@@ -505,13 +515,57 @@ def test_conformant_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_deve
     assert "Never mark the pull request ready, since that triggers the CI" in stopping
 
 
-def test_conformant_says_the_one_exception_the_code_of_the_critical_zones() -> None:
+def test_the_hand_back_at_conformity_is_its_line_and_nothing_else() -> None:
+    body = _execute()
+    conformity = section(body, "Conformity")
+    # Asked "in one line", every session wrote a report of several paragraphs that ended on
+    # something else than the developer's step: the line is said to be all, and what it leaves out.
+    assert "One line means a sentence or two, with no list and no heading" in conformity
+    assert "and nothing before it or after it" in conformity
+    for left_out in (
+        "no report of what was done",
+        "no count of slices, of reviews or of passes",
+        "no path of a report",
+        "no remark on what was left untouched",
+    ):
+        assert left_out in conformity
+    assert "The description of the pull request holds what was done" in conformity
+    assert "and the line ends on the developer's step" in conformity
+    # What every other stop says in the terminal gives way to it.
+    place = 'It takes the place of what "When the loop stops" has you say in the terminal'
+    assert place in conformity
+    stopping = section(body, "When the loop stops")
+    all_said = 'On `conformant`, the line "Conformity" gives is all you say, and it comes last'
+    assert f"{all_said}, after the push and the refresh" in stopping
+    # A push or a refresh that could not be done is told by the step the line ends on: the two
+    # steps that say so at every other stop add no line of their own here.
+    assert "one of them that could not be done is not said apart" in stopping
+    assert "the step the line ends on tells it" in stopping
+
+
+def test_conformant_names_the_changed_files_of_the_critical_zones_when_there_are_any() -> None:
     conformity = section(_execute(), "Conformity")
-    assert f"Say the one exception in one sentence: {CONFORMANT_EXCEPTION}" in conformity
-    assert (
-        "whose changed files the pull request description lists, when there are any" in conformity
+    changed = "when the branch changed files inside the critical zones the project declares"
+    assert changed in conformity
+    found = "The files are the `path` of each item of `critical_files`, in the entry of `plans`"
+    assert f"{found} whose `name` is the name of this plan's folder" in conformity
+    # The list is empty until `conformant` is recorded: asked before, it would hide the files.
+    assert "in the answer of `surface-status pr-body --json`, asked after the record" in conformity
+    removed = "An item whose `link` is null is a file the branch removed: the line says so"
+    assert removed in conformity
+    assert "When that list is empty, the line says nothing of the critical zones" in conformity
+    assert f"{CONFORMANT_EXCEPTION}." in conformity.lower()
+    # The answer of the script is shaped as the prompt reads it: per plan, by its name, each
+    # file with its path, and no link for one the branch removed.
+    golden = (
+        Path(__file__).resolve().parents[1] / "fixtures" / "cli" / "pr-body-critical-files.json"
     )
-    assert "for the developer to read themselves" in conformity
+    (plan,) = json.loads(golden.read_text(encoding="utf-8"))["plans"]
+    assert plan["name"] == "2026-09-01-alpha"
+    assert [(item["path"], item["link"] is None) for item in plan["critical_files"]] == [
+        ("billing/pay.py", False),
+        ("billing/old.py", True),
+    ]
 
 
 def test_a_refused_list_of_critical_files_goes_to_a_fresh_reviewer() -> None:

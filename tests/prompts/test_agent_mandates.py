@@ -523,9 +523,11 @@ def test_every_prompt_that_refreshes_the_pr_says_pr_body_takes_no_argument() -> 
         if _prompt_id(path) in callers:
             text = path.read_text(encoding="utf-8")
             assert "(it takes no argument, since it describes every plan of the branch)" in text
+    # It may be asked as JSON, where a prompt reads a field of it: never with a plan.
     for name, call in _all_calls():
         if call_arguments(call)[0] == "pr-body":
-            assert list(call_arguments(call)) == ["pr-body"], f"{name}: {call}"
+            given = [argument for argument in call_arguments(call) if argument != "--json"]
+            assert given == ["pr-body"], f"{name}: {call}"
 
 
 def test_the_calls_are_found() -> None:
