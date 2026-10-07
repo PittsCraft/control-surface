@@ -7,7 +7,7 @@ import pytest
 import toy
 from support import BLUEPRINT, case, gh, kept_run, stream
 
-from surface_evals.corpus import Diagram
+from surface_evals.corpus import Diagram, ExpectedCorrection
 from surface_evals.measure import EXECUTION, ZONES, cost_of, measure
 from surface_evals.report import DIRECTION, GOALS
 from surface_evals.runner import STOPPED, stops_at_hand_over
@@ -181,6 +181,44 @@ def test_the_pull_request_steps_are_measured_from_the_stops_and_the_record(
     stops[2]["state"] = "drafting"
     found = measure(kept_run(tmp_path / "asking", journal=JOURNAL, stops=stops), case(tmp_path))
     assert (found["pr_draft_at_hand_over"], found["pr_described"]) == (True, True)
+
+
+def test_the_correction_a_case_expects_is_told_apart_and_left_out_of_the_corrections(
+    tmp_path: Path,
+) -> None:
+    wrong_rule = ExpectedCorrection(why="The need says the wrong rule, on purpose.", says="7 days")
+    expecting = case(tmp_path, expected_correction=wrong_rule)
+    meant = "The rule is wrong: a member is reminded again only 7 Days or more after the last."
+    other = "The command always exits 0."
+
+    def found(name: str, *said: str, blueprints: tuple[str, ...] = (BLUEPRINT,)) -> list[object]:
+        stops = [_stop(1, "need", "/surface-plan x", "awaiting-approval", "Read.")]
+        stops += [
+            _stop(number, "correction", text, "awaiting-approval", "Read.")
+            for number, text in enumerate(said, start=2)
+        ]
+        root = kept_run(tmp_path / name, journal=DRAFTED, stops=stops, blueprints=blueprints)
+        measures = measure(root, expecting)
+        return [measures["corrections"], measures["expected_correction"]]
+
+    # The blueprint sent back with the rule the developer meant is the one the case expects.
+    assert found("caught", meant) == [0, True]
+    # Any other blueprint sent back is a correction like those of every case.
+    assert found("another-first", other, meant) == [1, True]
+    assert found("another-alone", other) == [1, False]
+    # It is left out once: sent back again, the amendment was not carried.
+    assert found("twice", meant, meant) == [1, True]
+    assert found("none") == [0, False]
+    # A run that handed no blueprint over had nothing to send back: empty, never false.
+    assert found("stuck", blueprints=()) == [0, None]
+    # A case that expects none has no such measure, and counts every blueprint sent back.
+    stops = [_stop(1, "correction", meant, "awaiting-approval", "Read.")]
+    plain = measure(kept_run(tmp_path / "plain", journal=DRAFTED, stops=stops), case(tmp_path))
+    assert [plain["corrections"], plain["expected_correction"]] == [1, None]
+    # Planning gives both: a run that stops at the hand over holds them.
+    assert "expected_correction" not in EXECUTION
+    assert "expected_correction" in GOALS
+    assert "expected_correction" not in DIRECTION
 
 
 def test_the_report_knows_every_measure_of_the_pull_request(tmp_path: Path) -> None:

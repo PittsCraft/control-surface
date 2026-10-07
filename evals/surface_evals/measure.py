@@ -77,7 +77,7 @@ def cost_of(logs: Sequence[SessionLog]) -> float:
     return sum(paid.values())
 
 
-def _loop(journal: list[dict[str, object]], record: dict[str, object]) -> Measures:
+def _loop(journal: list[dict[str, object]], record: dict[str, object], case: Case) -> Measures:
     """Whether the loop converged, and what it took: the passes, the hand back, the approval."""
     by_event: dict[str, list[dict[str, object]]] = {}
     for line in journal:
@@ -86,6 +86,14 @@ def _loop(journal: list[dict[str, object]], record: dict[str, object]) -> Measur
     reviews = by_event.get("review-done", [])
     blocked = by_event.get("blocked", [])
     stops = cast("list[dict[str, object]]", record["stops"])
+    sent_back = [str(stop["said"]) for stop in stops if stop["kind"] == "correction"]
+    # The correction a case expects, since its need states a rule the developer did not mean:
+    # whether a blueprint handed over was sent back with it. Empty for every other case, and
+    # for a run that handed no blueprint over.
+    expected = case.expected_correction
+    made: bool | None = None
+    if expected is not None and record["blueprints"]:
+        made = any(expected.says.lower() in said.lower() for said in sent_back)
     return {
         "approved_by_sentence": cast("bool | None", record["approved_by_sentence"]),
         "approvals": len(by_event.get("plan-approved", [])),
@@ -96,8 +104,10 @@ def _loop(journal: list[dict[str, object]], record: dict[str, object]) -> Measur
             1 for stop in stops if stop["kind"] == "answer" and hands_back(str(stop["said"]))
         ),
         # What the developer had to send back once they read the blueprint: the interview and
-        # the blueprint did not carry what they knew.
-        "corrections": sum(1 for stop in stops if stop["kind"] == "correction"),
+        # the blueprint did not carry what they knew. The correction the case expects is left
+        # out, once: no interview could have spared it.
+        "corrections": len(sent_back) - (1 if made else 0),
+        "expected_correction": made,
         "killed": sum(1 for stop in stops if not stop["ended"]),
         "relaunches": sum(1 for stop in stops if stop["kind"] == "relaunch"),
         "checks": len(checks),
@@ -275,7 +285,7 @@ def measure(root: Path, case: Case) -> Measures:
         "planning_usd": round(cost_of([log for log in logs if log.path not in launched]), 4),
         "usd": round(cost_of(logs), 4),
     }
-    measures.update(_loop(journal, record))
+    measures.update(_loop(journal, record, case))
     measures.update(_pull_request(project, record))
     measures.update(_plan(folder, logs))
     measures.update(_zones(case, kept[-1] if kept else None, folder, conformant=conformant))

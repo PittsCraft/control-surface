@@ -19,6 +19,7 @@ from surface_evals.report import (
     compare,
     render,
     summarize,
+    uncompared,
     write,
 )
 from surface_evals.runner import STOPPED
@@ -235,6 +236,68 @@ def test_a_campaign_stopped_at_the_hand_over_says_nothing_of_the_execution_again
         assert f"| `{absent}` |" not in text
     # A campaign played whole says nothing of runs that stopped.
     assert "played planning alone" not in render(before)
+
+
+def test_a_correction_a_case_expects_is_said_by_the_report_and_summarized_apart(
+    tmp_path: Path,
+) -> None:
+    name = "03-overdue-reminders"
+    meant = "The rule is wrong: a member is reminded again only 7 days or more after the last."
+    stops = [
+        *STOPS[:2],
+        {**STOPS[1], "kind": "correction", "said": meant},
+        *STOPS[2:],
+    ]
+    kept_run(tmp_path / "runs" / name / "run-01", journal=JOURNAL, stops=stops)
+    summary = summarize(tmp_path)
+    found = cast("dict[str, dict[str, object]]", summary["cases"])[name]
+    assert "on purpose" in str(found["expected_correction"])
+    measures = cast("dict[str, dict[str, float]]", found["measures"])
+    assert (measures["corrections"]["mean"], measures["expected_correction"]["mean"]) == (0, 1)
+    text = render(summary)
+    told = f"`{name}` expects one correction, which `expected_correction` tells and `corrections`"
+    assert f"{told} leaves out. Its need states a rule the developer did not mean" in text
+    assert "| `expected_correction` | 1 | 1 |" in text
+    # A case that expects none says nothing, and has no such row.
+    plain = min(path.name for path in CASES.iterdir() if (path / "case.json").is_file())
+    kept_run(tmp_path / "plain" / "runs" / plain / "run-01", journal=JOURNAL, stops=STOPS)
+    other = summarize(tmp_path / "plain")
+    assert (
+        cast("dict[str, dict[str, object]]", other["cases"])[plain]["expected_correction"] is None
+    )
+    assert "expects one correction" not in render(other)
+    assert "`expected_correction`" not in render(other)
+
+
+def test_corrections_are_not_compared_with_a_summary_that_counted_the_expected_one() -> None:
+    def summary(reminders: list[float], other: list[float], why: str | None) -> dict[str, object]:
+        made = _summary({"reminders": {"corrections": reminders}, "other": {"corrections": other}})
+        cases = cast("dict[str, dict[str, object]]", made["cases"])
+        folded = Spread.of([*reminders, *other]).to_dict()
+        cast("dict[str, object]", made["all"])["measures"] = {"corrections": folded}
+        if why is not None:  # a summary kept before the case said so holds no such key
+            cases["reminders"]["expected_correction"] = why
+            cases["other"]["expected_correction"] = None
+        return made
+
+    before = summary([1, 1], [1, 1], None)
+    after = summary([0, 0], [0, 0], "Its need states the wrong rule, on purpose.")
+    # The case that expects none is compared as ever. Of the other, and of all the runs, nothing
+    # is said: 1 then 0 would read as an interview that got better.
+    moves = {(move.scope, move.measure): move.verdict for move in compare(after, before)}
+    assert moves == {("other", "corrections"): "better"}
+    (left_out,) = uncompared(after, before)
+    assert left_out.startswith("Not compared: `corrections` of `reminders` and of all the runs.")
+    assert left_out in render(after, compare(after, before), uncompared(after, before))
+    # The same the other way round, and nothing is left out between two that tell it apart.
+    assert len(uncompared(before, after)) == 1
+    later = summary([2, 2], [2, 2], "Its need states the wrong rule, on purpose.")
+    assert uncompared(later, after) == []
+    assert {(move.scope, move.measure) for move in compare(later, after)} == {
+        ("reminders", "corrections"),
+        ("other", "corrections"),
+        ("all", "corrections"),
+    }
 
 
 def test_the_report_holds_no_em_dash_whatever_a_model_wrote() -> None:

@@ -118,6 +118,7 @@ def case(root: Path, **changes: object) -> Case:
         "critical_zones": (),
         "critical_files": (),
         "amendment": None,
+        "expected_correction": None,
     }
     return Case(**{**fields, **changes})  # type: ignore[arg-type]
 
@@ -140,7 +141,8 @@ def kept_run(  # noqa: PLR0913 (what a run may have left, each by its name)
         "".join(json.dumps(line) + "\n" for line in journal), encoding="utf-8"
     )
     (folder / "plan.md").write_text(PLAN, encoding="utf-8")
-    (folder / "blueprint.md").write_text(blueprints[-1], encoding="utf-8")
+    if blueprints:  # a run that handed none over left none in its plan folder
+        (folder / "blueprint.md").write_text(blueprints[-1], encoding="utf-8")
     (folder / "interview.md").write_text("# Interview\n", encoding="utf-8")
     if conformity is not None:
         (folder / "conformity.md").write_text(conformity, encoding="utf-8")

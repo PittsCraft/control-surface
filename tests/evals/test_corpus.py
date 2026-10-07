@@ -82,6 +82,22 @@ def test_one_case_carries_an_amendment_so_that_a_revision_is_drawn() -> None:
     assert [case.shape for case in amended] == ["several-flows"]
 
 
+def test_one_case_states_the_wrong_rule_and_says_which_correction_it_expects() -> None:
+    expecting = [case for case in load_cases() if case.expected_correction is not None]
+    assert [case.name for case in expecting] == ["03-overdue-reminders"]
+    (case,) = expecting
+    expected = case.expected_correction
+    assert expected is not None
+    # The rule the developer means is in what they know, and the need they type says another:
+    # the words that tell the correction are those of the brief, which the need does not hold.
+    assert expected.says in case.brief
+    assert expected.says not in case.need
+    assert "on the same day" in case.need
+    assert "on purpose" in expected.why
+    # The reader of the folder is told too, where the need alone would read as a slip.
+    assert (case.root / "README.md").is_file()
+
+
 def test_a_case_that_is_not_whole_is_refused(tmp_path: Path) -> None:
     def broken(name: str) -> Path:
         copy = tmp_path / name
@@ -100,6 +116,9 @@ def test_a_case_that_is_not_whole_is_refused(tmp_path: Path) -> None:
         ("sections", {"body_sections": {"min": 3, "max": 1}}, "body_sections"),
         ("diagram", {"diagram": "many"}, "diagram must be one of"),
         ("zones", {"critical_zones": "fines"}, "critical_zones must be a list"),
+        ("expected", {"expected_correction": "7 days"}, "expected_correction must be null, or"),
+        ("why", {"expected_correction": {"why": " ", "says": "7 days"}}, "expected_correction"),
+        ("says", {"expected_correction": {"why": "On purpose."}}, "expected_correction"),
     ):
         folder = broken(name)
         (folder / "case.json").write_text(json.dumps({**raw, **change}), encoding="utf-8")
