@@ -166,6 +166,37 @@ def test_extractor_cuts_the_body_by_what_the_developer_decides_separately() -> N
     assert "Say a fact once" in writing
 
 
+def test_extractor_titles_in_bold_what_the_developer_comes_back_for_in_a_long_section() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # The developer comes back to the page for one thing: in a section too long to take in at a
+    # glance, it is found by its title. The title names the thing and tells no rule again, and a
+    # short section gets none, so that titles neither pad a page nor replace a section.
+    said = [
+        "The cut decides the sections: a title in bold never stands in for a section the cut asks",
+        "Inside a section of the body, each thing the developer would come back for on its own",
+        "opens with a short title in bold, closed by a period, at the head of its first paragraph",
+        "and not as an item of a list",
+        "The title names the thing in the words of the feature, as a section's does",
+        "and states no rule",
+        "A section they take in at a glance, one or two short paragraphs, has no title inside it",
+        "A thing told in several paragraphs has one title, at its head",
+        "Inside a section too, what the feature does comes before which component answers for it",
+    ]
+    positions = [writing.index(sentence) for sentence in said]
+    assert positions == sorted(positions)
+    # A revision keeps them, like the titles of the sections, and an idea may stand under one.
+    assert "keep its cut and its titles, those in bold included" in writing
+    assert "One idea per section, or per title inside it, short prose" in writing
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
+    form = template.read_text(encoding="utf-8")
+    titled = "In a section longer than a glance, a short title in bold opens each thing"
+    assert f"{titled} they would come back for on its own" in form
+    # The cross-check is left as it was: it never counts a title or an order as an omission.
+    _, checker = read_agent("surface-checker")
+    assert "The cut, the titles and the order of its sections are never an omission" in checker
+
+
 def test_extractor_says_a_fact_once_on_the_whole_page_and_shows_behavior_not_code() -> None:
     _, body = read_agent("surface-extractor")
     writing = section(body, "What you write")
