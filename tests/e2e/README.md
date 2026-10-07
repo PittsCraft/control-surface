@@ -108,6 +108,8 @@ A scenario kills a session at a moment it reads in the files of the project or i
 | `test_planning_killed_in_the_interview_resumes_at_the_next_question` | `specs` | `/surface-plan` with the need; the session that takes the first answer of the interview killed once `interview.md` holds it; then `/surface-plan` alone, and the recommendation at every question | the journal of the killed session kept as is, `exploration.md` untouched, no question that had its answer written a second time, one `plan-drafted` with the gate of the toy, the plan committed and pushed, and one draft pull request with the description `surface-status pr-body` prints |
 | `test_an_amendment_killed_once_recorded_is_drafted_at_the_relaunch` | `awaiting-approval` | `/surface-plan` with an amendment, killed once the journal holds `amendment-received`, then `/surface-plan` alone | the amendment in `interview.md` at the kill, one `amendment-received`, revision 2 of the plan and of the blueprint with the header in its new order, pushed, the description refreshed and no second opening |
 | `test_a_conversation_after_the_hand_over_amends_and_approves_nothing` | `awaiting-approval` | `/surface-plan`, then in its conversation a question, an amendment and "Fine, go." | the question records nothing. The amendment is in `interview.md` and in the journal, revision 2 is drafted and pushed. The sentence that agrees records nothing, and the session names `/surface-execute` |
+| `test_a_ci_that_runs_on_a_push_makes_planning_wait_for_an_agreement` | `specs-ci` | `/surface-plan` with the need and the recommendation at every question, until the plan is drafted; then "Yes, push it and open the draft." | once the plan is drafted, the bare remote holds the main branch alone and no `gh pr create` was called. After the agreement: the plan pushed, one draft pull request, the answer in `interview.md`, the plan folder committed, and the description `surface-status pr-body` prints |
+| `test_a_push_the_developer_declines_leaves_the_plan_committed_locally` | `unpushed-ci` | `/surface-plan`, then "No, do not push: this plan stays on my machine for now." | nothing recorded, the bare remote holds the main branch alone before the answer and after it, no `gh pr create`, the answer in `interview.md`, and the final message says the plan is local |
 
 ### The developer's turn in the loop
 
@@ -125,6 +127,12 @@ A scenario kills a session at a moment it reads in the files of the project or i
 |---|---|---|---|
 | `test_an_abandon_waits_for_a_yes_then_fails_the_conformity_check` | `done` | `/surface-status abandon`, then the yes with its reason | nothing recorded before the yes. Then `abandoned` with the reason, the journal committed and pushed, the description refreshed, and `surface-status check --require conformant` exits with 1 on `abandoned-after-approval`, since the plan was approved |
 | `test_two_plans_on_a_branch_are_put_to_the_developer` | `two-plans` | `/surface-plan`, `/surface-execute` or `/surface-status abandon`, one test each | nothing recorded in either plan, nothing changed in the working tree, and the final message names both plans |
+
+### Sessions that died
+
+| Test | Start | Sessions | What must hold |
+|---|---|---|---|
+| `test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch` | `unpushed` | `/surface-plan` | nothing recorded, the branch pushed, and one draft pull request with the description `surface-status pr-body` prints |
 
 ### Without a session
 
