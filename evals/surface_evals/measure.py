@@ -91,7 +91,7 @@ def _loop(journal: list[dict[str, object]], record: dict[str, object]) -> Measur
         "approvals": len(by_event.get("plan-approved", [])),
         "questions": sum(1 for stop in stops if stop["kind"] == "answer"),
         # The questions the developer handed back: the interview asked what the brief leaves
-        # to the implementer, the opposite fault of a correction.
+        # to the implementer. A sign to follow, and no fault: a developer may delegate.
         "questions_handed_back": sum(
             1 for stop in stops if stop["kind"] == "answer" and hands_back(str(stop["said"]))
         ),
