@@ -15,21 +15,24 @@ BREAK_QUESTION = "Must the blueprint be modified for it to stay true?"
 DEFECT_QUESTION = "Must the code be fixed?"
 # A review with no finding ends the loop in this state.
 NO_FINDING_END = "conformant state"
-# On conformant, the loop hands back in one line. A criterion the reviewer cannot prove is a
-# finding, so a conformant plan leaves nothing to check: `conformity.md` is kept, never a required
-# reading. The chain never marks the pull request ready, since that triggers the host's CI.
-CONFORMANT_HAND_BACK = (
-    "the plan is conformant, and the developer marks the pull request ready when they want"
-)
+# On conformant, the loop hands back in one line, and that line is all the session says: the plan
+# is conformant, the changed files of the critical zones when there are any, then the developer's
+# step, last. No report of what was done: the description of the pull request holds it, and a
+# report in the terminal buried the step. A criterion the reviewer cannot prove is a finding, so a
+# conformant plan leaves nothing to check: `conformity.md` is kept, never a required reading. The
+# chain never marks the pull request ready, since that triggers the host's CI.
+CONFORMANT_HAND_BACK = "hand back in one line, which is all you say at this stop"
+CONFORMANT_STEP = "the developer marks the pull request ready when they want"
 # A branch may have no pull request: no `gh`, no remote, or a push the developer declined. The
 # line then names the step that fits, since nobody marks ready a pull request that does not exist.
 CONFORMANT_WITHOUT_PULL_REQUEST = (
     "the developer opens the pull request, if none is open yet, with the description"
     " `surface-status pr-body` prints"
 )
-# The one exception, which the hand-back says in one sentence: where a mistake would cost most,
-# in the zones the host's agent instructions declare critical, the developer reads the code
-# themselves, from the list of changed files the pull request description gives.
+# The one exception, which the line names: where a mistake would cost most, in the zones the
+# host's agent instructions declare critical, the developer reads the code themselves. The line
+# names the files the branch changed there, the list the pull request description gives, which
+# the session reads in the answer of `pr-body`.
 CONFORMANT_EXCEPTION = (
     "a conformant plan leaves nothing to check, except the code of the critical zones"
 )
