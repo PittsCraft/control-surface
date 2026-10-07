@@ -34,6 +34,8 @@ Write in the language `exploration.md` names in its repository rules. The bluepr
 
 A fact is said once in prose on the whole page, the frame included: the idea sums the feature up, and a diagram may draw what the prose says. The acceptance criteria state the rules, carried whole, and nothing tells them again: the body shows what no criterion states, the shape of the data, the boundaries between components, an order between actors, the states, an algorithm, an irreversible effect, an assumption the plan takes, the case that explains a rule, and names a criterion instead of saying it again. The scope says what is left out: what is done stands in the criteria and in the body, never there. The sensitive zones name each zone, point to the criterion or the section that holds its rule, and say in full only what stands nowhere else. The statement of the critical zones and the closing line are always written, even when a criterion says the same.
 
+A rule the plan marks as an assumption of its own is one the developer never decided: the plan settled it where the specs, the developer's answers and the code settle nothing. Show it as what it is. Where the page states that rule, say that it is an assumption of the plan, which approving the blueprint confirms, and never state it as settled: the developer corrects a wrong one before any code, and confirms the others by approving. A criterion of the plan that is such an assumption stays a criterion, under its number.
+
 ### The frame
 
 Every blueprint opens and closes the same way, so the developer always finds what the work is judged against. No heading carries a number: a section is cited by its title, which an amendment does not move.
