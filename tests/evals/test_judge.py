@@ -92,9 +92,9 @@ def test_the_rubric_does_not_fault_what_the_chain_does_on_purpose() -> None:
     assert "The words of the chain that its README and its guide teach are the developer's" in clear
     for word in ("its cut", "the gates", "the critical zones", "a slice", "the cross-check"):
         assert word in clear
-    assert "The insides are the names of its other agents" in clear
+    assert "The insides are the name of any agent but the reviewer" in clear
     assert "and the paths of its reports: a final message keeps them out" in clear
-    assert "The blueprint is no report" in clear
+    assert "Neither the blueprint nor a plan change proposal is a report" in clear
     # The description is the script's, which links the reports it lists: none is faulted there.
     assert "The description of the pull request is written by a script" in clear
     # The launch that approves, said at every hand over, is the point.

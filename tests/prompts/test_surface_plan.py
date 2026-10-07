@@ -21,6 +21,7 @@ from chain_contract import (
     COMMIT_FORM,
     DOCUMENTS_LANGUAGE,
     FORMER_LANGUAGE_RULE,
+    INSIDES,
     LANGUAGE_SOURCES,
     PLAN,
     PLAN_AGENT,
@@ -28,6 +29,7 @@ from chain_contract import (
     PLANNING_EVENTS,
     SEEN_BY,
     SLICE_ON_ITS_COMMIT,
+    TAUGHT_WORDS,
     THE_DEVELOPERS_RULES,
 )
 from prompt_support import (
@@ -311,6 +313,24 @@ def test_the_developers_words_are_quoted_as_given_then_translated() -> None:
     assert "add their translation below the text, under a heading that says so" in steps
     for writing in (section(body, "Asking a question"), section(body, "Taking an amendment")):
         assert 'in the developer\'s words then translated (see "Languages")' in writing
+
+
+def test_the_command_speaks_in_the_words_the_chain_taught_and_keeps_its_insides_out() -> None:
+    languages = section(_body(), "Languages")
+    told = "Tell the developer what happened in the words the chain taught them"
+    assert f"{told}: {TAUGHT_WORDS}." in languages
+    insides = f"{INSIDES}, the extractor or the checker for instance, and the paths of the reports"
+    assert insides in languages
+    assert "not which agent did it nor in which file its report stands" in languages
+    assert "The path of a report is given only when the developer asks for it" in languages
+    # The blueprint and a plan change proposal are the developer's to read: their paths are given.
+    theirs = "Neither the blueprint nor a plan change proposal is a report: each is theirs to read"
+    assert f"{theirs}, and its path is given" in languages
+    assert "Tell the developer where to read the blueprint: its path" in _hand_over()
+    # No step gives the session the name of an agent to pass on.
+    assert "how the body of the blueprint is cut, and why, as step 7 returned it" in _hand_over()
+    failed = "tell the developer which step failed, the drawing of the blueprint or its cross-check"
+    assert failed in section(_body(), "The agents")
 
 
 def test_the_interview_template_quotes_then_translates() -> None:

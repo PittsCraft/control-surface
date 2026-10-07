@@ -23,8 +23,10 @@ from chain_contract import (
     EXECUTE,
     EXECUTION_LOOP,
     IN_CONVERSATION,
+    INSIDES,
     REFUSED_LIST,
     SEEN_BY,
+    TAUGHT_WORDS,
 )
 from chain_contract import PLAN as PLAN_COMMAND
 from cli_support import PLAN, Project
@@ -225,6 +227,53 @@ def test_execute_speaks_the_developers_language_and_quotes_their_decisions() -> 
     assert "quoted in their words, then translated" in rules
     declined = _proposal_replies()["Declined"]
     assert "quoted in the developer's words and translated" in declined
+
+
+def test_execute_speaks_in_the_words_the_chain_taught_and_keeps_its_insides_out() -> None:
+    body = _execute()
+    rules = section(body, "Ground rules")
+    assert (
+        f"You tell the developer what happened in the words the chain taught them: {TAUGHT_WORDS}."
+        in rules
+    )
+    assert (
+        f"{INSIDES}, the executor or a fixer for instance, and the paths of the reports." in rules
+    )
+    assert "not which agent said so nor in which file" in rules
+    # A word the developer was not taught is said as what it is.
+    said = "A deviation is said as what it is: code that departs from the plan while the blueprint"
+    assert f"{said} stays true" in rules
+    # A report is named where the developer alone can act on it, or asks for it: the one case
+    # of the loop says so where it stops.
+    named = "A report is named by its path only when the developer has to open it to go on, or asks"
+    assert f"{named} for it" in rules
+    fixing = section(body, "A fix")
+    assert "Stop and report it, with the gate and the path of that report" in fixing
+    assert "only the developer can correct it" in fixing
+    # A plan change proposal is theirs to decide on: no report, and its path is given.
+    assert "A plan change proposal is no report: it is theirs to decide on" in rules
+    assert "its path goes with what you present" in rules
+    # No step asks for a path any more: at the ceiling the summary says what does not converge,
+    # and a stop says why it stopped and whose turn it is.
+    ceiling = section(body, "At the ceiling")
+    assert "what the reviews found, the gates that failed, the suspicions dismissed" in ceiling
+    stopping = section(body, "When the loop stops")
+    assert "1. Say in the terminal why the loop stopped and whose turn it is. On" in stopping
+    for asked in ("with their paths", "the paths worth reading"):
+        assert asked not in body
+
+
+def test_the_judge_is_given_the_same_words_as_the_commands() -> None:
+    """The rubric of the evaluations lists the words a message may use: one list, three places."""
+    rubric = Path(__file__).resolve().parents[2] / "evals" / "judge" / "rubric.md"
+    clear = next(
+        line
+        for line in rubric.read_text(encoding="utf-8").splitlines()
+        if line.startswith("- **clear**")
+    )
+    assert f"a message may use them: {TAUGHT_WORDS}." in clear
+    assert "The insides are the name of any agent but the reviewer" in clear
+    assert "Neither the blueprint nor a plan change proposal is a report" in clear
 
 
 def test_execute_writes_under_headings_the_interview_template_holds() -> None:
