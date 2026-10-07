@@ -38,8 +38,9 @@ The states, from the need to the review:
 | `done`, `defect`, `deviation` | both slices done and nothing reviewed yet: as planned, with that same defect, or with the tests of slice 1 in another file than the plan names. The evaluations review them (`evals/README.md`) |
 | `slow-gate` | `done`, with a test on the main branch that sleeps 20 seconds, so that the gate lasts |
 | `review-unrecorded` | `done`, the gates run green and committed, then a clean review and `conformity.md` written, neither recorded nor committed |
+| `conformant-unpushed` | `done`, then the gates, a clean review and `conformant`, all committed, and the branch not pushed since the slices |
 
-A state named after a death, `plan-written`, `slice-uncommitted`, `suspected-break` or `review-unrecorded`, holds what a session leaves when it dies at that point: the files are the whole state of a plan, so a state built there is the one a kill would leave, without the luck a kill needs to fall between a record and its commit.
+A state that holds work not committed or not pushed, `plan-written`, `slice-uncommitted`, `suspected-break`, `review-unrecorded`, `conformant-unpushed` and their like, is what a session leaves when it dies at that point: the files are the whole state of a plan, so a state built there is the one a kill would leave, without the luck a kill needs to fall between a record and its commit.
 
 `toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
 
@@ -142,7 +143,9 @@ A scenario kills a session at a moment it reads in the files of the project or i
 | `test_planning_killed_while_an_agent_works_drafts_the_plan_at_the_relaunch` | `plan-written`, `blueprint-drawn` | `/surface-plan`, killed while the extractor works, or the checker; then `/surface-plan` alone, and the recommendation at any question | the journal of the killed session kept as is, one `plan-drafted`, the plan committed and pushed, and one draft pull request with the description `surface-status pr-body` prints |
 | `test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch` | `unpushed` | `/surface-plan` | nothing recorded, the branch pushed, and one draft pull request with the description `surface-status pr-body` prints |
 
-The push of a stop of `/surface-execute` that never came is played by `test_an_accepted_plan_change_goes_back_to_planning`, whose state is committed and not pushed.
+| `test_a_conformant_plan_committed_and_never_pushed_is_pushed_at_the_relaunch` | `conformant-unpushed` | `/surface-execute` | nothing recorded, the branch pushed, the description refreshed |
+
+The push of a stop of `/surface-execute` that never came is played twice. `test_an_accepted_plan_change_goes_back_to_planning` starts from a proposal committed and not pushed, which the relaunch pushes before it asks. The last test of the table starts from a conformity committed and not pushed, and fails as the chain stands: `/surface-execute` finds no plan once the only one of the branch is conformant, so its relaunch stops before any push, and the pull request keeps the description of a plan in progress. No scenario plays the same death after `/surface-status` recorded an abandonment.
 
 ### The ceiling in planning, and a break an executor suspects
 

@@ -94,6 +94,7 @@ class State(StrEnum):
     DEVIATION = "deviation"  # the tests of slice 1 in another file than the plan names
     SLOW_GATE = "slow-gate"  # the work as planned, and a gate that lasts
     REVIEW_UNRECORDED = "review-unrecorded"  # gates green, a clean review written, not recorded
+    CONFORMANT_UNPUSHED = "conformant-unpushed"  # conformant, committed, and never pushed
 
 
 def plan_name(slug: str = SLUG) -> str:
@@ -1327,6 +1328,14 @@ def _review_left_unrecorded(project: Path, plan: str) -> None:
     )
 
 
+def _conformant_left_unpushed(project: Path, plan: str) -> None:
+    """Record a clean review, then the conformity, and commit both: the push never came."""
+    _review(project, plan, 1, REVIEW_CLEAN, "review: pass 1, no finding")
+    write(project, {f"{plan}/conformity.md": CONFORMITY})
+    record(project, plan, "conformant", "--conformity", "conformity.md")
+    commit(project, "plan: conformant", [f"{plan}/conformity.md", f"{plan}/journal.jsonl"])
+
+
 # What follows the slices in a state, before the push of the branch and after it.
 _PUSHED: Mapping[State, Callable[[Path, str], None]] = {
     State.DEVELOPER_BREAK: _developer_commit,
@@ -1338,6 +1347,7 @@ _PUSHED: Mapping[State, Callable[[Path, str], None]] = {
 _NOT_PUSHED: Mapping[State, Callable[[Path, str], None]] = {
     State.PROPOSED: _break_raised,
     State.REVIEW_UNRECORDED: _review_left_unrecorded,
+    State.CONFORMANT_UNPUSHED: _conformant_left_unpushed,
 }
 # What the executor of slice 2 left in the working tree, and the reason it recorded.
 _SUSPICIONS: Mapping[State, tuple[Mapping[str, str], str]] = {

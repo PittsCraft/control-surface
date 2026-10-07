@@ -249,6 +249,7 @@ UNCOMMITTED = frozenset(
         (toy.State.DEVIATION, "reviewing"),
         (toy.State.SLOW_GATE, "reviewing"),
         (toy.State.REVIEW_UNRECORDED, "reviewing"),
+        (toy.State.CONFORMANT_UNPUSHED, "conformant"),
     ],
 )
 def test_a_prepared_state_is_the_one_named(
@@ -787,6 +788,19 @@ def test_a_review_written_and_not_recorded_is_recorded_at_the_relaunch(tmp_path:
     assert "surface-reviewer" not in [role for _, role in launches(log)]
     assert state(project) == "conformant"
     assert not dirty(project, "docs")
+    assert pushed(project)
+    described(project)
+
+
+def test_a_conformant_plan_committed_and_never_pushed_is_pushed_at_the_relaunch(
+    tmp_path: Path,
+) -> None:
+    project = toy.build(toy.State.CONFORMANT_UNPUSHED, tmp_path)
+    before = events(project)
+    assert run_to_end(project, "/surface-execute", tmp_path / "logs" / "execute.jsonl") == 0
+    # The session that recorded the conformity died between its commit and its push. The plan
+    # is over and nothing is left to record: the stop is still owed its push and its refresh.
+    assert events(project) == before
     assert pushed(project)
     described(project)
 
