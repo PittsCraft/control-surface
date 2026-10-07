@@ -218,6 +218,8 @@ UNCOMMITTED = frozenset(
         toy.State.BLUEPRINT_DRAWN,
         toy.State.PLANNING_CEILING,
         toy.State.SLICE_UNCOMMITTED,
+        toy.State.SUSPECTED_BREAK,
+        toy.State.UNFOUNDED_SUSPICION,
         toy.State.REVIEW_UNRECORDED,
     }
 )
@@ -234,6 +236,8 @@ UNCOMMITTED = frozenset(
         (toy.State.UNPUSHED_CI, "awaiting-approval"),
         (toy.State.TWO_PLANS, "awaiting-approval"),
         (toy.State.SLICE_UNCOMMITTED, "executing"),
+        (toy.State.SUSPECTED_BREAK, "executing"),
+        (toy.State.UNFOUNDED_SUSPICION, "executing"),
         (toy.State.BLUEPRINT_MODIFIED, "executing"),
         (toy.State.DEVELOPER_BREAK, "reviewing"),
         (toy.State.PROPOSED, "plan-change-proposed"),
@@ -844,3 +848,92 @@ def test_planning_killed_while_an_agent_works_drafts_the_plan_at_the_relaunch(
     assert pushed(project)
     assert len(gh_stand_in.pulls(project)) == 1
     described(project)
+
+
+def test_the_ceiling_in_planning_hands_back_then_takes_an_instruction(tmp_path: Path) -> None:
+    project = toy.build(toy.State.PLANNING_CEILING, tmp_path)
+    logs = tmp_path / "logs"
+    before = events(project)
+    first = logs / "plan.jsonl"
+    session = say(project, "/surface-plan", first)
+    # Two cross-checks counted the omission and the ceiling is one: nothing more is launched,
+    # and the block is committed with the plan folder.
+    assert events(project) == [*before, "blocked"]
+    assert not launches(first)
+    assert not dirty(project, "docs")
+    instruction = "Draw the blueprint again: it must show that the command rewrites the shelf file."
+    converse(
+        project,
+        instruction,
+        logs,
+        "instruction",
+        until=lambda: (
+            "resumed" in events(project) and state(project) in {"awaiting-approval", "blocked"}
+        ),
+        resume=session,
+    )
+    seen = events(project)
+    assert seen[: len(before) + 2] == [*before, "blocked", "resumed"]
+    assert told(project, instruction.rstrip("."))
+    # The count starts again: the blueprint is drawn and cross-checked once more at least.
+    assert "check-done" in seen[len(before) + 2 :]
+
+
+def test_a_break_suspected_in_a_slice_is_confirmed_at_the_relaunch_then_refused(
+    tmp_path: Path,
+) -> None:
+    project = toy.build(toy.State.SUSPECTED_BREAK, tmp_path)
+    logs = tmp_path / "logs"
+    before = events(project)
+    first = logs / "execute.jsonl"
+    session = say(project, "/surface-execute", first)
+    lines = journal(project)
+    # The executor's reason waited in the journal: a reviewer judges it before anything carries
+    # the slice on, and confirms it.
+    assert [role for _, role in launches(first)] == ["surface-reviewer"]
+    assert [line["event"] for line in lines] == [*before, "plan-change-proposed"]
+    assert lines[-1]["slice"] == 2
+    assert document(project, lines[-1]["proposal"]).is_file()
+    # The proposal, the unfinished work of the slice and the journal are committed and pushed.
+    assert not dirty(project)
+    assert pushed(project)
+    described(project)
+    reason = "nothing reads the JSON export any more"
+    refusal = f"I decline it: {reason}, replace it. The blueprint stays as it is."
+    say(project, refusal, logs / "refusal.jsonl", resume=session)
+    if "plan-change-refused" not in events(project):
+        say(project, f"The reason: {reason}.", logs / "reason.jsonl", resume=session)
+    lines = journal(project)
+    seen = [line["event"] for line in lines]
+    assert seen.count("plan-change-refused") == 1
+    assert told(project, reason)
+    # Back to the slice, done once, and the break the developer refused is not raised again.
+    later = lines[seen.index("plan-change-refused") :]
+    assert [line["event"] for line in later].count("slice-done") == 1
+    assert "plan-change-proposed" not in [line["event"] for line in later]
+    assert not [line for line in later if line["event"] == "review-done" and line["breaks"]]
+    assert state(project) == "conformant"
+    assert header(project, tmp_path / "books.jsonl") == "title,author,year"
+
+
+def test_a_break_suspected_in_a_slice_is_dismissed_at_the_relaunch(tmp_path: Path) -> None:
+    project = toy.build(toy.State.UNFOUNDED_SUSPICION, tmp_path)
+    before = events(project)
+    start = toy.git(project, "rev-parse", "HEAD").strip()
+    log = tmp_path / "logs" / "execute.jsonl"
+    assert run_to_end(project, "/surface-execute", log) == 0
+    lines = journal(project)
+    seen = [line["event"] for line in lines]
+    assert seen[: len(before)] == before
+    dismissed = lines[len(before)]
+    assert (dismissed["event"], dismissed["slice"]) == ("suspicion-dismissed", 2)
+    # The note and the journal are committed, not the work: the next executor takes the slice
+    # up from it, with the note.
+    plan = f"docs/plans/{toy.plan_name()}"
+    assert first_commit(project, start) == sorted(
+        [f"{plan}/journal.jsonl", f"{plan}/{dismissed['report']}"]
+    )
+    assert [role for _, role in launches(log)][:2] == ["surface-reviewer", "surface-executor"]
+    assert seen.count("slice-done") == 2
+    assert "plan-change-proposed" not in seen
+    assert state(project) == "conformant"

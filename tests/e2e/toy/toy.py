@@ -80,6 +80,8 @@ class State(StrEnum):
     UNPUSHED_CI = "unpushed-ci"  # the same, under the CI that runs on every push
     TWO_PLANS = "two-plans"  # a second plan drafted on the same branch
     SLICE_UNCOMMITTED = "slice-uncommitted"  # approved, slice 1 recorded and not committed
+    SUSPECTED_BREAK = "suspected-break"  # slice 2 stopped on a break its executor suspects
+    UNFOUNDED_SUSPICION = "unfounded-suspicion"  # the same, on a suspicion that is none
     BLUEPRINT_MODIFIED = "blueprint-modified"  # approved, slice 1 done, then the blueprint edited
     DEVELOPER_BREAK = "developer-break"  # every slice done, then a commit against the schema
     PROPOSED = "plan-change-proposed"  # that break raised by a review, committed, not pushed
@@ -885,6 +887,101 @@ BLUEPRINT_EDITED = BLUEPRINT.replace(
     "3. One line per book: its title, author, year and ISBN, in that order.",
 )
 
+# The project of the suspected break: an `export` command exists before the feature, and prints
+# the shelf as JSON for a backup. The plan and its blueprint, which call the command new, were
+# drafted without seeing it: carrying out slice 2 would replace it, which the blueprint must say.
+README_WITH_JSON_EXPORT = README.replace(
+    "    python3 -m shelf list books.jsonl\n",
+    "    python3 -m shelf list books.jsonl\n"
+    "    python3 -m shelf export books.jsonl    # the shelf as JSON, read by the nightly backup\n",
+)
+
+MAIN_WITH_JSON_EXPORT = (
+    MAIN_BEFORE.replace(
+        "import argparse\nimport sys\n", "import argparse\nimport json\nimport sys\n"
+    )
+    .replace(
+        "from pathlib import Path\n", "from dataclasses import asdict\nfrom pathlib import Path\n"
+    )
+    .replace(
+        """    args = parser.parse_args(argv)
+    for book in load(args.path):
+""",
+        """    exporting = commands.add_parser("export", help="the books as JSON, for the backup")
+    exporting.add_argument("path", type=Path)
+    args = parser.parse_args(argv)
+    if args.command == "export":
+        json.dump([asdict(book) for book in load(args.path)], sys.stdout)
+        sys.stdout.write("\\n")
+        return 0
+    for book in load(args.path):
+""",
+    )
+)
+
+TEST_CLI_WITH_JSON_EXPORT = TEST_CLI_BEFORE.replace(
+    """
+
+if __name__ == "__main__":""",
+    """
+
+class ExportTest(unittest.TestCase):
+    def test_prints_the_shelf_as_json_for_the_backup(self) -> None:
+        self.assertEqual([book["title"] for book in json.loads(run("export"))], ["Dune", "Emma"])
+
+
+if __name__ == "__main__":""",
+).replace("import io\n", "import io\nimport json\n")
+
+# What the executor of slice 2 left when it stopped on that break: the test of the command it
+# was about to write, and its reason in the journal.
+TEST_CLI_OF_THE_SUSPECTED_BREAK = TEST_CLI_WITH_JSON_EXPORT.replace(
+    """
+
+if __name__ == "__main__":""",
+    """
+
+class ExportCsvTest(unittest.TestCase):
+    def test_prints_the_csv(self) -> None:
+        expected = "title,author,year\\nEmma,Austen,1815\\nDune,Herbert,1965\\n"
+        self.assertEqual(run("export"), expected)
+
+
+if __name__ == "__main__":""",
+)
+
+WHY_SUSPECTED = (
+    "the export command exists already: it prints the shelf as JSON, which the README says the"
+    " nightly backup reads; slice 2 would replace it, and the blueprint, which calls the command"
+    " new, shows neither that the JSON export goes nor another name for the CSV one"
+)
+
+# A suspicion that is none: the executor of slice 2 wants a test helper the plan does not name,
+# which changes nothing the blueprint shows.
+TEST_SHELVES = '''\
+"""Shelf files for the tests of the command line."""
+
+import tempfile
+from pathlib import Path
+
+LINES = (
+    '{"title": "Dune", "author": "Herbert", "year": 1965, "isbn": "9780441013593"}\\n'
+    '{"title": "Emma", "author": "Austen", "year": 1815, "isbn": "9780141439587"}\\n'
+)
+
+
+def shelf_file() -> Path:
+    """Write a shelf of two books in a temporary folder and return its path."""
+    path = Path(tempfile.mkdtemp()) / "books.jsonl"
+    path.write_text(LINES, encoding="utf-8")
+    return path
+'''
+
+WHY_UNFOUNDED = (
+    "slice 2 needs a helper module for its tests, tests/shelves.py, which builds the shelf files:"
+    " neither the plan nor the diagram of the blueprint names that file"
+)
+
 
 # Building.
 
@@ -1242,6 +1339,11 @@ _NOT_PUSHED: Mapping[State, Callable[[Path, str], None]] = {
     State.PROPOSED: _break_raised,
     State.REVIEW_UNRECORDED: _review_left_unrecorded,
 }
+# What the executor of slice 2 left in the working tree, and the reason it recorded.
+_SUSPICIONS: Mapping[State, tuple[Mapping[str, str], str]] = {
+    State.SUSPECTED_BREAK: ({"tests/test_cli.py": TEST_CLI_OF_THE_SUSPECTED_BREAK}, WHY_SUSPECTED),
+    State.UNFOUNDED_SUSPICION: ({"tests/shelves.py": TEST_SHELVES}, WHY_UNFOUNDED),
+}
 _ONE_PASS = frozenset({State.PLANNING_CEILING, State.CEILING, State.BLOCKED})
 _WITH_THE_DEFECT = frozenset({State.FIXING, State.CEILING, State.BLOCKED, State.DEFECT})
 _UNDRAFTED = frozenset({State.PLAN_WRITTEN, State.BLUEPRINT_DRAWN, State.PLANNING_CEILING})
@@ -1259,6 +1361,13 @@ def _executed(project: Path, plan: str, state: State) -> None:
         return
     defect = state in _WITH_THE_DEFECT
     _slice_one(project, plan, defect=defect, deviation=state is State.DEVIATION)
+    if state in _SUSPICIONS:
+        # The executor recorded its reason and stopped: only a reviewer qualifies a break, and
+        # the work of the slice waits for the verdict, uncommitted.
+        left, why = _SUSPICIONS[state]
+        write(project, left)
+        record(project, plan, "break-suspected", "--slice", "2", "--why", why)
+        return
     if state is State.BLUEPRINT_MODIFIED:
         write(project, {f"{plan}/blueprint.md": BLUEPRINT_EDITED})
         commit(project, "blueprint: export the isbn too", [f"{plan}/blueprint.md"])
@@ -1277,6 +1386,12 @@ def _more(state: State) -> dict[str, str]:
         return {CI_PATH: CI}
     if state is State.SLOW_GATE:
         return {"tests/test_slow.py": TEST_SLOW}
+    if state is State.SUSPECTED_BREAK:
+        return {
+            "README.md": README_WITH_JSON_EXPORT,
+            "shelf/__main__.py": MAIN_WITH_JSON_EXPORT,
+            "tests/test_cli.py": TEST_CLI_WITH_JSON_EXPORT,
+        }
     return {}
 
 

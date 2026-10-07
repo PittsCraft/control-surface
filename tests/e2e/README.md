@@ -27,6 +27,8 @@ The states, from the need to the review:
 | `unpushed-ci` | the same, under the CI of `specs-ci`, which `exploration.md` names |
 | `two-plans` | a second plan, `<date>-count-books`, drafted on the same branch: both await their approval |
 | `slice-uncommitted` | revision 1 approved, the work of slice 1 written and `slice-done` recorded, neither committed |
+| `suspected-break` | a project whose `export` command exists before the feature and prints the shelf as JSON for a backup, which the plan and the blueprint did not see. Slice 1 done, then `break-suspected` recorded for slice 2 with that reason, and the test its executor had begun, neither committed |
+| `unfounded-suspicion` | the toy as it is, slice 1 done, then `break-suspected` recorded for slice 2 on a test helper the plan does not name, with that helper, neither committed |
 | `blueprint-modified` | revision 1 approved, slice 1 done, then a commit of the developer that edits `blueprint.md` |
 | `developer-break` | both slices done, then a commit of the developer that adds an `isbn` column the blueprint leaves out |
 | `plan-change-proposed` | that commit raised as a contract break by a review, with its proposal under `plan-changes/`, committed and not pushed |
@@ -37,7 +39,7 @@ The states, from the need to the review:
 | `slow-gate` | `done`, with a test on the main branch that sleeps 20 seconds, so that the gate lasts |
 | `review-unrecorded` | `done`, the gates run green and committed, then a clean review and `conformity.md` written, neither recorded nor committed |
 
-A state named after a death, `plan-written`, `slice-uncommitted` or `review-unrecorded`, holds what a session leaves when it dies at that point: the files are the whole state of a plan, so a state built there is the one a kill would leave, without the luck a kill needs to fall between a record and its commit.
+A state named after a death, `plan-written`, `slice-uncommitted`, `suspected-break` or `review-unrecorded`, holds what a session leaves when it dies at that point: the files are the whole state of a plan, so a state built there is the one a kill would leave, without the luck a kill needs to fall between a record and its commit.
 
 `toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
 
@@ -141,6 +143,16 @@ A scenario kills a session at a moment it reads in the files of the project or i
 | `test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch` | `unpushed` | `/surface-plan` | nothing recorded, the branch pushed, and one draft pull request with the description `surface-status pr-body` prints |
 
 The push of a stop of `/surface-execute` that never came is played by `test_an_accepted_plan_change_goes_back_to_planning`, whose state is committed and not pushed.
+
+### The ceiling in planning, and a break an executor suspects
+
+Each starts where a session died: planning after the cross-check that passed the ceiling, a slice after its executor recorded a suspicion and before any reviewer judged it. The verdict of the reviewer is a model's, on a suspicion written to leave it little room: a command the feature would replace without the blueprint saying so, and a test helper the plan does not name.
+
+| Test | Start | Sessions | What must hold |
+|---|---|---|---|
+| `test_the_ceiling_in_planning_hands_back_then_takes_an_instruction` | `planning-ceiling` | `/surface-plan`, then the instruction, and the recommendation at any question | `blocked` and nothing else, no agent launched, the plan folder committed. Then `resumed` right after it, the instruction in `interview.md`, and a cross-check after it |
+| `test_a_break_suspected_in_a_slice_is_confirmed_at_the_relaunch_then_refused` | `suspected-break` | `/surface-execute`, then the refusal with its reason | a reviewer and no other agent, `plan-change-proposed` for slice 2, the proposal, the unfinished work and the journal committed and pushed, the description refreshed. Then one `plan-change-refused`, the reason in `interview.md`, the slice done once, no break raised again, `conformant`, and an export that prints the CSV |
+| `test_a_break_suspected_in_a_slice_is_dismissed_at_the_relaunch` | `unfounded-suspicion` | `/surface-execute` | `suspicion-dismissed` for slice 2 as the first event, the note and the journal in the first commit and nothing of the work, a reviewer then an executor, each slice done once, `conformant` |
 
 ### Without a session
 
