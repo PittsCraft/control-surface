@@ -436,8 +436,8 @@ def test_planning_killed_in_the_interview_resumes_at_the_next_question(tmp_path:
     assert drafted["gates"] == [toy.GATE_COMMAND]
     assert not dirty(project, "docs")
     assert pushed(project)
-    described(project)
     assert len(gh_stand_in.pulls(project)) == 1
+    described(project)
 
 
 def test_an_amendment_killed_once_recorded_is_drafted_at_the_relaunch(tmp_path: Path) -> None:
@@ -611,3 +611,43 @@ def test_an_amendment_takes_a_plan_blocked_at_the_ceiling_back_to_planning(tmp_p
     assert "plan-approved" not in seen[len(blocked) :]
     assert {1, 2} <= set(lines[-1]["slices"])
     revision_two(project)
+
+
+def test_an_abandon_waits_for_a_yes_then_fails_the_conformity_check(tmp_path: Path) -> None:
+    project = toy.build(toy.State.DONE, tmp_path)
+    logs = tmp_path / "logs"
+    before = events(project)
+    session = say(project, "/surface-status abandon", logs / "abandon.jsonl")
+    # Nothing is recorded without an explicit yes.
+    assert events(project) == before
+    assert not dirty(project)
+    confirmation = "Yes, abandon it. The bookshop no longer wants the export."
+    say(project, confirmation, logs / "confirmation.jsonl", resume=session)
+    lines = journal(project)
+    assert [line["event"] for line in lines] == [*before, "abandoned"]
+    assert "bookshop" in lines[-1]["why"]
+    assert state(project) == "abandoned"
+    assert not dirty(project, "docs")
+    assert pushed(project)
+    described(project)
+    # The plan was approved: the branch may carry code never declared conformant, and the
+    # check of the host's CI fails on it from then on.
+    assert toy.check(project) == (1, ["abandoned-after-approval"])
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["/surface-plan", "/surface-execute", "/surface-status abandon"],
+    ids=["plan", "execute", "abandon"],
+)
+def test_two_plans_on_a_branch_are_put_to_the_developer(command: str, tmp_path: Path) -> None:
+    project = toy.build(toy.State.TWO_PLANS, tmp_path)
+    plans = [toy.plan_name(), toy.plan_name(toy.SECOND_SLUG)]
+    before = [events(project, plan) for plan in plans]
+    log = tmp_path / "logs" / "launch.jsonl"
+    assert run_to_end(project, command, log) == 0
+    # Neither plan is guessed: nothing is recorded in either, and the question names both.
+    assert [events(project, plan) for plan in plans] == before
+    assert not dirty(project)
+    assert toy.SLUG in final(log)
+    assert toy.SECOND_SLUG in final(log)

@@ -119,6 +119,13 @@ A scenario kills a session at a moment it reads in the files of the project or i
 | `test_a_relaunch_resumes_a_plan_blocked_at_the_ceiling` | `blocked` | `/surface-execute` | the same, in a fresh session |
 | `test_an_amendment_takes_a_plan_blocked_at_the_ceiling_back_to_planning` | `blocked` | `/surface-plan` with an amendment | `amendment-received` right after `blocked`, no approval, revision 2 drafted with slices 1 and 2 kept, pushed, the description refreshed |
 
+### The status command, and a branch with two plans
+
+| Test | Start | Sessions | What must hold |
+|---|---|---|---|
+| `test_an_abandon_waits_for_a_yes_then_fails_the_conformity_check` | `done` | `/surface-status abandon`, then the yes with its reason | nothing recorded before the yes. Then `abandoned` with the reason, the journal committed and pushed, the description refreshed, and `surface-status check --require conformant` exits with 1 on `abandoned-after-approval`, since the plan was approved |
+| `test_two_plans_on_a_branch_are_put_to_the_developer` | `two-plans` | `/surface-plan`, `/surface-execute` or `/surface-status abandon`, one test each | nothing recorded in either plan, nothing changed in the working tree, and the final message names both plans |
+
 ### Without a session
 
 `test_a_prepared_state_is_the_one_named` and its two neighbours build each state, `test_a_session_bypasses_permissions_in_the_container_only` checks the command line of a session and its refusal outside the container, and `test_a_kill_takes_what_a_session_left_at_work` kills a process started in a group of its own. They cost nothing, and run without a token:
