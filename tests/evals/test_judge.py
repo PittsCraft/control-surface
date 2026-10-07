@@ -102,6 +102,17 @@ def test_the_rubric_does_not_fault_what_the_chain_does_on_purpose() -> None:
     said = "One thing said at every hand over, and in reply to a sentence that agrees, is not"
     assert f"{said} noise" in noise
     assert "that only the launch of `/surface-execute` approves" in noise
+    # The hand back at conformity is one line: conformant says the rest, and no account is owed.
+    length = criteria["messages.right-length"]
+    assert "a stop that ended in the state `conformant` is short on purpose" in length
+    assert "names the files `pr-body` lists under the critical zones, when it lists any" in length
+    assert "so the developer needs no account of the run: do not fault that message" in length
+    assert "Fault it when one of the three is missing" in length
+    # At that stop, the word conformant is the reason.
+    stopped = criteria["following.why-stopped"]
+    assert "a message that says the plan is conformant has said why, the work done" in stopped
+    assert "The developer knows the word from the guide of the chain" in stopped
+    assert "Do not ask that message to say it in other words, nor for what was built" in stopped
 
 
 def test_the_judge_is_given_its_part_of_the_rubric_and_the_documents_it_names() -> None:
