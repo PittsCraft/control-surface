@@ -109,6 +109,7 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert found["numbered_headings"] == 0
     assert found["body_titles"] == ["The overdue command"]
     assert found["body_in_range"] is True
+    assert (found["inner_titles"], found["untitled_long_sections"]) == (0, 0)
     assert found["diagram_as_expected"] is True
     assert found["closing_line"] == "the data schema, the state machines."
     assert found["cut_kept"] is None
