@@ -322,6 +322,9 @@ def test_the_command_speaks_in_the_words_the_chain_taught_and_keeps_its_insides_
     insides = f"{INSIDES}, the extractor or the checker for instance, and the paths of the reports"
     assert insides in languages
     assert "not which agent did it nor in which file its report stands" in languages
+    # The rule gives no sentence to say at every hand over: a step is named when it has to be.
+    assert "When a step of the chain has to be told, a failed one for instance" in languages
+    assert "Say that the blueprint was drawn and cross-checked" not in languages
     assert "The path of a report is given only when the developer asks for it" in languages
     # The blueprint and a plan change proposal are the developer's to read: their paths are given.
     theirs = "Neither the blueprint nor a plan change proposal is a report: each is theirs to read"
@@ -504,6 +507,16 @@ def test_the_hand_over_stays_in_the_conversation_and_asks_amend_or_approve() -> 
         ],
     )
     assert first < later < pointer
+    # Nor the steps of the chain: a hand over means they were done, and only a step that could
+    # not be done is said, where the command has it said.
+    steps = "Tell none of the steps that led here either, the drafting, the cross-check and what"
+    assert pointer < hand_over.index(steps)
+    assert "the commit, the push, the pull request opened or refreshed" in hand_over
+    assert "a hand over means they were done" in hand_over
+    assert "only a step that was not done is told" in hand_over
+    # The address of the pull request is asked for, since no telling of its opening carries it.
+    address = "and the address of the pull request when there is one, whose description links to it"
+    assert f"Tell the developer where to read the blueprint: its path, {address}" in hand_over
     assert "say in one line how the body of the blueprint is cut, and why" in hand_over
     assert "and the cut or the gates again only when the revision changed them" in hand_over
     assert "name the gates the loop will run, `gates` of `show`" in hand_over
