@@ -234,6 +234,8 @@ def _form(case: Case, kept: list[form.Blueprint]) -> Measures:
         "body_sections": len(titles),
         "body_titles": titles,
         "body_in_range": low <= len(titles) <= high,
+        "inner_titles": sum(section.inner_titles for section in drawn.body),
+        "untitled_long_sections": sum(1 for section in drawn.body if section.untitled_and_long),
         "diagrams": drawn.diagrams,
         "diagram_as_expected": as_expected,
         "closing_line": drawn.closing_line,

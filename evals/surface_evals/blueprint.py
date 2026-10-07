@@ -18,6 +18,13 @@ _HEADING = re.compile(r"## (?P<title>.+)")
 _FENCE = re.compile(r"```(?P<tag>\S*)")
 _NUMBERED = re.compile(r"[0-9]+[.)]? ")
 _CRITERION = re.compile(r"[0-9]+\. ")
+# A title inside a section: a few words in bold at the head of a paragraph, as a developer looks
+# for one, "**The name of the file.** It carries the day". An item of a list is not one.
+_TITLE = re.compile(r"\*\*[^*\n]+\*\*")
+# What a paragraph is not: a table, a block of code indented or fenced.
+_NOT_PROSE = ("|", "    ", "\t", "```")
+# A section the developer takes in at a glance holds no more paragraphs than this.
+GLANCE = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +32,32 @@ class Section:
     title: str
     text: str
     diagrams: int
+
+    @property
+    def paragraphs(self) -> tuple[str, ...]:
+        """Its paragraphs and its lists, which blank lines part, a fence left whole and out."""
+        blocks: list[str] = []
+        lines: list[str] = []
+        fenced = False
+        for line in (*self.text.splitlines(), ""):
+            if _FENCE.fullmatch(line.strip()) is not None:
+                fenced = not fenced
+            if line.strip() or fenced:
+                lines.append(line)
+            elif lines:
+                blocks.append("\n".join(lines))
+                lines = []
+        return tuple(block for block in blocks if not block.startswith(_NOT_PROSE))
+
+    @property
+    def inner_titles(self) -> int:
+        """How many of its paragraphs open with a title in bold."""
+        return sum(1 for block in self.paragraphs if _TITLE.match(block))
+
+    @property
+    def untitled_and_long(self) -> bool:
+        """Whether it is longer than a glance and holds no title to find a rule by."""
+        return len(self.paragraphs) > GLANCE and self.inner_titles == 0
 
 
 @dataclass(frozen=True, slots=True)

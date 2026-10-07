@@ -45,3 +45,29 @@ def test_a_heading_inside_a_fence_is_not_a_section() -> None:
     assert drawn.titles == ("One",)
     assert drawn.diagrams == 1
     assert drawn.words > 0
+
+
+def test_a_title_in_bold_at_the_head_of_a_paragraph_is_counted_inside_its_section() -> None:
+    text = (
+        "## A run\n\n"
+        "**Who is skipped.** A member reminded less than 7 days ago.\n\n"
+        "    M2 2 1.00\n\n"
+        "| book | due |\n|---|---|\n| B1 | 2026-03-15 |\n\n"
+        "```text\n**not a title**\n\nstill the fence\n```\n\n"
+        "- **An item** of a list is no title.\n\n"
+        "**What is printed.** One line per member.\nIt goes on.\n"
+    )
+    section = parse(text).body[0]
+    # Two paragraphs and a list: the table and the blocks of code are no prose.
+    assert len(section.paragraphs) == 3
+    assert section.inner_titles == 2
+    assert not section.untitled_and_long
+
+
+def test_a_section_longer_than_a_glance_with_no_title_is_told() -> None:
+    long = parse("## A run\n\nOne.\n\nTwo.\n\nThree.\n").body[0]
+    assert long.untitled_and_long
+    # Two paragraphs are taken in at a glance: no title is missed there.
+    short = parse("## A run\n\nOne.\n\n```mermaid\nflowchart LR\n```\n\nTwo.\n").body[0]
+    assert not short.untitled_and_long
+    assert short.inner_titles == 0
