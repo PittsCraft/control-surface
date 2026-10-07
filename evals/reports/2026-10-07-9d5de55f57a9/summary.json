@@ -1,0 +1,2800 @@
+{
+  "v": 1,
+  "at": "2026-10-07T13:33:17Z",
+  "chain": "9d5de55f57a9",
+  "cases": {
+    "01-overdue-list": {
+      "shape": "one-behavior",
+      "expected_correction": null,
+      "runs": 2,
+      "outcomes": [
+        "stopped-at-hand-over",
+        "stopped-at-hand-over"
+      ],
+      "measures": {
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "body_in_range": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "body_sections": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "checks": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "corrections": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "criteria": {
+          "mean": 8.5,
+          "low": 8.0,
+          "high": 9.0,
+          "n": 2
+        },
+        "cut_kept": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagram_as_expected": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagrams": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gh_not_played": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "inner_titles": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "plan_drafts": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "planning_usd": {
+          "mean": 1.4227,
+          "low": 1.3733,
+          "high": 1.4721,
+          "n": 2
+        },
+        "pr_described": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_draft_at_hand_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions_handed_back": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "untitled_long_sections": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "words": {
+          "mean": 590.5,
+          "low": 589.0,
+          "high": 592.0,
+          "n": 2
+        },
+        "zones_none_said": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.decidable": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.diagrams": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.no-padding": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "following-in-planning.no-noise": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "following-in-planning.whose-turn": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "following-in-planning.why-stopped": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "interview.no-invented-rule": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.not-already-answered": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.questions-matter": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.right-number": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages-in-planning.clear": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages-in-planning.next-step": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages-in-planning.right-length": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        }
+      },
+      "count": {
+        "count_grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "implementation_details": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "repeated_in_prose": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "skippable_percent": {
+          "mean": 10.0,
+          "low": 10.0,
+          "high": 10.0,
+          "n": 2
+        }
+      }
+    },
+    "02-reservations": {
+      "shape": "several-flows",
+      "expected_correction": null,
+      "runs": 2,
+      "outcomes": [
+        "conformant",
+        "conformant"
+      ],
+      "measures": {
+        "acceptance": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "acceptance_all": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approvals": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "body_in_range": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "body_sections": {
+          "mean": 4.0,
+          "low": 3.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "checks": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "conformant": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "corrections": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "criteria": {
+          "mean": 11.5,
+          "low": 11.0,
+          "high": 12.0,
+          "n": 2
+        },
+        "cut_kept": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagram_as_expected": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagrams": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "findings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "fixes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate_runs_failed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "gh_not_played": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "inner_titles": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "killed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "plan_drafts": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "planning_usd": {
+          "mean": 2.5103,
+          "low": 2.4207,
+          "high": 2.6,
+          "n": 2
+        },
+        "pr_described": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_draft_at_hand_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_marked_ready": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "pr_refreshed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions": {
+          "mean": 6.0,
+          "low": 6.0,
+          "high": 6.0,
+          "n": 2
+        },
+        "questions_handed_back": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "relaunches": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "reviews": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "untitled_long_sections": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "usd": {
+          "mean": 3.6243,
+          "low": 3.5023,
+          "high": 3.7463,
+          "n": 2
+        },
+        "words": {
+          "mean": 1440.0,
+          "low": 1414.0,
+          "high": 1466.0,
+          "n": 2
+        },
+        "zones_announced": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "zones_files_listed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "zones_none_said": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "blueprint.decidable": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "blueprint.diagrams": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.no-padding": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "following.no-noise": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "following.whose-turn": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "following.why-stopped": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "interview.no-invented-rule": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.not-already-answered": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.questions-matter": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "interview.right-number": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages.clear": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages.next-step": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages.right-length": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        }
+      },
+      "count": {
+        "count_grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "implementation_details": {
+          "mean": 2.0,
+          "low": 1.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "repeated_in_prose": {
+          "mean": 11.0,
+          "low": 9.0,
+          "high": 13.0,
+          "n": 2
+        },
+        "skippable_percent": {
+          "mean": 12.5,
+          "low": 10.0,
+          "high": 15.0,
+          "n": 2
+        }
+      }
+    },
+    "03-overdue-reminders": {
+      "shape": "across-components",
+      "expected_correction": "Its need states a rule the developer did not mean, on purpose: no member reminded twice on the same day, where they mean 7 days or more between two reminders of a member. A session that takes the need at its word plans the first, and what the case evaluates is that the error is caught when the developer reads the blueprint.",
+      "runs": 2,
+      "outcomes": [
+        "stopped-at-hand-over",
+        "stopped-at-hand-over"
+      ],
+      "measures": {
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "body_in_range": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "body_sections": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "checks": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "corrections": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "criteria": {
+          "mean": 8.0,
+          "low": 7.0,
+          "high": 9.0,
+          "n": 2
+        },
+        "cut_kept": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagram_as_expected": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagrams": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "expected_correction": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gh_not_played": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "inner_titles": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "plan_drafts": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "planning_usd": {
+          "mean": 2.1231,
+          "low": 2.1169,
+          "high": 2.1294,
+          "n": 2
+        },
+        "pr_described": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_draft_at_hand_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "questions_handed_back": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "untitled_long_sections": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "words": {
+          "mean": 1186.0,
+          "low": 1120.0,
+          "high": 1252.0,
+          "n": 2
+        },
+        "zones_none_said": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "blueprint.decidable": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.diagrams": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.no-padding": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "following-in-planning.no-noise": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "following-in-planning.whose-turn": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "following-in-planning.why-stopped": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "interview.no-invented-rule": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.not-already-answered": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "interview.questions-matter": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "interview.right-number": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "messages-in-planning.clear": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages-in-planning.next-step": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages-in-planning.right-length": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        }
+      },
+      "count": {
+        "count_grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "implementation_details": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "repeated_in_prose": {
+          "mean": 5.0,
+          "low": 2.0,
+          "high": 8.0,
+          "n": 2
+        },
+        "skippable_percent": {
+          "mean": 5.0,
+          "low": 0.0,
+          "high": 10.0,
+          "n": 2
+        }
+      }
+    },
+    "04-suspension": {
+      "shape": "trade-off",
+      "expected_correction": null,
+      "runs": 2,
+      "outcomes": [
+        "conformant",
+        "conformant"
+      ],
+      "measures": {
+        "acceptance": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "acceptance_all": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approvals": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "body_in_range": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "body_sections": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "checks": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "conformant": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "corrections": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "criteria": {
+          "mean": 10.0,
+          "low": 10.0,
+          "high": 10.0,
+          "n": 2
+        },
+        "diagrams": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "findings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "fixes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate_runs_failed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "gh_not_played": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "inner_titles": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "killed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "plan_drafts": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "planning_usd": {
+          "mean": 1.1813,
+          "low": 1.1017,
+          "high": 1.261,
+          "n": 2
+        },
+        "pr_described": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_draft_at_hand_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_marked_ready": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "pr_refreshed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "questions_handed_back": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "relaunches": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "reviews": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "untitled_long_sections": {
+          "mean": 1.5,
+          "low": 1.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "usd": {
+          "mean": 1.9146,
+          "low": 1.851,
+          "high": 1.9783,
+          "n": 2
+        },
+        "words": {
+          "mean": 861.5,
+          "low": 784.0,
+          "high": 939.0,
+          "n": 2
+        },
+        "zones_announced": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "zones_files_listed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "zones_none_said": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "blueprint.decidable": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.diagrams": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.no-padding": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "following.no-noise": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "following.whose-turn": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "following.why-stopped": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "interview.no-invented-rule": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "interview.not-already-answered": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.questions-matter": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.right-number": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages.clear": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages.next-step": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages.right-length": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        }
+      },
+      "count": {
+        "count_grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "implementation_details": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "repeated_in_prose": {
+          "mean": 3.0,
+          "low": 1.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "skippable_percent": {
+          "mean": 7.5,
+          "low": 5.0,
+          "high": 10.0,
+          "n": 2
+        }
+      }
+    },
+    "05-fine-cap": {
+      "shape": "critical-zone",
+      "expected_correction": null,
+      "runs": 2,
+      "outcomes": [
+        "conformant",
+        "conformant"
+      ],
+      "measures": {
+        "acceptance": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "acceptance_all": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approvals": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "body_in_range": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "body_sections": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "checks": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "conformant": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "corrections": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "criteria": {
+          "mean": 11.5,
+          "low": 10.0,
+          "high": 13.0,
+          "n": 2
+        },
+        "diagram_as_expected": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "diagrams": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "findings": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "fixes": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate_runs_failed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "gh_not_played": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "inner_titles": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "killed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "plan_drafts": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "planning_usd": {
+          "mean": 0.9938,
+          "low": 0.9823,
+          "high": 1.0053,
+          "n": 2
+        },
+        "pr_described": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_draft_at_hand_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_marked_ready": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "pr_refreshed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions_handed_back": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "relaunches": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "reviews": {
+          "mean": 1.5,
+          "low": 1.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "untitled_long_sections": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "usd": {
+          "mean": 1.863,
+          "low": 1.6719,
+          "high": 2.0542,
+          "n": 2
+        },
+        "words": {
+          "mean": 722.0,
+          "low": 709.0,
+          "high": 735.0,
+          "n": 2
+        },
+        "zones_announced": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "zones_files_listed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "zones_named": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "blueprint.decidable": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.diagrams": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.no-padding": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "following.no-noise": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "following.whose-turn": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "following.why-stopped": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "grounded": {
+          "mean": 0.9643,
+          "low": 0.9286,
+          "high": 1.0,
+          "n": 2
+        },
+        "interview.no-invented-rule": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.not-already-answered": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.questions-matter": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.right-number": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages.clear": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages.next-step": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages.right-length": {
+          "mean": 3.0,
+          "low": 2.0,
+          "high": 4.0,
+          "n": 2
+        }
+      },
+      "count": {
+        "count_grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "implementation_details": {
+          "mean": 1.0,
+          "low": 0.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "repeated_in_prose": {
+          "mean": 5.5,
+          "low": 4.0,
+          "high": 7.0,
+          "n": 2
+        },
+        "skippable_percent": {
+          "mean": 10.0,
+          "low": 10.0,
+          "high": 10.0,
+          "n": 2
+        }
+      }
+    },
+    "06-borrow-limit": {
+      "shape": "ambiguous",
+      "expected_correction": null,
+      "runs": 2,
+      "outcomes": [
+        "conformant",
+        "conformant"
+      ],
+      "measures": {
+        "acceptance": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "acceptance_all": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approvals": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "approved_by_sentence": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "body_in_range": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "body_sections": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "checks": {
+          "mean": 1.5,
+          "low": 1.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "conformant": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "contaminated": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "corrections": {
+          "mean": 0.5,
+          "low": 0.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "criteria": {
+          "mean": 9.5,
+          "low": 7.0,
+          "high": 12.0,
+          "n": 2
+        },
+        "cut_kept": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 1
+        },
+        "diagram_as_expected": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "diagrams": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "findings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "fixes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "frame": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "gate_runs_failed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "gh_not_played": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "handed_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "inner_titles": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "killed": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "numbered_headings": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "omissions": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "plan_drafts": {
+          "mean": 1.5,
+          "low": 1.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "plan_minimum": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "planning_passes": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "planning_usd": {
+          "mean": 1.3595,
+          "low": 0.9839,
+          "high": 1.735,
+          "n": 2
+        },
+        "pr_described": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_draft_at_hand_over": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "pr_marked_ready": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "pr_refreshed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "questions": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "questions_handed_back": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "relaunches": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "reviews": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "untitled_long_sections": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "usd": {
+          "mean": 1.9726,
+          "low": 1.5938,
+          "high": 2.3514,
+          "n": 2
+        },
+        "words": {
+          "mean": 649.0,
+          "low": 542.0,
+          "high": 756.0,
+          "n": 2
+        },
+        "zones_announced": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "n": 2
+        },
+        "zones_files_listed": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "zones_none_said": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        }
+      },
+      "judge": {
+        "blueprint.cut": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "blueprint.decidable": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.diagrams": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "blueprint.no-padding": {
+          "mean": 2.0,
+          "low": 2.0,
+          "high": 2.0,
+          "n": 2
+        },
+        "following.no-noise": {
+          "mean": 3.0,
+          "low": 3.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "following.whose-turn": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "following.why-stopped": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "interview.no-invented-rule": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "interview.not-already-answered": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "interview.questions-matter": {
+          "mean": 2.5,
+          "low": 2.0,
+          "high": 3.0,
+          "n": 2
+        },
+        "interview.right-number": {
+          "mean": 3.5,
+          "low": 3.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "messages.clear": {
+          "mean": 4.5,
+          "low": 4.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages.next-step": {
+          "mean": 5.0,
+          "low": 5.0,
+          "high": 5.0,
+          "n": 2
+        },
+        "messages.right-length": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        }
+      },
+      "count": {
+        "count_grounded": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "implementation_details": {
+          "mean": 1.0,
+          "low": 1.0,
+          "high": 1.0,
+          "n": 2
+        },
+        "repeated_in_prose": {
+          "mean": 4.0,
+          "low": 4.0,
+          "high": 4.0,
+          "n": 2
+        },
+        "skippable_percent": {
+          "mean": 10.0,
+          "low": 10.0,
+          "high": 10.0,
+          "n": 2
+        }
+      }
+    }
+  },
+  "all": {
+    "runs": 12,
+    "stopped_at_hand_over": 4,
+    "measures": {
+      "acceptance": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "acceptance_all": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "approvals": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "approved_by_sentence": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 12
+      },
+      "body_in_range": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "body_sections": {
+        "mean": 2.0833,
+        "low": 1.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "checks": {
+        "mean": 1.5833,
+        "low": 1.0,
+        "high": 2.0,
+        "n": 12
+      },
+      "conformant": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "contaminated": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 12
+      },
+      "corrections": {
+        "mean": 0.25,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "criteria": {
+        "mean": 9.8333,
+        "low": 7.0,
+        "high": 13.0,
+        "n": 12
+      },
+      "cut_kept": {
+        "mean": 0.8571,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 7
+      },
+      "diagram_as_expected": {
+        "mean": 0.8,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 10
+      },
+      "diagrams": {
+        "mean": 0.9167,
+        "low": 0.0,
+        "high": 3.0,
+        "n": 12
+      },
+      "expected_correction": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 2
+      },
+      "findings": {
+        "mean": 0.125,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "fixes": {
+        "mean": 0.125,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "frame": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "gate": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "gate_runs_failed": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 8
+      },
+      "gh_not_played": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 12
+      },
+      "handed_over": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "inner_titles": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 12
+      },
+      "killed": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 8
+      },
+      "numbered_headings": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 12
+      },
+      "omissions": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 12
+      },
+      "plan_drafts": {
+        "mean": 1.5833,
+        "low": 1.0,
+        "high": 2.0,
+        "n": 12
+      },
+      "plan_minimum": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "planning_passes": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 12
+      },
+      "planning_usd": {
+        "mean": 1.5985,
+        "low": 0.9823,
+        "high": 2.6,
+        "n": 12
+      },
+      "pr_described": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "pr_draft_at_hand_over": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "pr_marked_ready": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 8
+      },
+      "pr_refreshed": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "questions": {
+        "mean": 2.8333,
+        "low": 1.0,
+        "high": 6.0,
+        "n": 12
+      },
+      "questions_handed_back": {
+        "mean": 0.75,
+        "low": 0.0,
+        "high": 2.0,
+        "n": 12
+      },
+      "relaunches": {
+        "mean": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "n": 8
+      },
+      "reviews": {
+        "mean": 1.125,
+        "low": 1.0,
+        "high": 2.0,
+        "n": 8
+      },
+      "untitled_long_sections": {
+        "mean": 1.25,
+        "low": 0.0,
+        "high": 3.0,
+        "n": 12
+      },
+      "usd": {
+        "mean": 2.3436,
+        "low": 1.5938,
+        "high": 3.7463,
+        "n": 8
+      },
+      "words": {
+        "mean": 908.1667,
+        "low": 542.0,
+        "high": 1466.0,
+        "n": 12
+      },
+      "zones_announced": {
+        "mean": 0.625,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "zones_files_listed": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 8
+      },
+      "zones_named": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 2
+      },
+      "zones_none_said": {
+        "mean": 0.8,
+        "low": 0.0,
+        "high": 1.0,
+        "n": 10
+      }
+    },
+    "judge": {
+      "blueprint.cut": {
+        "mean": 3.8333,
+        "low": 3.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "blueprint.decidable": {
+        "mean": 4.5,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "blueprint.diagrams": {
+        "mean": 5.0,
+        "low": 5.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "blueprint.no-padding": {
+        "mean": 2.1667,
+        "low": 2.0,
+        "high": 3.0,
+        "n": 12
+      },
+      "following-in-planning.no-noise": {
+        "mean": 2.5,
+        "low": 2.0,
+        "high": 3.0,
+        "n": 4
+      },
+      "following-in-planning.whose-turn": {
+        "mean": 5.0,
+        "low": 5.0,
+        "high": 5.0,
+        "n": 4
+      },
+      "following-in-planning.why-stopped": {
+        "mean": 5.0,
+        "low": 5.0,
+        "high": 5.0,
+        "n": 4
+      },
+      "following.no-noise": {
+        "mean": 2.625,
+        "low": 2.0,
+        "high": 3.0,
+        "n": 8
+      },
+      "following.whose-turn": {
+        "mean": 4.75,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 8
+      },
+      "following.why-stopped": {
+        "mean": 4.375,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 8
+      },
+      "grounded": {
+        "mean": 0.994,
+        "low": 0.9286,
+        "high": 1.0,
+        "n": 12
+      },
+      "interview.no-invented-rule": {
+        "mean": 4.4167,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "interview.not-already-answered": {
+        "mean": 4.6667,
+        "low": 3.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "interview.questions-matter": {
+        "mean": 3.8333,
+        "low": 2.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "interview.right-number": {
+        "mean": 3.75,
+        "low": 2.0,
+        "high": 5.0,
+        "n": 12
+      },
+      "messages-in-planning.clear": {
+        "mean": 3.75,
+        "low": 3.0,
+        "high": 4.0,
+        "n": 4
+      },
+      "messages-in-planning.next-step": {
+        "mean": 4.75,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 4
+      },
+      "messages-in-planning.right-length": {
+        "mean": 4.25,
+        "low": 4.0,
+        "high": 5.0,
+        "n": 4
+      },
+      "messages.clear": {
+        "mean": 4.375,
+        "low": 3.0,
+        "high": 5.0,
+        "n": 8
+      },
+      "messages.next-step": {
+        "mean": 4.375,
+        "low": 3.0,
+        "high": 5.0,
+        "n": 8
+      },
+      "messages.right-length": {
+        "mean": 3.375,
+        "low": 2.0,
+        "high": 4.0,
+        "n": 8
+      }
+    },
+    "count": {
+      "count_grounded": {
+        "mean": 1.0,
+        "low": 1.0,
+        "high": 1.0,
+        "n": 12
+      },
+      "implementation_details": {
+        "mean": 1.3333,
+        "low": 0.0,
+        "high": 3.0,
+        "n": 12
+      },
+      "repeated_in_prose": {
+        "mean": 5.3333,
+        "low": 1.0,
+        "high": 13.0,
+        "n": 12
+      },
+      "skippable_percent": {
+        "mean": 9.1667,
+        "low": 0.0,
+        "high": 15.0,
+        "n": 12
+      }
+    }
+  },
+  "remarks": {
+    "blueprint.cut": {
+      "case": "03-overdue-reminders",
+      "score": 3,
+      "reason": "The reminder-interval rule, one behavior the developer decides on its own, is split between criterion 6 and a separate outbox section that adds the past-date case and the partial-run behavior. The developer has to join the two to see the whole rule.",
+      "passage": "A member's last reminder is the latest date among the `reminder` notices addressed to them, not the last such line of the file.",
+      "grounded": true
+    },
+    "blueprint.decidable": {
+      "case": "01-overdue-list",
+      "score": 4,
+      "reason": "The rules, output format, tie-break with its worked example, wrong usage deferred to the parser, and the empty-list assumption are all stated, with the interview answers carried. One detail is left to another file: days late are defined only as whatever `lending/fines.py` counts, anchored by the single 'yesterday is 1' case.",
+      "passage": "Days late are the ones the fine computation counts, with today taken from `--today` or from the real date.",
+      "grounded": true
+    },
+    "blueprint.diagrams": {
+      "case": "01-overdue-list",
+      "score": 5,
+      "reason": "There is no diagram, and nothing here has a shape that needs one. The single relation between the command line, the loans module and the fine computation is a short dependency that a sentence states well.",
+      "passage": "The order is computed there, not in the loans module, because the days late come from the fine computation, and the fine computation already depends on the loans module: the loans module cannot call it back.",
+      "grounded": true
+    },
+    "blueprint.no-padding": {
+      "case": "01-overdue-list",
+      "score": 2,
+      "reason": "Several facts are said twice. Scope repeats criterion 9 (no change to the fine computation) and criterion 7 (no own handling of wrong usage), and the critical-zones line restates criterion 9 instead of standing as a bare line.",
+      "passage": "Critical zones touched: none. The command reads `loans.jsonl` and relies on the day count of the fine computation (`lending/fines.py`) without changing either (criterion 9).",
+      "grounded": true
+    },
+    "following-in-planning.no-noise": {
+      "case": "01-overdue-list",
+      "score": 2,
+      "reason": "Several stops narrate chain steps for their own sake: creating the branch and folder, writing the exploration, cross-checking 'with nothing omitted', pushing, refreshing the pull request description, and explaining the cut. Stop 3 also ends on reassurance the developer did not need.",
+      "passage": "The changes are in the plan and blueprint only. No code has been written.",
+      "grounded": true
+    },
+    "following-in-planning.whose-turn": {
+      "case": "01-overdue-list",
+      "score": 5,
+      "reason": "Every stop ends by putting the next move with the developer and saying what it is: answer Q1 with a recommendation, amend or approve by launching `/surface-execute`, or amend further. There is no stop where the developer is left unsure whether to act.",
+      "passage": "Do you want to amend further, or approve? To approve, launch `/surface-execute`; a reply here won't approve it.",
+      "grounded": true
+    },
+    "following-in-planning.why-stopped": {
+      "case": "01-overdue-list",
+      "score": 5,
+      "reason": "Each stop names its reason: an open question (Q1), the blueprint handed over for approval, a revision handed back with what changed and why criterion 6 was kept, and a reply that does not approve. No stop leaves its cause implicit.",
+      "passage": "Saying \"go ahead\" here doesn't approve the plan. Only launching `/surface-execute` does, so I've recorded nothing and the plan is still awaiting approval.",
+      "grounded": true
+    },
+    "following.no-noise": {
+      "case": "02-reservations",
+      "score": 2,
+      "reason": "Stops 7 and 8 narrate chain steps for their own sake (drawn, cross-checked, no omissions, pushed, PR description refreshed). Stop 8 then repeats the link, the unchanged cut and gate, and the outstanding assumptions already given at stop 7.",
+      "passage": "I redrew and cross-checked the blueprint, which found no omissions, then committed and pushed. The pull request description is refreshed.",
+      "grounded": true
+    },
+    "following.whose-turn": {
+      "case": "02-reservations",
+      "score": 4,
+      "reason": "Every stop ends with a clear question or a named next step for the developer. One lapse of detail: stop 7 asks the developer to confirm eight rules but names only three, so what exactly is expected stays partly vague.",
+      "passage": "the plan settled eight small rules you didn't decide. Approving the blueprint confirms them, so check these in particular:",
+      "grounded": true
+    },
+    "following.why-stopped": {
+      "case": "02-reservations",
+      "score": 4,
+      "reason": "The interview, hand over and hand back stops each say why the session stopped. The final stop gives only the jargon state 'conformant' and does not say that the slices were built and reviewed against the blueprint.",
+      "passage": "The plan is conformant, and the branch changed no files in the critical zones.",
+      "grounded": true
+    },
+    "interview.no-invented-rule": {
+      "case": "01-overdue-list",
+      "score": 4,
+      "reason": "Revision 1 set a rule the developer never chose: an extra argument exits with code 2. The developer had to strike it through an amendment. Every rule in the final blueprint comes from the need, the answer or the code.",
+      "passage": "Criterion 6 contradicts what I know: I don't decide what happens on wrong usage, so the command should do whatever the other commands do with an extra argument. Please drop the \"exits with code 2\" requirement and don't pin that behavior.",
+      "grounded": true
+    },
+    "interview.not-already-answered": {
+      "case": "03-overdue-reminders",
+      "score": 3,
+      "reason": "The code already settles Q1: the README says `loans` prints in the order of the file, and the question names that convention as its own recommendation. Q2 is not settled by the code, because the existing `fine` notice fixes no wording for a reminder.",
+      "passage": "Recommended: A, it is the order the README gives for `loans`, so the output follows the file.",
+      "grounded": true
+    },
+    "interview.questions-matter": {
+      "case": "03-overdue-reminders",
+      "score": 2,
+      "reason": "The developer answered both questions with \"That's your call\", so neither one asked for a business rule, a contract or a decision only they could make. The question that did matter was whether the mailer keeps the lines it has sent in the outbox, and it was never asked.",
+      "passage": "Answer (2026-10-07): \"That's your call; I don't rely on the order. Go with your recommendation, A.\"",
+      "grounded": true
+    },
+    "interview.right-number": {
+      "case": "03-overdue-reminders",
+      "score": 2,
+      "reason": "The interview never asked what \"No member is reminded twice on the same day\" should mean in practice. The plan guessed it, and the developer had to correct it with an amendment that set the 7-day interval. The two questions it did ask were there for thoroughness, and whether the total should include fines from returned loans was left as an assumption rather than asked.",
+      "passage": "1. Criterion 6 is wrong. A member is reminded again only 7 days or more after their last reminder, so a reminder dated the 1st blocks them through the 7th and they are reminded again from the 8th.",
+      "grounded": true
+    },
+    "messages-in-planning.clear": {
+      "case": "01-overdue-list",
+      "score": 3,
+      "reason": "Stop 3 names the executor, an internal agent, in a message to the developer. The other messages keep to the chain's own words and match the plan state.",
+      "passage": "The plan also warns the executor not to add a test or README sentence about it.",
+      "grounded": true
+    },
+    "messages-in-planning.next-step": {
+      "case": "01-overdue-list",
+      "score": 4,
+      "reason": "Stops 2 and 3 end on the right choice, to amend or to launch `/surface-execute`, and Stop 4 repeats that only the launch approves. Stop 1 ends on its recommendation without plainly asking the developer to reply with A, B or C.",
+      "passage": "I'd pick **A**. It matches `loans`, it adds no new rule, and the desk sees the same relative order in both lists.",
+      "grounded": true
+    },
+    "messages-in-planning.right-length": {
+      "case": "01-overdue-list",
+      "score": 4,
+      "reason": "Most messages are as long as they need to be, and Stop 3 rightly spends words on why `B10` comes before `B2`. Its second point, though, describes the new test in detail and then admits the blueprint says the same, repeating a file the developer is sent to read.",
+      "passage": "The new test calls `overdue B1` and the existing wrong-usage case, then checks that both exit codes are equal and that standard output is empty. It doesn't write a literal code. The blueprint says the same.",
+      "grounded": true
+    },
+    "messages.clear": {
+      "case": "05-fine-cap",
+      "score": 3,
+      "reason": "The last message says marking the pull request ready triggers the developer's CI. The earlier message said the repository has no CI, so the developer is told two contradictory things about what their next action sets off.",
+      "passage": "When you want, mark pull request #1 ready, which triggers your CI.",
+      "grounded": true
+    },
+    "messages.next-step": {
+      "case": "04-suspension",
+      "score": 3,
+      "reason": "Stop 1 ends on a preview of later questions and what the agent will do, not on the answer the developer owes to Q1. Stop 4 likewise closes on an assumption taken as settled rather than on the question to answer.",
+      "passage": "I'll ask these one at a time.",
+      "grounded": true
+    },
+    "messages.right-length": {
+      "case": "05-fine-cap",
+      "score": 2,
+      "reason": "Stop 4 gives only the state and says nothing of what was built: no slices, no gate results, no review outcome or defects fixed. Stop 2 never says whether the blueprint covers the developer's added rule for a loan whose book is no longer in the catalog, while Stop 3 repeats Stop 2's summary almost in full.",
+      "passage": "The plan is conformant. Read `lending/fines.py` and `lending/__main__.py` yourself, since both are in the critical zones. Mark the pull request ready when you want, which triggers your CI.",
+      "grounded": true
+    }
+  },
+  "probes": [],
+  "judge_check": {
+    "v": 1,
+    "model": "opus",
+    "pairs": [
+      {
+        "name": "padded-blueprint",
+        "what": "a blueprint padded with the need restated, a walk through the code, a diagram of a chain with no branch and the list of the tests",
+        "criterion": "blueprint.no-padding",
+        "original": [
+          4,
+          4
+        ],
+        "spoiled": [
+          2,
+          2
+        ],
+        "below": true
+      },
+      {
+        "name": "stripped-blueprint",
+        "what": "a blueprint stripped of the two rules the interview settled, and of the ISBN left out",
+        "criterion": "blueprint.decidable",
+        "original": [
+          3,
+          4
+        ],
+        "spoiled": [
+          2,
+          2
+        ],
+        "below": true
+      },
+      {
+        "name": "answered-question",
+        "what": "an interview with two questions the need and the code already answer",
+        "criterion": "interview.not-already-answered",
+        "original": [
+          5,
+          5
+        ],
+        "spoiled": [
+          2,
+          2
+        ],
+        "below": true
+      }
+    ],
+    "counts": [
+      {
+        "name": "padded-blueprint",
+        "what": "a blueprint padded with the need restated, a walk through the code, a diagram of a chain with no branch and the list of the tests",
+        "count": "repeated_in_prose",
+        "original": [
+          0,
+          0
+        ],
+        "spoiled": [
+          8,
+          7
+        ],
+        "above": true
+      },
+      {
+        "name": "padded-blueprint",
+        "what": "a blueprint padded with the need restated, a walk through the code, a diagram of a chain with no branch and the list of the tests",
+        "count": "implementation_details",
+        "original": [
+          1,
+          0
+        ],
+        "spoiled": [
+          10,
+          9
+        ],
+        "above": true
+      },
+      {
+        "name": "padded-blueprint",
+        "what": "a blueprint padded with the need restated, a walk through the code, a diagram of a chain with no branch and the list of the tests",
+        "count": "skippable_percent",
+        "original": [
+          5,
+          0
+        ],
+        "spoiled": [
+          45,
+          45
+        ],
+        "above": true
+      }
+    ],
+    "refused": []
+  },
+  "spent": {
+    "usd": 30.8868,
+    "points": 6.0,
+    "sessions": 200
+  },
+  "against": {
+    "chain": "d139a1ca0dbe",
+    "at": "2026-10-05T10:58:28Z"
+  }
+}
