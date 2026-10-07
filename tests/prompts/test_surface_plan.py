@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
+    ASSUMPTION_OF_THE_PLAN,
     ATTRIBUTION_WORDS,
     BLUEPRINT_ASPECTS,
     BLUEPRINT_CLOSING,
@@ -27,6 +28,7 @@ from chain_contract import (
     PLANNING_EVENTS,
     SEEN_BY,
     SLICE_ON_ITS_COMMIT,
+    THE_DEVELOPERS_RULES,
 )
 from prompt_support import (
     AGENTS,
@@ -797,6 +799,39 @@ def test_the_plan_template_leaves_the_rest_to_the_agent_that_drafts_it() -> None
     assert "No code beyond a signature or a schema fragment" in opening
     assert "it returns the plan whole as its answer, and nothing around it" in opening
     assert "the command that launched it writes `plan.md`" in opening
+
+
+def test_the_plan_marks_a_rule_it_settles_on_its_own_as_an_assumption_to_confirm() -> None:
+    opening = _template("plan.md").split("\n## ", 1)[0]
+    # The agent that drafts the plan has no way to ask: what it settles of the developer's is
+    # marked, so that the blueprint does not show it as settled.
+    cannot, theirs, marked, shown, implementation = _positions(
+        opening,
+        [
+            "The agent cannot ask the developer anything",
+            f"the developer's to confirm. It is {THE_DEVELOPERS_RULES}.",
+            f"it says so: {ASSUMPTION_OF_THE_PLAN}.",
+            "The blueprint then gives it to the developer as one",
+            "A matter of implementation, which neither a user nor such a program would see",
+        ],
+    )
+    assert cannot < theirs < marked < shown < implementation
+    settles = "an answer of the developer in `interview.md` nor the code, its closest precedent"
+    assert f"when neither the specs, {settles} included, settles it" in opening
+    # The command writes into `interview.md` what it left to the plan: that is no answer.
+    assert "an assumption the interview wrote down without asking is no answer" in opening
+    assert "Wherever the plan states that rule, an acceptance criterion included" in opening
+    assert "where a rule stated as settled would be one they never decided" in opening
+    assert "would see, is no such assumption." in opening
+    # The line between a rule of the developer and a matter of implementation is the interview's,
+    # in its words.
+    steps = section(_body(), "First launch, with specs")
+    interview = next(line for line in steps.splitlines() if line.startswith("5. Interview."))
+    assert THE_DEVELOPERS_RULES in interview
+    assert "which neither a user nor such a program would see" in interview
+    # Planning gains no step: the command neither marks such a rule nor sends a question back.
+    assert ASSUMPTION_OF_THE_PLAN not in _body()
+    assert "approving the blueprint confirms" not in _body()
 
 
 def test_a_slice_says_of_its_commit_only_what_the_repository_or_the_developer_ask() -> None:

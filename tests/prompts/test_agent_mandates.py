@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
+    ASSUMPTION_OF_THE_PLAN,
     BLUEPRINT_ASPECTS,
     BLUEPRINT_CLOSING,
     BLUEPRINT_ON_THE_COMMITS,
@@ -196,6 +197,32 @@ def test_extractor_says_a_fact_once_on_the_whole_page_and_shows_behavior_not_cod
     assert "A fact is said once in prose on the whole page" in form
     assert "What it does stands in the criteria and in the body" in form
     assert "that no criterion states, as behavior and not as code" in form
+
+
+def test_extractor_shows_an_assumption_of_the_plan_as_one_that_approving_confirms() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # A rule the plan settled on its own was never decided by the developer: the page says so
+    # where it states the rule, and never shows it as settled.
+    said = [
+        "A rule the plan marks as an assumption of its own is one the developer never decided",
+        f"Where the page states that rule, say that it is {ASSUMPTION_OF_THE_PLAN}",
+        "never state it as settled",
+        "A criterion of the plan that is such an assumption stays a criterion, under its number",
+    ]
+    positions = [writing.index(sentence) for sentence in said]
+    assert positions == sorted(positions)
+    assert "where the specs, the developer's answers and the code settle nothing" in writing
+    assert "confirms the others by approving" in writing
+    # The words stay true once the page is frozen: nothing on it waits for an answer.
+    assert "to confirm" not in writing
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
+    form = template.read_text(encoding="utf-8")
+    shown = "A rule the plan marks as an assumption of its own is shown as one where it is stated"
+    assert f"{shown}, never as settled: approving the blueprint confirms it" in form
+    # The cross-check is left as it was: how a rule is shown is no omission.
+    _, checker = read_agent("surface-checker")
+    assert "assumption" not in checker.lower()
 
 
 def test_extractor_keeps_the_cut_of_the_previous_revision() -> None:

@@ -153,6 +153,18 @@ CLOSING_LINE = "No change:"
 # script runs. No heading carries a number, so no prompt names a section of the plan by one.
 PLAN_AGENT = "Plan"
 PLAN_MINIMUM = ("Acceptance criteria", "Slices", "Gates")
+# That agent cannot ask the developer anything. A rule a user of the feature would see applied,
+# which neither the specs, an answer of the developer nor the code settles, it settles on its
+# own and marks wherever the plan states it. The extractor shows it on the blueprint as an
+# assumption, never as settled, in words that stay true once the page is frozen: approving
+# confirms it, and planning gains no step. The line is the one the interview draws, in its
+# words: a matter of implementation is no such assumption.
+ASSUMPTION_OF_THE_PLAN = "an assumption of the plan, which approving the blueprint confirms"
+THE_DEVELOPERS_RULES = (
+    "a rule that a user of the feature, or a program that reads what it writes, would see"
+    " applied: an order, ties included, a number, a frequency or a limit, who or what is"
+    " counted or left out, what is refused"
+)
 
 # How a commit of the work is written or signed is known to the agent that writes it, which
 # follows the conventions of the host. That agent is not the one that drafts the plan, and the
