@@ -132,7 +132,15 @@ A scenario kills a session at a moment it reads in the files of the project or i
 
 | Test | Start | Sessions | What must hold |
 |---|---|---|---|
+| `test_a_session_killed_in_a_fix_resumes_it` | `fixing` | `/surface-execute`, killed once the fixer has changed code, then relaunched | the journal of the killed session kept as is, a `fix-done`, `conformant`, nothing left uncommitted |
+| `test_a_session_killed_in_a_gate_run_runs_the_gates_again` | `slow-gate` | `/surface-execute`, killed with its gate while the gate runs, then relaunched | the kill leaves neither a `gates-run` nor a report. Then a first run, green, and `conformant` |
+| `test_a_session_killed_in_a_review_launches_it_again` | `done` | `/surface-execute`, killed while the reviewer works, then relaunched | the journal of the killed session kept as is, one gate run before the first review, `conformant` |
+| `test_a_review_written_and_not_recorded_is_recorded_at_the_relaunch` | `review-unrecorded` | `/surface-execute` | the first event recorded is a `review-done` that cites the report left, which stays as it was; no reviewer is launched; `conformant`, pushed, the description refreshed |
+| `test_a_slice_recorded_and_not_committed_is_committed_at_the_relaunch` | `slice-uncommitted` | `/surface-execute` | the first commit holds the work of slice 1 and the journal, and nothing else; each slice done once; `conformant` |
+| `test_planning_killed_while_an_agent_works_drafts_the_plan_at_the_relaunch` | `plan-written`, `blueprint-drawn` | `/surface-plan`, killed while the extractor works, or the checker; then `/surface-plan` alone, and the recommendation at any question | the journal of the killed session kept as is, one `plan-drafted`, the plan committed and pushed, and one draft pull request with the description `surface-status pr-body` prints |
 | `test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch` | `unpushed` | `/surface-plan` | nothing recorded, the branch pushed, and one draft pull request with the description `surface-status pr-body` prints |
+
+The push of a stop of `/surface-execute` that never came is played by `test_an_accepted_plan_change_goes_back_to_planning`, whose state is committed and not pushed.
 
 ### Without a session
 

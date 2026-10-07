@@ -705,3 +705,142 @@ def test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch(tmp_path: 
     assert pushed(project)
     assert len(gh_stand_in.pulls(project)) == 1
     described(project)
+
+
+def test_a_session_killed_in_a_fix_resumes_it(tmp_path: Path) -> None:
+    project = toy.build(toy.State.FIXING, tmp_path)
+    logs = tmp_path / "logs"
+    # Killed as soon as the fixer has changed code it has not committed yet.
+    kill_when(
+        project,
+        "/surface-execute",
+        logs / "execute-killed.jsonl",
+        lambda: dirty(project, "shelf", "tests"),
+    )
+    at_kill = events(project)
+    assert "fix-done" not in at_kill
+    assert run_to_end(project, "/surface-execute", logs / "execute-resumed.jsonl") == 0
+    seen = events(project)
+    assert seen[: len(at_kill)] == at_kill
+    assert "fix-done" in seen
+    assert state(project) == "conformant"
+    assert not dirty(project, "shelf", "tests", "docs")
+
+
+def test_a_session_killed_in_a_gate_run_runs_the_gates_again(tmp_path: Path) -> None:
+    project = toy.build(toy.State.SLOW_GATE, tmp_path)
+    logs = tmp_path / "logs"
+    before = events(project)
+    # Killed while the gate of the plan runs: the state script started it, in a group of its own.
+    kill_when(
+        project,
+        "/surface-execute",
+        logs / "execute-killed.jsonl",
+        lambda: any(
+            command.endswith(toy.GATE_COMMAND) for command in toy.at_work(project).values()
+        ),
+    )
+    # The run died with its session: it left neither a result nor a report.
+    assert events(project) == before
+    assert not list(document(project, "gates").glob("*"))
+    assert run_to_end(project, "/surface-execute", logs / "execute-resumed.jsonl") == 0
+    lines = journal(project)
+    assert [line["event"] for line in lines][: len(before)] == before
+    runs = [line for line in lines if line["event"] == "gates-run"]
+    assert (runs[0]["run"], runs[0]["result"]) == (1, "pass")
+    assert state(project) == "conformant"
+
+
+def test_a_session_killed_in_a_review_launches_it_again(tmp_path: Path) -> None:
+    project = toy.build(toy.State.DONE, tmp_path)
+    logs = tmp_path / "logs"
+    killed = logs / "execute-killed.jsonl"
+    kill_when(project, "/surface-execute", killed, lambda: at_work(killed, "surface-reviewer"))
+    at_kill = events(project)
+    assert "review-done" not in at_kill
+    assert run_to_end(project, "/surface-execute", logs / "execute-resumed.jsonl") == 0
+    seen = events(project)
+    assert seen[: len(at_kill)] == at_kill
+    # The gates were green before the kill and nothing changed since: they do not run again
+    # before the review the relaunch owes.
+    assert seen[: seen.index("review-done")].count("gates-run") == 1
+    assert state(project) == "conformant"
+
+
+def test_a_review_written_and_not_recorded_is_recorded_at_the_relaunch(tmp_path: Path) -> None:
+    project = toy.build(toy.State.REVIEW_UNRECORDED, tmp_path)
+    before = events(project)
+    report = document(project, "reviews/pass-01.md").read_bytes()
+    log = tmp_path / "logs" / "execute.jsonl"
+    assert run_to_end(project, "/surface-execute", log) == 0
+    lines = journal(project)
+    # The report the interrupted reviewer left is its return: it is recorded as it stands, and
+    # no second reviewer is launched.
+    assert [line["event"] for line in lines][: len(before)] == before
+    assert lines[len(before)]["event"] == "review-done"
+    assert lines[len(before)]["report"] == "reviews/pass-01.md"
+    assert document(project, "reviews/pass-01.md").read_bytes() == report
+    assert "surface-reviewer" not in [role for _, role in launches(log)]
+    assert state(project) == "conformant"
+    assert not dirty(project, "docs")
+    assert pushed(project)
+    described(project)
+
+
+def first_commit(project: Path, start: str) -> list[str]:
+    """List the files of the first commit made after `start`."""
+    first = toy.git(project, "rev-list", "--reverse", f"{start}..HEAD").split()[0]
+    return sorted(toy.git(project, "show", "--name-only", "--format=", first).split())
+
+
+def test_a_slice_recorded_and_not_committed_is_committed_at_the_relaunch(tmp_path: Path) -> None:
+    project = toy.build(toy.State.SLICE_UNCOMMITTED, tmp_path)
+    before = events(project)
+    start = toy.git(project, "rev-parse", "HEAD").strip()
+    assert run_to_end(project, "/surface-execute", tmp_path / "logs" / "execute.jsonl") == 0
+    seen = events(project)
+    assert seen[: len(before)] == before
+    assert seen.count("slice-done") == 2
+    # The first commit of the relaunch is the one the executor did not make: the work of
+    # slice 1 with the journal line that records it, and nothing else.
+    assert first_commit(project, start) == [
+        f"docs/plans/{toy.plan_name()}/journal.jsonl",
+        "shelf/export.py",
+        "tests/test_export.py",
+    ]
+    assert state(project) == "conformant"
+
+
+@pytest.mark.parametrize(
+    ("prepared", "agent"),
+    [
+        (toy.State.PLAN_WRITTEN, "surface-extractor"),
+        (toy.State.BLUEPRINT_DRAWN, "surface-checker"),
+    ],
+    ids=["extraction", "cross_check"],
+)
+def test_planning_killed_while_an_agent_works_drafts_the_plan_at_the_relaunch(
+    prepared: toy.State, agent: str, tmp_path: Path
+) -> None:
+    project = toy.build(prepared, tmp_path)
+    logs = tmp_path / "logs"
+    before = events(project)
+    killed = logs / "plan-killed.jsonl"
+    kill_when(project, "/surface-plan", killed, lambda: at_work(killed, agent))
+    at_kill = events(project)
+    assert "plan-drafted" not in at_kill
+    converse(
+        project,
+        "/surface-plan",
+        logs,
+        "relaunch",
+        until=lambda: state(project) == "awaiting-approval",
+    )
+    seen = events(project)
+    assert seen[: len(at_kill)] == at_kill
+    assert seen[: len(before)] == before
+    assert seen.count("plan-drafted") == 1
+    assert not dirty(project, "docs")
+    assert pushed(project)
+    assert len(gh_stand_in.pulls(project)) == 1
+    described(project)
