@@ -66,6 +66,44 @@ def test_the_rubric_holds_the_two_questions_of_working_with_the_chain() -> None:
     assert by_id["following"].reads == ("stops",)
 
 
+def test_the_rubric_does_not_fault_what_the_chain_does_on_purpose() -> None:
+    _, dimensions = load_rubric()
+    criteria = {
+        f"{dimension.id}.{line.split('**')[1]}": line
+        for dimension in dimensions
+        for line in dimension.text.splitlines()
+        if line.startswith("- **")
+    }
+    # What the frame of a blueprint asks for is not padding, and a diagram may draw the prose.
+    padding = criteria["blueprint.no-padding"]
+    assert "Three things the frame of a blueprint asks for are not padding" in padding
+    for asked in ("the closing line", "the statement of the critical zones", "the boundaries"):
+        assert asked in padding
+    # Bare lines only: the rule of a zone told again in full is still a fact said twice.
+    assert "The first two are bare lines, and say no fact twice" in padding
+    assert "the rule of a zone told again in full still does" in padding
+    assert "Nor is a diagram that draws what the prose says a fact said twice" in padding
+    # A chain with a single fork is no shape; where the shape is real, the prose may say it too.
+    diagrams = criteria["blueprint.diagrams"]
+    assert "a chain with no branch or a chain with a single fork" in diagrams
+    assert "a diagram may draw what the prose already says: do not fault it for that" in diagrams
+    # The words the README and the guide teach are the developer's; the insides are named.
+    clear = criteria["messages.clear"]
+    assert "The words of the chain that its README and its guide teach are the developer's" in clear
+    for word in ("its cut", "the gates", "the critical zones", "a slice", "the cross-check"):
+        assert word in clear
+    assert "The insides are the names of its other agents" in clear
+    assert "and the paths of its reports: a final message keeps them out" in clear
+    assert "The blueprint is no report" in clear
+    # The description is the script's, which links the reports it lists: none is faulted there.
+    assert "The description of the pull request is written by a script" in clear
+    # The launch that approves, said at every hand over, is the point.
+    noise = criteria["following.no-noise"]
+    said = "One thing said at every hand over, and in reply to a sentence that agrees, is not"
+    assert f"{said} noise" in noise
+    assert "that only the launch of `/surface-execute` approves" in noise
+
+
 def test_the_judge_is_given_its_part_of_the_rubric_and_the_documents_it_names() -> None:
     asked = prompt(DIMENSION, DOCUMENTS)
     assert asked.startswith(DIMENSION.text)
