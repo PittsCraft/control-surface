@@ -227,9 +227,13 @@ def test_extractor_draws_a_diagram_when_prose_would_flatten_a_shape() -> None:
     writing = section(body, "What you write")
     rule = "Draw a mermaid diagram when what you describe has a shape that prose flattens"
     assert f"{rule}: several things in relation, an order between several actors" in writing
+    assert "states and their transitions, a path that forks more than once." in writing
     assert "the existing elements it attaches to, marked as existing" in writing
     assert "A diagram may say again what the prose says" in writing
-    assert "Do not draw one for a single fact, a list, or a chain with no branch" in writing
+    # A chain with a single fork is no shape: one sentence says it, as it says a chain with none.
+    none = "Do not draw one for a single fact, a list, a chain with no branch, or a chain with a"
+    assert f"{none} single fork: a sentence says it better" in writing
+    assert "a path that branches" not in writing
     assert "Never to fill a section" in writing
     assert "wherever one applies" not in body
     assert "only when it shows what the prose" not in body
