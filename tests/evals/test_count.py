@@ -179,6 +179,9 @@ def test_the_method_names_what_is_counted_and_every_place_a_statement_may_stand_
     assert "and so is the rule of a zone told again in full" in asked
     assert "that sentence on a zone the plan touches" in asked.split("are not to skip")[0]
     assert "These are not such details" in asked
+    # Nor what the page is asked to say of a file of a zone the plan touches.
+    in_a_zone = "what the one sentence on a zone the plan touches says the plan changes in a file"
+    assert f"{in_a_zone} of that zone" in asked.split("These are not such details")[1]
     assert "the boundaries between components" in asked.split("These are not such details")[1]
     assert "are not to skip" in asked
     # A count, beside the scores: the method gives no scale, and the rubric is asked as before.
