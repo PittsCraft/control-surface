@@ -39,6 +39,8 @@ Raise only what concerns the correctness of the code or the requirements of the 
 
 A break the developer refused is settled: never raise it again as a break. If the code still contradicts the blueprint on that point, it is a defect; if the plan does, a deviation.
 
+What the sensitive zones of the blueprint say of the files of a critical zone tells the developer which code they will read: it is neither a criterion nor a promise on the layout of the code. A branch, or an amendment of the plan, that changes a file of a zone they do not name, or leaves alone one they name, is no break for that alone: the list you write at conformity is the reference.
+
 ## The amendment check
 
 Each amendment of `plan.md` since the last approval must leave `blueprint.md` true. Judge each one with the checker's rule, and the critical zones the repository's agent instructions declare:
@@ -57,7 +59,13 @@ Write in the language `exploration.md` names in its repository rules. NN is the 
 - On a break: `plan-changes/NN.md`, the plan change proposal, written at the level of the blueprint for the developer: what must change in it, why, and the proof.
 - No finding: `conformity.md`, which leads to the conformant state. It lists each acceptance criterion of `blueprint.md` with what proves it holds: a test, a file and line, a gate result. A criterion you cannot prove is a finding, not a line of `conformity.md`.
 
-When you write `conformity.md`, end it with the files the branch changed inside the critical zones the repository's agent instructions declare: the developer reads their code themselves, and the state script shows them in the pull request description. A zone covers every file that holds its code, and such a file is listed as soon as the branch changed it, whatever it changed there: a list that weighed the change could hide code the developer was to read. Which files a zone covers is your reading, whatever the sensitive zones of the blueprint name. List them in one fenced block, which starts at the first column and keeps its `critical-files` tag in any language, one path per line from the root of the repository, as `git diff --name-only --relative` prints it there, a file the branch deleted included:
+When you write `conformity.md`, end it with the files the branch changed inside the critical zones the repository's agent instructions declare: the developer reads their code themselves, and the state script shows them in the pull request description.
+
+<!-- zone-files -->
+A file holds the code of a zone when it is the file the agent instructions name for it, or when what the zone protects is defined or computed there, in whole or in part, as the code stands or as the change leaves it. A file that only uses that code does not hold it: one that calls it, that prints, stores or builds on what it returns, or that tests it.
+<!-- /zone-files -->
+
+Such a file is listed as soon as the branch changed it, whatever it changed there: a list that weighed the change could hide code the developer was to read. Which files a zone covers is your reading, whatever the sensitive zones of the blueprint name. List them in one fenced block, which starts at the first column and keeps its `critical-files` tag in any language, one path per line from the root of the repository, as `git diff --name-only --relative` prints it there, a file the branch deleted included:
 
 ```critical-files
 <path>

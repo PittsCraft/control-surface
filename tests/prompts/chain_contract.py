@@ -48,17 +48,48 @@ UNNAMED_ZONE = "A critical zone the plan touches and the sensitive zones do not 
 # Both read "touches" by file, as the reviewer lists at conformity: a zone is touched as soon as
 # the plan changes a file that holds its code, even when what the zone protects stays as it is.
 # Read as what a zone protects, a page said none and the developer was then sent to a file of
-# one. Which files hold the code of a zone is each agent's reading, of the same things. The page
-# names the files and says how far the plan goes, so that "touched" is read for what it is.
+# one. The page names the files and says how far the plan goes, so that "touched" is read for
+# what it is.
 TOUCHED_BY_FILE = (
     "The plan touches a zone as soon as a slice changes, creates or deletes a file that holds its"
     " code, whatever it changes there"
 )
-FILES_OF_A_ZONE = (
-    "Which files hold the code of a zone is your reading: the file the agent instructions name"
-    " for it, and the files whose code defines, computes or writes what they say it protects"
+# The extractor, the cross-check and the reviewer hold one definition of such a file, in the
+# same words, between the marks of this name. A wider one at approval, "the files whose code
+# defines, computes or writes" what a zone protects, announced a zone for a file that prints a
+# fine and for a test file, which no reviewer listed in any run: a file that only uses the code
+# of a zone does not hold it. A choice of the computation the plan moves into another file does.
+ZONE_FILES_MARK = "zone-files"
+HOLDS_THE_CODE = (
+    "A file holds the code of a zone when it is the file the agent instructions name for it, or"
+    " when what the zone protects is defined or computed there, in whole or in part, as the code"
+    " stands or as the change leaves it"
 )
+ONLY_USES_THE_CODE = (
+    "A file that only uses that code does not hold it: one that calls it, that prints, stores or"
+    " builds on what it returns, or that tests it"
+)
+# The plan is read by the files its slices change, which its form asks each slice to name. A
+# slice that names none is read from what it does, and a file it only allows to change is not
+# one the plan changes.
+SLICE_NAMES_ITS_FILES = "the files it changes"
+SLICE_WITHOUT_FILES = (
+    "Where a slice names no file, tell from what it does and from the code where it lands"
+)
+ALLOWED_IS_NOT_CHANGED = "A file a slice only allows to change is not one the plan changes"
 HOW_FAR = "say how far the plan goes into it, in one sentence"
+# What the page says of the files of a zone tells the developer which code they will read. It
+# is frozen with the page, and the work may still change another file of the zone, or leave a
+# named one alone: that is no break for that alone, and the list at conformity is the
+# reference. So the page says of files only which the plan changes, and how far.
+NO_PROMISE_ON_FILES = "it is neither a criterion nor a promise on the layout of the code"
+NO_BREAK_FOR_A_FILE = (
+    "that changes a file of a zone they do not name, or leaves alone one they name, is no break"
+    " for that alone: the list you write at conformity is the reference"
+)
+ONLY_THE_FILES_CHANGED = (
+    "Say nothing else of the files of a zone, not that another of them stays as it is"
+)
 # At conformity the reviewer lists the files the branch changed inside those zones, in a fenced
 # block of `conformity.md` that the state script alone takes up, in the pull request description.
 # It lists by file, whatever the branch changed there and whatever the blueprint named: a list
@@ -67,7 +98,7 @@ CRITICAL_FILES_OF_THE_BRANCH = (
     "the files the branch changed inside the critical zones the repository's agent instructions"
     " declare"
 )
-LISTED_BY_FILE = "such a file is listed as soon as the branch changed it, whatever it changed there"
+LISTED_BY_FILE = "Such a file is listed as soon as the branch changed it, whatever it changed there"
 INDEPENDENT_LIST = (
     "Which files a zone covers is your reading, whatever the sensitive zones of the blueprint name"
 )
