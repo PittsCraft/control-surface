@@ -18,13 +18,11 @@ The states, from the need to the review:
 | State | What the project holds |
 |---|---|
 | `specs` | the main branch, the chain installed, no plan |
-| `specs-ci` | the same, with a CI workflow that runs the gate on every push, of any branch, and on every pull request |
 | `plan-written` | the branch `feat/csv-export`, the interview closed and `plan.md` written, no blueprint yet. Nothing of the plan folder is committed |
 | `blueprint-drawn` | the same, with `blueprint.md` drawn and not cross-checked yet |
 | `planning-ceiling` | specs that ask to rewrite the shelf file once the CSV is printed, a plan that does it, a blueprint that says the file is never written, and two cross-checks that count that omission, `max_autonomous_passes: 1`. Nothing committed |
 | `awaiting-approval` | the branch `feat/csv-export`, a plan drafted at revision 1 (two slices), pushed, and its draft pull request, open in the stand-in `gh` |
 | `unpushed` | that plan drafted and committed, the branch never pushed, no pull request |
-| `unpushed-ci` | the same, under the CI of `specs-ci`, which `exploration.md` names |
 | `two-plans` | a second plan, `<date>-count-books`, drafted on the same branch: both await their approval |
 | `slice-uncommitted` | revision 1 approved, the work of slice 1 written and `slice-done` recorded, neither committed |
 | `suspected-break` | a project whose `export` command exists before the feature and prints the shelf as JSON for a backup, which the plan and the blueprint did not see. Slice 1 done, then `break-suspected` recorded for slice 2 with that reason, and the test its executor had begun, neither committed |
@@ -112,8 +110,6 @@ A scenario kills a session at a moment it reads in the files of the project or i
 | `test_planning_killed_in_the_interview_resumes_at_the_next_question` | `specs` | `/surface-plan` with the need; the session that takes the first answer of the interview killed once `interview.md` holds it; then `/surface-plan` alone, and the recommendation at every question | the journal of the killed session kept as is, `exploration.md` untouched, no question that had its answer written a second time, one `plan-drafted` with the gate of the toy, the plan committed and pushed, and one draft pull request with the description `surface-status pr-body` prints |
 | `test_an_amendment_killed_once_recorded_is_drafted_at_the_relaunch` | `awaiting-approval` | `/surface-plan` with an amendment, killed once the journal holds `amendment-received`, then `/surface-plan` alone | the amendment in `interview.md` at the kill, one `amendment-received`, revision 2 of the plan and of the blueprint with the header in its new order, pushed, the description refreshed and no second opening |
 | `test_a_conversation_after_the_hand_over_amends_and_approves_nothing` | `awaiting-approval` | `/surface-plan`, then in its conversation a question, an amendment and "Fine, go." | the question records nothing. The amendment is in `interview.md` and in the journal, revision 2 is drafted and pushed. The sentence that agrees records nothing, and the session names `/surface-execute` |
-| `test_a_ci_that_runs_on_a_push_makes_planning_wait_for_an_agreement` | `specs-ci` | `/surface-plan` with the need and the recommendation at every question, until the plan is drafted; then "Yes, push it and open the draft." | once the plan is drafted, the bare remote holds the main branch alone and no `gh pr create` was called. After the agreement: the plan pushed, one draft pull request, the answer in `interview.md`, the plan folder committed, and the description `surface-status pr-body` prints |
-| `test_a_push_the_developer_declines_leaves_the_plan_committed_locally` | `unpushed-ci` | `/surface-plan`, then "No, do not push: this plan stays on my machine for now." | nothing recorded, the bare remote holds the main branch alone before the answer and after it, no `gh pr create`, the answer in `interview.md`, and the final message says the plan is local |
 
 ### The developer's turn in the loop
 

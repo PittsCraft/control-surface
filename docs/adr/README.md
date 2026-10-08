@@ -16,3 +16,4 @@ The current architecture is described in [ARCHITECTURE.md](../../ARCHITECTURE.md
 | 0034 | [Gates named by the plan, run by the script](0034-gates-named-by-the-plan-run-by-the-script.md) |
 | 0035 | [The plan is drafted by Claude Code's built-in Plan agent, held to the minimum the chain reads](0035-plan-drafted-by-the-built-in-plan-agent.md) |
 | 0036 | [Evaluations on real sessions, with a model as the developer and a judge that is checked](0036-evaluations-on-real-sessions.md) |
+| 0037 | [The host's CI left to the host](0037-the-host-ci-left-to-the-host.md) |

@@ -46,7 +46,7 @@ If that answer is missing or is not JSON, the chain is not installed or `python3
 | none yet (`state` is null) | Record `plan-opened` (step 3), then step 4. |
 | `interview` | If `exploration.md` is missing or unfinished, step 4. Else resume at the first question of `interview.md` without an answer, or ask the next open point. Never ask again a question that has an answer. |
 | `drafting` | Resume at the missing step: see "Drafting, the missing step". |
-| `awaiting-approval` | First finish step 10 if it did not end (plan files uncommitted, branch never pushed, no pull request), unless `interview.md` records that the developer declined the push. Then take the amendment given (see "Taking an amendment"); without one, step 11. |
+| `awaiting-approval` | First finish step 10 if it did not end (plan files uncommitted, branch never pushed, no pull request). Then take the amendment given (see "Taking an amendment"); without one, step 11. |
 | `plan-change-proposed` | See "A plan change proposal". |
 | `blocked` | See "After a block". |
 | `executing`, `reviewing`, `fixing` | This command does not see this plan: it is the agents' turn. See "Not your turn". |
@@ -149,7 +149,6 @@ The developer amends a plan only when it is their turn: awaiting approval, or bl
 ## Commit, push and pull request
 
 - Commit only the files of the plan folder, by path, following the repository's conventions. Each journal line goes in the commit of the files it describes. Never other changes of the working tree.
-- Before the first push of the branch (it has no upstream yet), read the CI configuration. If its triggers react to a push of this branch or to the opening of a pull request, draft included, warn the developer, say what would run, and wait for their agreement. Write their answer into `interview.md` under "Git", so a relaunch does not ask again. Declined: push nothing, say the plan is committed locally, and go to step 11.
 - Push the branch, setting its upstream.
 - The pull request opens as a draft at the first `plan-drafted`. Its description is the text `surface-status pr-body` prints, and nothing else (it takes no argument, since it describes every plan of the branch): the output of the script is given to `gh` on its standard input, so that no text of yours stands between the two. No pull request yet: `gh pr create --draft --body-file -`, with a title after the repository's conventions. One exists: `gh pr edit --body-file -`. Refresh it the same way at the end of every launch that pushes.
 - Nothing else is written on the pull request, and you never mark it ready for review. Its comments are read only when the developer asks for it explicitly.

@@ -10,7 +10,7 @@ allowed-tools: Bash(.claude/skills/surface-status/scripts/surface-status *) Bash
 
 You tell the developer where the plans stand, from the state script alone, and you record one act of theirs: the abandonment of a plan, once they have confirmed it. Every other act belongs to `/surface-plan` or `/surface-execute`: name the one to run, and record nothing else.
 
-The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. It is the only writer of the journal, and the same script the project's CI calls. Exit code 0 is accepted, 1 refused or check failed with the reason, 2 a usage error. The state lives in files: read it from the script at each step, never from memory of this conversation.
+The state script is `.claude/skills/surface-status/scripts/surface-status`, run from the root of the repository; below it is written `surface-status`, and `<plan>` is the plan folder. It is the only writer of the journal. Exit code 0 is accepted, 1 refused or check failed with the reason, 2 a usage error. The state lives in files: read it from the script at each step, never from memory of this conversation.
 
 Every command runs from the root of the repository, with paths from there, since one shell serves the whole session.
 
