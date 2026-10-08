@@ -63,7 +63,7 @@ Two commands, and three moments when the loop hands back to you: the blueprint w
 
 ## Going further
 
-- [Guide](docs/guide.md): every step in detail, permissions, the conformity check in your CI, settings, updates.
+- [Guide](docs/guide.md): every step in detail, permissions, the conformity check, which your CI can call, settings, updates.
 - [ARCHITECTURE.md](ARCHITECTURE.md): how the chain is built, and its invariants.
 - [`docs/adr/`](docs/adr/README.md): the decisions whose history matters.
 - [CONTRIBUTING.md](CONTRIBUTING.md): to work on the chain itself.

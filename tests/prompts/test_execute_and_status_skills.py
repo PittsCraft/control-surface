@@ -544,7 +544,7 @@ def test_conformant_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_deve
         [
             "It says, in this order: that the plan is conformant",
             "those files by name, as the code left for the developer to read themselves",
-            f"and last, the developer's step: {CONFORMANT_STEP}, which triggers their CI",
+            f"and last, the developer's step: {CONFORMANT_STEP}. The files are",
         ],
     )
     assert conformant < files < step
@@ -561,7 +561,10 @@ def test_conformant_hands_back_in_one_line_and_leaves_the_ready_mark_to_the_deve
     assert "one it cannot prove is a finding" in conformity
     assert "nothing asks the developer to read it" in conformity
     stopping = section(body, "When the loop stops")
-    assert "Never mark the pull request ready, since that triggers the CI" in stopping
+    # What the project runs on a pull request that is ready is the developer's to start, and
+    # the line says nothing of a CI, which a host may not have (ADR 0037).
+    assert "Never mark the pull request ready, since what the project runs on one" in stopping
+    assert not re.search(r"\bCI\b", conformity)
 
 
 def test_the_hand_back_at_conformity_is_its_line_and_nothing_else() -> None:

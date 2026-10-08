@@ -240,7 +240,6 @@ UNCOMMITTED = frozenset(
         (toy.State.PLANNING_CEILING, "drafting"),
         (toy.State.AWAITING, "awaiting-approval"),
         (toy.State.UNPUSHED, "awaiting-approval"),
-        (toy.State.UNPUSHED_CI, "awaiting-approval"),
         (toy.State.TWO_PLANS, "awaiting-approval"),
         (toy.State.SLICE_UNCOMMITTED, "executing"),
         (toy.State.SUSPECTED_BREAK, "executing"),
@@ -648,7 +647,7 @@ def test_an_abandon_waits_for_a_yes_then_fails_the_conformity_check(tmp_path: Pa
     assert pushed(project)
     described(project)
     # The plan was approved: the branch may carry code never declared conformant, and the
-    # check of the host's CI fails on it from then on.
+    # conformity check fails on it from then on.
     assert toy.check(project) == (1, ["abandoned-after-approval"])
 
 
@@ -670,54 +669,31 @@ def test_two_plans_on_a_branch_are_put_to_the_developer(command: str, tmp_path: 
     assert toy.SECOND_SLUG in final(log)
 
 
-def test_a_ci_that_runs_on_a_push_makes_planning_wait_for_an_agreement(tmp_path: Path) -> None:
+def test_a_ci_that_runs_on_a_push_makes_planning_wait_for_nothing(tmp_path: Path) -> None:
     project = toy.build(toy.State.SPECS_CI, tmp_path)
-    logs = tmp_path / "logs"
-    session = converse(
+    converse(
         project,
         f"/surface-plan {NEED}",
-        logs,
+        tmp_path / "logs",
         "need",
         until=recorded(project, "plan-drafted"),
     )
-    # The CI of the toy runs on every push and on every pull request: the plan is drafted, and
-    # nothing of it has left the machine before the developer agrees.
-    assert on_the_remote(project) == {"main"}
-    assert not openings(project)
-    agreement = "Yes, push it and open the draft."
-    say(project, agreement, logs / "agreement.jsonl", resume=session)
+    # The CI of the toy runs on every push and on every pull request, and what it runs is the
+    # host's (ADR 0037): the session that drafts the plan pushes it and opens its draft, with
+    # no question between the two, which a reply would have had to answer in a session more.
     assert state(project) == "awaiting-approval"
     assert pushed(project)
     assert len(gh_stand_in.pulls(project)) == 1
-    # The answer is kept, so that a relaunch does not ask again.
-    assert told(project, agreement.rstrip("."))
     assert not dirty(project, "docs")
     described(project)
-
-
-def test_a_push_the_developer_declines_leaves_the_plan_committed_locally(tmp_path: Path) -> None:
-    project = toy.build(toy.State.UNPUSHED_CI, tmp_path)
-    logs = tmp_path / "logs"
-    before = events(project)
-    session = say(project, "/surface-plan", logs / "relaunch.jsonl")
-    # The first push of the branch is still to come, and the CI runs on it: the session asks.
-    assert on_the_remote(project) == {"main"}
-    assert not openings(project)
-    refusal = logs / "refusal.jsonl"
-    say(project, "No, do not push: this plan stays on my machine for now.", refusal, resume=session)
-    assert events(project) == before
-    assert on_the_remote(project) == {"main"}
-    assert not openings(project)
-    assert told(project, "do not push")
-    assert "local" in final(refusal).lower()
 
 
 def test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch(tmp_path: Path) -> None:
     project = toy.build(toy.State.UNPUSHED, tmp_path)
     before = events(project)
     assert run_to_end(project, "/surface-plan", tmp_path / "logs" / "relaunch.jsonl") == 0
-    # The session that drafted the plan died between its commit and its push: the toy has no
-    # CI to warn about, so this one pushes and opens the draft without a question.
+    # The session that drafted the plan died between its commit and its push: this one pushes
+    # and opens the draft, and asks nothing first.
     assert events(project) == before
     assert pushed(project)
     assert len(gh_stand_in.pulls(project)) == 1

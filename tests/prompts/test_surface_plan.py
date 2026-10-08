@@ -710,7 +710,7 @@ def test_the_blueprint_template_says_which_critical_zones_the_plan_touches() -> 
     assert zones.index(said) < zones.index(CLOSING_LINE)
 
 
-# Git, pull request and CI.
+# Git and pull request.
 
 
 def _git_steps() -> list[str]:
@@ -718,16 +718,18 @@ def _git_steps() -> list[str]:
     return [line for line in part.splitlines() if line.startswith("- ")]
 
 
-def test_the_ci_triggers_are_read_before_the_first_push() -> None:
+def test_the_push_waits_for_nothing_of_the_ci() -> None:
+    # What a host's CI does on a push is the host's: the command reads no trigger, and asks
+    # nothing before the first push (ADR 0037). The CI is still read in step 1, for the gates.
     steps = _git_steps()
-    check = next(i for i, step in enumerate(steps) if step.startswith("- Before the first push"))
+    commit = next(i for i, step in enumerate(steps) if step.startswith("- Commit only"))
     push = next(i for i, step in enumerate(steps) if step.startswith("- Push the branch"))
-    assert check < push
-    warning = steps[check]
-    assert "read the CI configuration" in warning
-    assert "react to a push of this branch or to the opening of a pull request" in warning
-    assert "wait for their agreement" in warning
-    assert 'under "Git", so a relaunch does not ask again' in warning
+    assert push == commit + 1
+    assert not re.search(r"\bCI\b", section(_body(), "Commit, push and pull request"))
+    for template in ("exploration.md", "interview.md"):
+        assert not re.search(r"\bCI\b", _template(template))
+    for text in (_body(), *(_template(path.name) for path in TEMPLATES.iterdir())):
+        assert "trigger" not in text.lower()
 
 
 def test_the_draft_pull_request_opens_at_the_first_plan_drafted() -> None:

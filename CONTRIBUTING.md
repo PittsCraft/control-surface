@@ -38,7 +38,7 @@ Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and `.
 
 ## State script
 
-`surface-status` is the only writer of each plan's `journal.jsonl`. State is derived from the journal, never stored, and the script refuses any transition its table does not allow, and any event whose guard fails. Its subcommands (`show`, `resolve`, `record`, `gate`, `abandon`, `commits`, `pr-body`, `check`) serve the developer, the skills and the host project's CI; `--json` is for the skills.
+`surface-status` is the only writer of each plan's `journal.jsonl`. State is derived from the journal, never stored, and the script refuses any transition its table does not allow, and any event whose guard fails. Its subcommands (`show`, `resolve`, `record`, `gate`, `abandon`, `commits`, `pr-body`, `check`) serve the developer and the skills, and a host may call `check` from its CI; `--json` is for the skills.
 
 ## Text rules
 

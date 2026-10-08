@@ -24,7 +24,6 @@ In a Claude Code session of your project, run `/surface-plan` with a short descr
 - It explores the code the feature touches, then asks you its questions one at a time. Each comes with its options and the one it would pick. Your answers are written down as you give them, and it never invents a business rule to fill a gap. A rule a user of the feature would see applied, an order, a number, a limit, is yours to decide: it asks unless your specs or your code already settle it, and settles alone only what is a matter of implementation.
 - It finds the commands that check your project, tests, lint, type checks, where your project states them, and writes them in the plan as its gates. It asks you only if it finds none.
 - It has a detailed plan drafted by the `Plan` agent built into Claude Code, then the blueprint drawn from it and cross-checked, so that the blueprint hides nothing the plan does.
-- Before the first push, if your CI reacts to a push or to a new PR, it warns you and waits for your agreement.
 - It commits, pushes, opens a draft PR that links the blueprint and the plan, and tells you where to read the blueprint and which gates the loop will run.
 
 Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
@@ -81,34 +80,15 @@ Conformant means the last review proved every acceptance criterion of the bluepr
 
 The PR description lists, one line each and for information, the decisions the agents took within the contract that you did not see go by: the plan amendments that keep the blueprint true, and the suspected breaks a reviewer dismissed. It lists nothing when there is nothing to list.
 
-When you want, you mark the PR ready for review, which triggers your CI, and you merge. The chain never does it for you. The conformity check belongs in your CI when the PR is marked ready, and in your hands before merging:
+When you want, you mark the PR ready for review, and you merge. The chain never does it for you. Before merging, the conformity check is in your hands:
 
 ```sh
 .claude/skills/surface-status/scripts/surface-status check --require conformant
 ```
 
-It fails as long as a plan of the branch is neither conformant nor abandoned before its approval, so keep it out of the gates your plans name.
+It fails as long as a plan of the branch is neither conformant nor abandoned before its approval, so keep it out of the gates your plans name. Exit code 0 means every plan of the branch is conformant, 1 that one is not, 2 that the check could not run.
 
-In a GitHub Actions workflow, the check needs the full history of the repository to find where your branch left the main branch. A checkout at depth 1, the default, makes it exit 2 and say so:
-
-```yaml
-on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-
-jobs:
-  conformity:
-    # A draft pull request waits until it is marked ready.
-    if: ${{ !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - run: .claude/skills/surface-status/scripts/surface-status check --require conformant
-```
-
-Exit code 0 means every plan of the branch is conformant, 1 that one is not, 2 that the check could not run.
+Your CI can call it too: whether it does, and when, is yours to decide. It needs the full history of the repository, main branch included, to find where your branch left it: in a checkout that is shallow, or that holds your branch alone, it exits with 2.
 
 ### At any time: `/surface-status`
 

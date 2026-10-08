@@ -77,7 +77,6 @@ class State(StrEnum):
     PLANNING_CEILING = "planning-ceiling"  # two cross-checks with an omission, a ceiling of one
     AWAITING = "awaiting-approval"  # a plan drafted at revision 1, pushed, its draft opened
     UNPUSHED = "unpushed"  # that plan drafted and committed, never pushed: no draft opened
-    UNPUSHED_CI = "unpushed-ci"  # the same, under the CI that runs on every push
     TWO_PLANS = "two-plans"  # a second plan drafted on the same branch
     SLICE_UNCOMMITTED = "slice-uncommitted"  # approved, slice 1 recorded and not committed
     SUSPECTED_BREAK = "suspected-break"  # slice 2 stopped on a break its executor suspects
@@ -239,7 +238,7 @@ order and their names are a contract with the bookshop.
 """
 
 # A CI that reacts to a push of any branch and to a pull request, a draft included: what
-# /surface-plan warns about before the first push of a branch.
+# /surface-plan acts on in no way, and asks nothing about before a push (ADR 0037).
 CI_PATH = ".github/workflows/ci.yml"
 CI = """\
 name: ci
@@ -297,7 +296,6 @@ EXPLORATION = """\
 - Conventions: branches `feat/<slug>`; commits `<area>: <what changes>`, imperative. No pull
   request convention stated.
 - Decisions: not recorded anywhere.
-- CI: none.
 
 ## What the feature touches
 
@@ -485,12 +483,6 @@ DOCUMENTS = {
     "blueprint.md": BLUEPRINT,
 }
 
-# Under the CI of `CI`, the exploration names it: a session reads there what triggers it.
-EXPLORATION_CI = EXPLORATION.replace(
-    "- CI: none.",
-    f"- CI: `{CI_PATH}` runs the gate on every push, of any branch, and on every pull\n"
-    "  request, a draft included.",
-)
 
 # The plan of the planning ceiling: the specs ask for an effect on the developer's file, the plan
 # does it, and the blueprint, left as it is, says the file is never written.
@@ -1084,7 +1076,7 @@ def critical_files(project: Path) -> list[str]:
 
 
 def check(project: Path) -> tuple[int, list[str]]:
-    """Run the conformity check of the host's CI: its exit code, and the codes of what fails it."""
+    """Run the conformity check: its exit code, and the codes of what fails it."""
     done = subprocess.run(
         [str(project / STATE_SCRIPT), "--json", "check", "--require", "conformant"],
         cwd=project,
@@ -1103,7 +1095,8 @@ def check(project: Path) -> tuple[int, list[str]]:
 def _base(dest: Path, settings: Mapping[str, object], more: Mapping[str, str]) -> Path:
     """Make the project on its main branch, pushed, with the chain installed and committed.
 
-    `more` holds the files a state adds to the project before the feature: a CI, a slow test.
+    `more` holds the files a state adds to the project before the feature: a CI, a slow test, a
+    command the feature replaces.
     """
     project = dest / "shelf"
     remote = dest / "origin.git"
@@ -1203,14 +1196,12 @@ def _drafted(project: Path, state: State) -> str:
     An unpushed state stops before the push, and so has no pull request.
     """
     git(project, "switch", "--quiet", "--create", BRANCH)
-    under_ci = state is State.UNPUSHED_CI
-    documents = {**DOCUMENTS, "exploration.md": EXPLORATION_CI} if under_ci else DOCUMENTS
-    plan = _open(project, SLUG, documents)
+    plan = _open(project, SLUG, DOCUMENTS)
     _draft(project, plan, CHECK, "plan: export the shelf as CSV, revision 1")
     if state is State.TWO_PLANS:
         second = _open(project, SECOND_SLUG, SECOND_DOCUMENTS)
         _draft(project, second, SECOND_CHECK, "plan: count the books of a shelf, revision 1")
-    if state not in {State.UNPUSHED, State.UNPUSHED_CI}:
+    if state is not State.UNPUSHED:
         git(project, "push", "--quiet", "--set-upstream", "origin", BRANCH)
         gh_stand_in.open_pull(
             project, head=BRANCH, base="main", title=PULL_TITLE, body=pr_body(project), draft=True
@@ -1357,7 +1348,7 @@ _SUSPICIONS: Mapping[State, tuple[Mapping[str, str], str]] = {
 _ONE_PASS = frozenset({State.PLANNING_CEILING, State.CEILING, State.BLOCKED})
 _WITH_THE_DEFECT = frozenset({State.FIXING, State.CEILING, State.BLOCKED, State.DEFECT})
 _UNDRAFTED = frozenset({State.PLAN_WRITTEN, State.BLUEPRINT_DRAWN, State.PLANNING_CEILING})
-_DRAFTED = frozenset({State.AWAITING, State.UNPUSHED, State.UNPUSHED_CI, State.TWO_PLANS})
+_DRAFTED = frozenset({State.AWAITING, State.UNPUSHED, State.TWO_PLANS})
 
 
 def _executed(project: Path, plan: str, state: State) -> None:
@@ -1392,7 +1383,7 @@ def _executed(project: Path, plan: str, state: State) -> None:
 
 def _more(state: State) -> dict[str, str]:
     """Give the files a state adds to the project before the feature."""
-    if state in {State.SPECS_CI, State.UNPUSHED_CI}:
+    if state is State.SPECS_CI:
         return {CI_PATH: CI}
     if state is State.SUSPECTED_BREAK:
         return {

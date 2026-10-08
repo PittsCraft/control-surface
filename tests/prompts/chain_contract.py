@@ -20,10 +20,11 @@ NO_FINDING_END = "conformant state"
 # step, last. No report of what was done: the description of the pull request holds it, and a
 # report in the terminal buried the step. A criterion the reviewer cannot prove is a finding, so a
 # conformant plan leaves nothing to check: `conformity.md` is kept, never a required reading. The
-# chain never marks the pull request ready, since that triggers the host's CI.
+# chain never marks the pull request ready, since what the host runs then is the developer's to
+# start.
 CONFORMANT_HAND_BACK = "hand back in one line, which is all you say at this stop"
 CONFORMANT_STEP = "the developer marks the pull request ready when they want"
-# A branch may have no pull request: no `gh`, no remote, or a push the developer declined. The
+# A branch may have no pull request: no `gh`, or no remote. The
 # line then names the step that fits, since nobody marks ready a pull request that does not exist.
 CONFORMANT_WITHOUT_PULL_REQUEST = (
     "the developer opens the pull request, if none is open yet, with the description"

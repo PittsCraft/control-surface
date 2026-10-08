@@ -46,7 +46,7 @@ If that answer is missing or is not JSON, the chain is not installed or `python3
 | none yet (`state` is null) | Record `plan-opened` (step 3), then step 4. |
 | `interview` | If `exploration.md` is missing or unfinished, step 4. Else resume at the first question of `interview.md` without an answer, or ask the next open point. Never ask again a question that has an answer. |
 | `drafting` | Resume at the missing step: see "Drafting, the missing step". |
-| `awaiting-approval` | First finish step 10 if it did not end (plan files uncommitted, branch never pushed, no pull request), unless `interview.md` records that the developer declined the push. Then take the amendment given (see "Taking an amendment"); without one, step 11. |
+| `awaiting-approval` | First finish step 10 if it did not end (plan files uncommitted, branch never pushed, no pull request). Then take the amendment given (see "Taking an amendment"); without one, step 11. |
 | `plan-change-proposed` | See "A plan change proposal". |
 | `blocked` | See "After a block". |
 | `executing`, `reviewing`, `fixing` | This command does not see this plan: it is the agents' turn. See "Not your turn". |
@@ -67,7 +67,7 @@ The conversation is the developer's, the plan folder is the repository's.
 
 ## First launch, with specs
 
-1. Conventions. Read what the repository says about itself: its agent instructions, README, contributing guide, domain document if it keeps one, decision records, CI configuration and any script that replays the CI locally. Establish the business concepts, the architecture and its boundaries, the generated artifacts never edited by hand, the gates in the order they run, the conventions for branches, commits and pull requests, where decisions are recorded, and what triggers the CI.
+1. Conventions. Read what the repository says about itself: its agent instructions, README, contributing guide, domain document if it keeps one, decision records, CI configuration and any script that replays the CI locally. Establish the business concepts, the architecture and its boundaries, the generated artifacts never edited by hand, the gates in the order they run, the conventions for branches, commits and pull requests, and where decisions are recorded.
    - The documents' language (see "Languages"), in this order: the first that answers wins. A language the agent instructions (`AGENTS.md`, `CLAUDE.md`) declare for what the repository holds. Otherwise the language of the repository's own documentation, its README and the plans it already holds. Otherwise the language the specs are written in.
 2. Branch. The main branch is `origin/HEAD`, else `main`, else `master`, as the state script finds it. Launched from the main branch, create a branch named after the repository's practice, as below, and switch to it. From any other branch, stay: the plan opens there, and a branch may carry several plans. A new branch comes only from the main branch.
    - Find the practice in this order, and stop at the first that answers. A convention written in what step 1 read (agent instructions, contributing guide) wins. Otherwise the head branches of past pull requests, which outlive the branches deleted after merge: the developer's own first, `gh pr list --state all --author @me --limit 50 --json headRefName`, then the team's, `gh pr list --state all --limit 50 --json headRefName,author`, leaving out the branches of bots. Without `gh`, or when it finds no pull request, the remote branches, `git branch -r`, and the subjects of merge commits, `git log --merges --format=%s -n 50`, which name the branch they merged.
@@ -149,7 +149,6 @@ The developer amends a plan only when it is their turn: awaiting approval, or bl
 ## Commit, push and pull request
 
 - Commit only the files of the plan folder, by path, following the repository's conventions. Each journal line goes in the commit of the files it describes. Never other changes of the working tree.
-- Before the first push of the branch (it has no upstream yet), read the CI configuration. If its triggers react to a push of this branch or to the opening of a pull request, draft included, warn the developer, say what would run, and wait for their agreement. Write their answer into `interview.md` under "Git", so a relaunch does not ask again. Declined: push nothing, say the plan is committed locally, and go to step 11.
 - Push the branch, setting its upstream.
 - The pull request opens as a draft at the first `plan-drafted`. Its description is the text `surface-status pr-body` prints, and nothing else (it takes no argument, since it describes every plan of the branch): the output of the script is given to `gh` on its standard input, so that no text of yours stands between the two. No pull request yet: `gh pr create --draft --body-file -`, with a title after the repository's conventions. One exists: `gh pr edit --body-file -`. Refresh it the same way at the end of every launch that pushes.
 - Nothing else is written on the pull request, and you never mark it ready for review. Its comments are read only when the developer asks for it explicitly.
