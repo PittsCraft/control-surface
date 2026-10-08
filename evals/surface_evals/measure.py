@@ -8,6 +8,7 @@ asked for, and everything the execution gives when the run stopped at the hand o
 """
 
 import json
+import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
@@ -24,6 +25,8 @@ from surface_status.plan_folder import parse_slice_markers as parse_slices
 
 # The key phrases of the critical zones the host declares in its `AGENTS.md`.
 ZONES = ("fine computation", "loans.jsonl")
+# Where a sentence ends: the full stop of a path, `lending/fines.py`, is followed by no space.
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s")
 # What a session must never read: the clone the container mounts, where the cases are kept
 # with their acceptance tests and their reference implementations.
 HIDDEN = ("/clone/", "evals/cases")
@@ -190,9 +193,11 @@ def _plan(folder: Path, logs: Sequence[SessionLog]) -> Measures:
 def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant: bool) -> Measures:
     """Whether the critical zones were named at approval, and their files listed at conformity."""
     zones = "" if drawn is None else drawn.zones.lower()
-    # The section opens on the critical zones, or on the statement that the plan touches none.
-    opening = zones.split("\n\n", 1)[0]
-    said_none = form.NONE_TOUCHED.search(opening) is not None
+    # The section opens on one statement: the critical zones touched, or that the plan touches
+    # none. What follows says how far the plan goes into a zone, where "none of its fields" is
+    # not the statement that no zone is touched.
+    statement = _SENTENCE_END.split(zones.split("\n\n", 1)[0], maxsplit=1)[0]
+    said_none = form.NONE_TOUCHED.search(statement) is not None
     expected = [phrase.lower() in zones for phrase in case.critical_zones]
     listed: list[str] | None = None
     if conformant:
@@ -201,9 +206,13 @@ def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant
             listed = list(block or ())
         except (OSError, PlanFolderError):
             listed = None
+    # A zone is touched as soon as a file that holds its code changes, whatever the need asks
+    # of it: only the proof of conformity tells that none was. Where it lists a file, a zone was
+    # touched, and whether the page announced it is `zones_announced`.
+    none_touched = not expected and listed == []
     return {
         "zones_named": None if drawn is None or not expected else all(expected),
-        "zones_none_said": None if drawn is None or expected else said_none,
+        "zones_none_said": said_none if drawn is not None and none_touched else None,
         "critical_files": listed,
         "zones_files_listed": (
             None if listed is None else all(path in listed for path in case.critical_files)

@@ -322,6 +322,38 @@ def test_a_critical_zone_is_named_at_approval_and_its_files_listed_at_conformity
     assert measure(spoken, zone)["zones_announced"] is False
 
 
+def test_a_zone_touched_by_its_file_alone_is_announced_and_none_is_not_expected(
+    tmp_path: Path,
+) -> None:
+    # The need asks nothing of a zone, and the plan changes a file that holds the code of one.
+    # The page names the zone with its file, then says how far: "none" there is not the
+    # statement that the plan touches no zone.
+    asks_nothing = case(tmp_path)
+    by_file = BLUEPRINT.replace(
+        NONE,
+        "Critical zones touched, among those `AGENTS.md` declares: the fine computation"
+        " (`lending/fines.py`). The plan changes its imports and none of the computation.",
+    )
+    named = kept_run(
+        tmp_path / "named", journal=JOURNAL, blueprints=(by_file,), conformity=CONFORMITY
+    )
+    found = measure(named, asks_nothing)
+    assert found["critical_files"] == ["lending/fines.py"]
+    assert found["zones_announced"] is True
+    # A file of a zone changed: none was not to be said, and the measure does not apply.
+    assert found["zones_none_said"] is None
+    # The page that said none of that branch is the one `zones_announced` tells.
+    silent = kept_run(tmp_path / "silent", journal=JOURNAL, conformity=CONFORMITY)
+    found = measure(silent, asks_nothing)
+    assert (found["zones_announced"], found["zones_none_said"]) == (False, None)
+    # No file of a zone changed: the page that names one all the same did not say none.
+    unlisted = kept_run(
+        tmp_path / "unlisted", journal=JOURNAL, blueprints=(by_file,), conformity="# Conformity\n"
+    )
+    found = measure(unlisted, asks_nothing)
+    assert (found["zones_announced"], found["zones_none_said"]) == (True, False)
+
+
 def test_the_host_declares_the_zones_the_measures_look_for() -> None:
     declared = (Path(__file__).resolve().parents[2] / "evals/host/AGENTS.md").read_text("utf-8")
     zones = declared.split("## Critical zones", 1)[1]
@@ -366,8 +398,10 @@ def test_a_run_that_stops_at_the_hand_over_holds_no_measure_of_the_execution(
     assert found["approved_by_sentence"] is False
     assert found["plan_minimum"] is True
     assert found["frame"] is True
-    assert found["zones_none_said"] is True
     assert found["contaminated"] is False
+    # Whether none was rightly said waits for the proof of conformity, which alone tells that
+    # no file of a zone changed.
+    assert found["zones_none_said"] is None
     assert found["planning_usd"] == pytest.approx(1.01)
     # Nothing of the execution is a 0 or a False, which would read as a run that did not conform.
     assert {name: found[name] for name in EXECUTION} == dict.fromkeys(EXECUTION)
