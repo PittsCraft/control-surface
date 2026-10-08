@@ -20,7 +20,7 @@ What will be built there that no criterion states, as behavior and not as code, 
 
 ## Sensitive zones
 
-Critical zones touched, among those the repository's agent instructions declare: <none, or each zone a file of which the plan changes, named as they name it, with that file>. <For each zone named, one sentence on how far the plan goes: into what the zone protects, or only into something else its file holds.>
+Critical zones touched, among those the repository's agent instructions declare: <none, or each zone the plan touches, named as they name it, with in backticks its files the plan changes>. <Then, for each zone named, one sentence on how far the plan goes: into what the zone protects, or only into something else its file holds.>
 
 What the developer would not see go by and that touches their control, their work or their time, when there is any.
 

@@ -58,16 +58,23 @@ TOUCHED_BY_FILE = (
 # same words, between the marks of this name. A wider one at approval, "the files whose code
 # defines, computes or writes" what a zone protects, announced a zone for a file that prints a
 # fine and for a test file, which no reviewer listed in any run: a file that only uses the code
-# of a zone does not hold it. A choice of the computation the plan moves into another file does.
+# of a zone does not hold it. A choice of the computation the plan moves into another file does,
+# and so does a file the plan moves that code out of: before the change or after it. A host may
+# place files in a zone by a folder or a pattern, and such a file holds it whatever it holds.
 ZONE_FILES_MARK = "zone-files"
 HOLDS_THE_CODE = (
-    "A file holds the code of a zone when it is the file the agent instructions name for it, or"
-    " when what the zone protects is defined or computed there, in whole or in part, as the code"
-    " stands or as the change leaves it"
+    "A file holds the code of a zone when the agent instructions place it in the zone, by its"
+    " name, its folder or a pattern, whatever it holds, or when code there defines or computes"
+    " what the zone protects, in whole or in part, before the change or after it"
 )
 ONLY_USES_THE_CODE = (
-    "A file that only uses that code does not hold it: one that calls it, that prints, stores or"
-    " builds on what it returns, or that tests it"
+    "Among the files the instructions do not place, one that only uses that code does not hold"
+    " it: one that calls it, that prints, stores or builds on what it returns, or that tests it"
+)
+# The definition speaks of code. Told "defined there", a reviewer listed a README that states
+# the fields of a format, and the developer was sent to read a document as critical code.
+ONLY_DESCRIBES = (
+    "Nor does one that describes what the zone protects, a README or any other document"
 )
 # The plan is read by the files its slices change, which its form asks each slice to name. A
 # slice that names none is read from what it does, and a file it only allows to change is not
@@ -78,14 +85,29 @@ SLICE_WITHOUT_FILES = (
 )
 ALLOWED_IS_NOT_CHANGED = "A file a slice only allows to change is not one the plan changes"
 HOW_FAR = "say how far the plan goes into it, in one sentence"
-# What the page says of the files of a zone tells the developer which code they will read. It
-# is frozen with the page, and the work may still change another file of the zone, or leave a
-# named one alone: that is no break for that alone, and the list at conformity is the
-# reference. So the page says of files only which the plan changes, and how far.
+# The page states the zones in the one sentence it opens its closing section on, of fixed
+# form: this lead-in, then none, or each zone touched with in backticks its files the plan
+# changes. The developer finds there at once which files they will read, and what reads the
+# page, the cross-check and the evaluations, reads it there and not in free prose.
+ZONES_LEAD_IN = "Critical zones touched, among those the repository's agent instructions declare:"
+ZONES_STATEMENT = (
+    "its lead-in, then `none`, or each zone touched, named as the agent instructions name it,"
+    " with in backticks its files the plan changes"
+)
+# What the page says of the files of a zone it names as touched tells the developer which code
+# they will read. It is frozen with the page, and the work may still change another file of
+# that zone, or leave a named one alone: that is no break for that alone, and the list at
+# conformity is the reference. So the page says of files only which the plan changes, and how
+# far. A zone the page says is not touched is the contract: the developer approved a page that
+# told them they would not read that code, and a change that reaches it comes back to them.
 NO_PROMISE_ON_FILES = "it is neither a criterion nor a promise on the layout of the code"
 NO_BREAK_FOR_A_FILE = (
-    "that changes a file of a zone they do not name, or leaves alone one they name, is no break"
-    " for that alone: the list you write at conformity is the reference"
+    "that changes another of its files, or leaves alone one they name, is no break for that"
+    " alone: the list you write at conformity is the reference"
+)
+BREAK_FOR_AN_UNTOUCHED_ZONE = (
+    "A zone they say the plan does not touch is another matter, and so is every zone when they"
+    " say none"
 )
 ONLY_THE_FILES_CHANGED = (
     "Say nothing else of the files of a zone, not that another of them stays as it is"
