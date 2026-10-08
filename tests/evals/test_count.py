@@ -172,6 +172,12 @@ def test_the_method_names_what_is_counted_and_every_place_a_statement_may_stand_
     # What the frame asks for is not counted: its two lines, and the boundaries the page shows.
     assert "Two lines of the frame are not statements of it" in asked
     assert "and the closing line that names what does not change" in asked
+    # Nor the sentence the page is asked for on a zone it touches: any other still counts.
+    how_far = "Nor is the one sentence that says how far the plan goes into a zone it touches"
+    assert f"{how_far}, even where it says that the rule of the zone is left as it is" in asked
+    assert "Any other sentence that says again that it is unchanged is one" in asked
+    assert "and so is the rule of a zone told again in full" in asked
+    assert "that sentence on a zone the plan touches" in asked.split("are not to skip")[0]
     assert "These are not such details" in asked
     assert "the boundaries between components" in asked.split("These are not such details")[1]
     assert "are not to skip" in asked

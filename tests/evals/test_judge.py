@@ -81,6 +81,9 @@ def test_the_rubric_does_not_fault_what_the_chain_does_on_purpose() -> None:
         assert asked in padding
     # Bare lines only: the rule of a zone told again in full is still a fact said twice.
     assert "The first two are bare lines, and say no fact twice" in padding
+    # Nor the sentence the page is asked for on a zone it touches, its rule left alone or not.
+    how_far = "Nor does the one sentence that says how far the plan goes into a zone it touches"
+    assert f"{how_far}, even where it says that the rule of the zone is left as it is" in padding
     assert "the rule of a zone told again in full still does" in padding
     assert "Nor is a diagram that draws what the prose says a fact said twice" in padding
     # A chain with a single fork is no shape; where the shape is real, the prose may say it too.
