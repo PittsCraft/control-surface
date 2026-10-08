@@ -22,7 +22,6 @@ import gh_stand_in
 import pytest
 import toy
 
-POLL = 2  # seconds between two looks at a running session
 WATCH = 0.5  # seconds between two looks at a session to kill at a chosen moment
 MAX_REPLIES = 12  # what the developer says to one conversation, at most
 # Every question of the chain is lettered and carries a recommendation: this reply answers any.
@@ -61,7 +60,9 @@ def state(project: Path) -> str:
 
 
 def dirty(project: Path, *paths: str) -> bool:
-    return bool(toy.git(project, "status", "--porcelain", "--", *paths).strip())
+    # Without the lock a status takes on the index: a session at work there would find it held.
+    status = toy.git(project, "--no-optional-locks", "status", "--porcelain", "--", *paths)
+    return bool(status.strip())
 
 
 def pushed(project: Path) -> bool:
@@ -105,9 +106,12 @@ def final(log: Path) -> str:
 
 
 def stream(log: Path) -> list[dict[str, Any]]:
-    """Read the events of a session's stream, a line cut by a kill left out."""
+    """Read the events of a session's stream, a line cut by a kill left out.
+
+    So is a line still being written, wherever the read cuts it: a stream is read as it grows.
+    """
     read: list[dict[str, Any]] = []
-    for raw in log.read_text(encoding="utf-8").splitlines():
+    for raw in log.read_text(encoding="utf-8", errors="replace").splitlines():
         if raw.startswith("{"):
             try:
                 read.append(json.loads(raw))
@@ -123,7 +127,7 @@ def launches(log: Path) -> list[tuple[str, str]]:
         for line in stream(log)
         if line.get("type") == "assistant" and not line.get("parent_tool_use_id")
         for block in line["message"]["content"]
-        if block.get("type") == "tool_use" and block.get("name") == "Agent"
+        if block.get("type") == "tool_use" and block.get("name") in {"Agent", "Task"}
     ]
 
 
@@ -201,13 +205,16 @@ def kill_when(
     met = False
     with log.open("w", encoding="utf-8") as out:
         session = toy.start_claude(project, words, out, resume=resume)
-        while session.poll() is None and time.monotonic() - started < toy.SESSION_TIMEOUT:
-            met = moment()
-            if met:
-                break
-            time.sleep(WATCH)
-        if session.poll() is None:
-            toy.kill(session, project)
+        try:
+            while session.poll() is None and time.monotonic() - started < toy.SESSION_TIMEOUT:
+                met = moment()
+                if met:
+                    break
+                time.sleep(WATCH)
+        finally:
+            # Whatever the watch raised, no session is left to run on, billed, behind a scenario.
+            if session.poll() is None:
+                toy.kill(session, project)
     assert met, f"the session of {log.name} ended, or lasted too long, before the moment to kill it"
 
 
@@ -318,7 +325,7 @@ def test_the_nominal_path_reaches_conformant(tmp_path: Path) -> None:
     seen = events(project)
     assert seen.count("plan-approved") == 1
     assert seen.count("slice-done") == 2
-    assert (project / "docs" / "plans" / toy.plan_name() / "conformity.md").is_file()
+    assert document(project, "conformity.md").is_file()
     # The toy declares the CSV export a critical zone: its code is listed for the developer.
     assert "shelf/export.py" in toy.critical_files(project)
     assert not dirty(project, "shelf", "tests", "docs")
@@ -339,17 +346,14 @@ def test_a_session_killed_in_a_slice_resumes_it(tmp_path: Path) -> None:
     # leaves its code uncommitted for as long as its tests run.
     project = toy.build(toy.State.AWAITING, tmp_path, slow=True)
     logs = tmp_path / "logs"
-    logs.mkdir()
-    started = time.monotonic()
-    with (logs / "execute-killed.jsonl").open("w", encoding="utf-8") as out:
-        session = toy.start_claude(project, "/surface-execute", out)
-        # Killed as soon as an executor has written code the journal does not cover yet.
-        while session.poll() is None and time.monotonic() - started < toy.SESSION_TIMEOUT:
-            if "plan-approved" in events(project) and dirty(project, "shelf", "tests"):
-                break
-            time.sleep(POLL)
-        assert session.poll() is None, "the session ended before any slice was under way"
-        toy.kill(session, project)
+    approved = recorded(project, "plan-approved")
+    # Killed as soon as an executor has written code the journal does not cover yet.
+    kill_when(
+        project,
+        "/surface-execute",
+        logs / "execute-killed.jsonl",
+        lambda: approved() and dirty(project, "shelf", "tests"),
+    )
     at_kill = events(project)
     (logs / "journal-at-kill.jsonl").write_text(
         "\n".join(json.dumps(line) for line in journal(project)) + "\n", encoding="utf-8"
@@ -537,7 +541,7 @@ def test_a_break_on_a_commit_of_the_developer_is_raised_then_refused(tmp_path: P
     described(project)
     reason = "the import of the bookshop reads three columns"
     refusal = f"I decline it: {reason}, the ISBN stays out."
-    say(project, refusal, logs / "refusal.jsonl", resume=session)
+    session = say(project, refusal, logs / "refusal.jsonl", resume=session)
     if "plan-change-refused" not in events(project):
         # The reason is asked on a line of its own when the refusal is not read as giving it.
         say(project, f"The reason: {reason}.", logs / "reason.jsonl", resume=session)
@@ -835,7 +839,7 @@ def test_a_slice_recorded_and_not_committed_is_committed_at_the_relaunch(tmp_pat
     # The first commit of the relaunch is the one the executor did not make: the work of
     # slice 1 with the journal line that records it, and nothing else.
     assert first_commit(project, start) == [
-        f"docs/plans/{toy.plan_name()}/journal.jsonl",
+        f"docs/plans/{plan_of(project)}/journal.jsonl",
         "shelf/export.py",
         "tests/test_export.py",
     ]
@@ -927,7 +931,7 @@ def test_a_break_suspected_in_a_slice_is_confirmed_at_the_relaunch_then_refused(
     described(project)
     reason = "nothing reads the JSON export any more"
     refusal = f"I decline it: {reason}, replace it. The blueprint stays as it is."
-    say(project, refusal, logs / "refusal.jsonl", resume=session)
+    session = say(project, refusal, logs / "refusal.jsonl", resume=session)
     if "plan-change-refused" not in events(project):
         say(project, f"The reason: {reason}.", logs / "reason.jsonl", resume=session)
     lines = journal(project)
@@ -956,7 +960,7 @@ def test_a_break_suspected_in_a_slice_is_dismissed_at_the_relaunch(tmp_path: Pat
     assert (dismissed["event"], dismissed["slice"]) == ("suspicion-dismissed", 2)
     # The note and the journal are committed, not the work: the next executor takes the slice
     # up from it, with the note.
-    plan = f"docs/plans/{toy.plan_name()}"
+    plan = f"docs/plans/{plan_of(project)}"
     assert first_commit(project, start) == sorted(
         [f"{plan}/journal.jsonl", f"{plan}/{dismissed['report']}"]
     )

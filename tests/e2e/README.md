@@ -143,7 +143,6 @@ A scenario kills a session at a moment it reads in the files of the project or i
 | `test_a_slice_recorded_and_not_committed_is_committed_at_the_relaunch` | `slice-uncommitted` | `/surface-execute` | the first commit holds the work of slice 1 and the journal, and nothing else; each slice done once; `conformant` |
 | `test_planning_killed_while_an_agent_works_drafts_the_plan_at_the_relaunch` | `plan-written`, `blueprint-drawn` | `/surface-plan`, killed while the extractor works, or the checker; then `/surface-plan` alone, and the recommendation at any question | the journal of the killed session kept as is, one `plan-drafted`, the plan committed and pushed, and one draft pull request with the description `surface-status pr-body` prints |
 | `test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch` | `unpushed` | `/surface-plan` | nothing recorded, the branch pushed, and one draft pull request with the description `surface-status pr-body` prints |
-
 | `test_a_conformant_plan_committed_and_never_pushed_is_pushed_at_the_relaunch` | `conformant-unpushed` | `/surface-execute` | nothing recorded, the branch pushed, the description refreshed |
 
 The push of a stop of `/surface-execute` that never came is played twice. `test_an_accepted_plan_change_goes_back_to_planning` starts from a proposal committed and not pushed, which the relaunch pushes before it asks. The last test of the table starts from a conformity committed and not pushed, and fails as the chain stands: `/surface-execute` finds no plan once the only one of the branch is conformant, so its relaunch stops before any push, and the pull request keeps the description of a plan in progress. The test is marked as expected to fail, strictly: the day the chain takes that push up, it passes, the mark fails, and the mark goes. No scenario plays the same death after `/surface-status` recorded an abandonment.
@@ -160,7 +159,7 @@ Each starts where a session died: planning after the cross-check that passed the
 
 ### Without a session
 
-`test_a_prepared_state_is_the_one_named` and its two neighbours build each state, `test_a_session_bypasses_permissions_in_the_container_only` checks the command line of a session and its refusal outside the container, and `test_a_kill_takes_what_a_session_left_at_work` kills a process started in a group of its own. They cost nothing, and run without a token:
+`test_a_prepared_state_is_the_one_named` and its three neighbours build each state, `test_a_session_bypasses_permissions_in_the_container_only` checks the command line of a session and its refusal outside the container, and `test_a_kill_takes_what_a_session_left_at_work` kills a process started in a group of its own. They cost nothing, and run without a token:
 
 ```sh
 scripts/gate.sh e2e -k "prepared or bypasses or left_at_work"
@@ -168,7 +167,7 @@ scripts/gate.sh e2e -k "prepared or bypasses or left_at_work"
 
 ## Playing a scenario by hand
 
-To look into a scenario that failed, or to play a path no test covers yet, run the sessions yourself, one session per answer: `run` prints the session id, and `--resume <session id>` gives the next answer to the same conversation. A fresh session, without `--resume`, is how a relaunch after a dead session is tested. To kill a session mid-way, run it in the background and kill its process group (`kill -9 -<pid>`), watching the plan folder to choose the moment.
+To look into a scenario that failed, or to play a path no test covers yet, run the sessions yourself, one session per answer: `run` prints the session id, and `--resume <session id>` gives the next answer to the same conversation. A fresh session, without `--resume`, is how a relaunch after a dead session is tested. To kill a session mid-way, run it in the background and kill its process group (`kill -9 -<pid>`), watching the plan folder to choose the moment. A gate under way runs in a process group of its own, which that kill misses: the scenarios kill it too, and left alive it records its run under the session that takes over.
 
 They are played in the container too, from a shell in it, at the root of the clone:
 
