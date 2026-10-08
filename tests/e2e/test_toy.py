@@ -265,10 +265,14 @@ def test_a_prepared_state_is_the_one_named(
     assert dirty(project) is (prepared in UNCOMMITTED)
 
 
-def test_a_prepared_state_without_a_plan_is_on_the_main_branch(tmp_path: Path) -> None:
-    project = toy.build(toy.State.SPECS, tmp_path)
+@pytest.mark.parametrize("prepared", [toy.State.SPECS, toy.State.SPECS_CI])
+def test_a_prepared_state_without_a_plan_is_on_the_main_branch(
+    prepared: toy.State, tmp_path: Path
+) -> None:
+    project = toy.build(prepared, tmp_path)
     assert toy.git(project, "branch", "--show-current").strip() == "main"
     assert not list(project.glob("docs/plans/*"))
+    assert (project / toy.CI_PATH).is_file() is (prepared is toy.State.SPECS_CI)
     assert not dirty(project)
 
 
@@ -663,6 +667,25 @@ def test_two_plans_on_a_branch_are_put_to_the_developer(command: str, tmp_path: 
     assert not dirty(project)
     assert toy.SLUG in final(log)
     assert toy.SECOND_SLUG in final(log)
+
+
+def test_a_ci_that_runs_on_a_push_makes_planning_wait_for_nothing(tmp_path: Path) -> None:
+    project = toy.build(toy.State.SPECS_CI, tmp_path)
+    converse(
+        project,
+        f"/surface-plan {NEED}",
+        tmp_path / "logs",
+        "need",
+        until=recorded(project, "plan-drafted"),
+    )
+    # The CI of the toy runs on every push and on every pull request, and what it runs is the
+    # host's (ADR 0037): the session that drafts the plan pushes it and opens its draft, with
+    # no question between the two, which a reply would have had to answer in a session more.
+    assert state(project) == "awaiting-approval"
+    assert pushed(project)
+    assert len(gh_stand_in.pulls(project)) == 1
+    assert not dirty(project, "docs")
+    described(project)
 
 
 def test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch(tmp_path: Path) -> None:

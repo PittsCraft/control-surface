@@ -88,7 +88,7 @@ When you want, you mark the PR ready for review, and you merge. The chain never 
 
 It fails as long as a plan of the branch is neither conformant nor abandoned before its approval, so keep it out of the gates your plans name. Exit code 0 means every plan of the branch is conformant, 1 that one is not, 2 that the check could not run.
 
-Your CI can call it too: whether it does, and when, is yours to decide. It needs the full history of the repository, to find where your branch left the main branch, and says so when a shallow checkout hides it.
+Your CI can call it too: whether it does, and when, is yours to decide. It needs the full history of the repository, main branch included, to find where your branch left it: in a checkout that is shallow, or that holds your branch alone, it exits with 2.
 
 ### At any time: `/surface-status`
 

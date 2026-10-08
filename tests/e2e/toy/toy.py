@@ -70,6 +70,7 @@ class State(StrEnum):
     """The prepared states, each named after the scenario that starts from it."""
 
     SPECS = "specs"  # the main branch, the chain installed, no plan yet
+    SPECS_CI = "specs-ci"  # the same, with a CI that runs on every push and pull request
     # Planning under way: the plan folder is in the working tree, nothing of it committed yet.
     PLAN_WRITTEN = "plan-written"  # the interview closed and the plan written, no blueprint
     BLUEPRINT_DRAWN = "blueprint-drawn"  # the blueprint drawn too, and not cross-checked
@@ -234,6 +235,22 @@ AGENTS_MD = """\
 
 Critical zone: the CSV export is read by the bookshop's spreadsheet import. Its columns, their
 order and their names are a contract with the bookshop.
+"""
+
+# A CI that reacts to a push of any branch and to a pull request, a draft included: what
+# /surface-plan acts on in no way, and asks nothing about before a push (ADR 0037).
+CI_PATH = ".github/workflows/ci.yml"
+CI = """\
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s tests -q
 """
 
 # A test that lasts, on the main branch of a project built slow. The gate, and the tests an
@@ -1078,8 +1095,8 @@ def check(project: Path) -> tuple[int, list[str]]:
 def _base(dest: Path, settings: Mapping[str, object], more: Mapping[str, str]) -> Path:
     """Make the project on its main branch, pushed, with the chain installed and committed.
 
-    `more` holds the files a state adds to the project before the feature: a slow test, a command
-    the feature replaces.
+    `more` holds the files a state adds to the project before the feature: a CI, a slow test, a
+    command the feature replaces.
     """
     project = dest / "shelf"
     remote = dest / "origin.git"
@@ -1366,6 +1383,8 @@ def _executed(project: Path, plan: str, state: State) -> None:
 
 def _more(state: State) -> dict[str, str]:
     """Give the files a state adds to the project before the feature."""
+    if state is State.SPECS_CI:
+        return {CI_PATH: CI}
     if state is State.SUSPECTED_BREAK:
         return {
             "README.md": README_WITH_JSON_EXPORT,
@@ -1385,7 +1404,7 @@ def build(state: State, dest: Path, *, slow: bool = False) -> Path:
     if slow:
         more["tests/test_slow.py"] = TEST_SLOW
     project = _base(dest, settings, more)
-    if state is State.SPECS:
+    if state in {State.SPECS, State.SPECS_CI}:
         return project
     if state in _UNDRAFTED:
         _undrafted(project, state)

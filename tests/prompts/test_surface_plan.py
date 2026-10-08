@@ -720,14 +720,16 @@ def _git_steps() -> list[str]:
 
 def test_the_push_waits_for_nothing_of_the_ci() -> None:
     # What a host's CI does on a push is the host's: the command reads no trigger, and asks
-    # nothing before the first push (ADR 0037).
+    # nothing before the first push (ADR 0037). The CI is still read in step 1, for the gates.
     steps = _git_steps()
     commit = next(i for i, step in enumerate(steps) if step.startswith("- Commit only"))
     push = next(i for i, step in enumerate(steps) if step.startswith("- Push the branch"))
     assert push == commit + 1
-    assert "CI" not in section(_body(), "Commit, push and pull request")
+    assert not re.search(r"\bCI\b", section(_body(), "Commit, push and pull request"))
     for template in ("exploration.md", "interview.md"):
-        assert "CI" not in _template(template)
+        assert not re.search(r"\bCI\b", _template(template))
+    for text in (_body(), *(_template(path.name) for path in TEMPLATES.iterdir())):
+        assert "trigger" not in text.lower()
 
 
 def test_the_draft_pull_request_opens_at_the_first_plan_drafted() -> None:
