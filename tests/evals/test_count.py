@@ -586,8 +586,10 @@ def test_a_campaign_kept_before_the_count_is_compared_without_a_word_on_counts_t
     assert [move for move in compare(new, old) if move.measure in named] == []
     assert [move for move in compare(old, new) if move.measure in named] == []
     told = "Not compared: the counts of the blueprint, which the campaign before does not hold."
-    assert uncompared(new, old) == [told]
-    assert uncompared(old, new) == [told.replace("the campaign before", "this campaign")]
+    # The two campaigns do not hold the same measures of the script either, which is said
+    # first: the counts are the last thing left out.
+    assert uncompared(new, old)[-1] == told
+    assert uncompared(old, new)[-1] == told.replace("the campaign before", "this campaign")
     assert uncompared(new, new) == []
     assert uncompared(old, old) == []
     _, report = write(after, OLD)
@@ -596,7 +598,7 @@ def test_a_campaign_kept_before_the_count_is_compared_without_a_word_on_counts_t
     assert moved.rstrip().endswith(told)
     # With nothing else to tell, the report does not leave "nothing moved" to cover the counts.
     assert (
-        render(new, [], uncompared(new, old))
+        render(new, [], [told])
         .rstrip()
         .endswith(f"Nothing lies outside the spread between runs.\n\n{told}")
     )

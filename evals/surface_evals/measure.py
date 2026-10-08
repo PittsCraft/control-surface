@@ -8,7 +8,6 @@ asked for, and everything the execution gives when the run stopped at the hand o
 """
 
 import json
-import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
@@ -25,8 +24,6 @@ from surface_status.plan_folder import parse_slice_markers as parse_slices
 
 # The key phrases of the critical zones the host declares in its `AGENTS.md`.
 ZONES = ("fine computation", "loans.jsonl")
-# Where a sentence ends: the full stop of a path, `lending/fines.py`, is followed by no space.
-_SENTENCE_END = re.compile(r"(?<=[.!?])\s")
 # What a session must never read: the clone the container mounts, where the cases are kept
 # with their acceptance tests and their reference implementations.
 HIDDEN = ("/clone/", "evals/cases")
@@ -55,6 +52,7 @@ EXECUTION = (
     "critical_files",
     "zones_files_listed",
     "zones_announced",
+    "zones_files_announced",
     # The description at the stops of the loop, which such a run has none of.
     "pr_refreshed",
     # Never marked ready is a promise to the end of the chain, and the hand back at conformity,
@@ -192,13 +190,12 @@ def _plan(folder: Path, logs: Sequence[SessionLog]) -> Measures:
 
 def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant: bool) -> Measures:
     """Whether the critical zones were named at approval, and their files listed at conformity."""
-    zones = "" if drawn is None else drawn.zones.lower()
-    # The section opens on one statement: the critical zones touched, or that the plan touches
-    # none. What follows says how far the plan goes into a zone, where "none of its fields" is
-    # not the statement that no zone is touched.
-    statement = _SENTENCE_END.split(zones.split("\n\n", 1)[0], maxsplit=1)[0]
-    said_none = form.NONE_TOUCHED.search(statement) is not None
-    expected = [phrase.lower() in zones for phrase in case.critical_zones]
+    closing = "" if drawn is None else drawn.zones
+    # The section opens on the critical zones the plan touches, or on the statement that it
+    # touches none. A zone it speaks of is not a zone it names as touched: it may say "not
+    # changed", and after a zone it names, "none of its fields" says how far the plan goes.
+    said_none = form.says_none(closing, ZONES)
+    expected = [phrase.lower() in closing.lower() for phrase in case.critical_zones]
     listed: list[str] | None = None
     if conformant:
         try:
@@ -206,21 +203,21 @@ def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant
             listed = list(block or ())
         except (OSError, PlanFolderError):
             listed = None
-    # A zone is touched as soon as a file that holds its code changes, whatever the need asks
-    # of it: only the proof of conformity tells that none was. Where it lists a file, a zone was
-    # touched, and whether the page announced it is `zones_announced`.
-    none_touched = not expected and listed == []
+    # The files the developer is sent to read, where a page was there to announce them.
+    sent = None if listed is None or drawn is None else listed
     return {
         "zones_named": None if drawn is None or not expected else all(expected),
-        "zones_none_said": said_none if drawn is not None and none_touched else None,
         "critical_files": listed,
         "zones_files_listed": (
             None if listed is None else all(path in listed for path in case.critical_files)
         ),
         # The code the developer is sent to read at conformity was announced at approval: no
-        # file is listed under a blueprint that said the plan touches no critical zone. A zone
-        # the section speaks of is not a zone it names as touched: it may say "not changed".
-        "zones_announced": None if listed is None or drawn is None else not (listed and said_none),
+        # file is listed under a blueprint that said the plan touches no critical zone.
+        "zones_announced": None if sent is None else not (sent and said_none),
+        # And file by file: each one the proof lists is named by its path in the closing
+        # section, which tells a file listed for one zone under a page that named another.
+        # Empty when the proof lists none: there was nothing to announce.
+        "zones_files_announced": all(path in closing for path in sent) if sent else None,
     }
 
 

@@ -6,6 +6,7 @@ these headings equal to those of the template the extractor is given.
 """
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 OPENING = ("The idea in one sentence", "Acceptance criteria", "Scope and out of scope")
@@ -13,6 +14,17 @@ CLOSING = "Sensitive zones"
 CLOSING_LINE = "No change:"
 # How a blueprint says the plan touches no critical zone: none, or neither of two.
 NONE_TOUCHED = re.compile(r"\b(none|neither|no critical zone)\b", re.IGNORECASE)
+# The same said outright, of the zones and of nothing else: "Critical zones touched: none",
+# "None is touched", "the plan touches neither of the two critical zones".
+_NONE_OUTRIGHT = re.compile(
+    r"\bno critical zone\b"
+    r"|\bzones? touched[^:\n]*:\s*none\b(?!\s+of\b)"
+    r"|\bnone (?:is|are) touched\b"
+    r"|\btouch(?:es|ed)? (?:none|neither)\b"
+    r"(?:\s*[.,;:)]|\s*$|\s+(?:critical )?zones?\b"
+    r"|\s+of (?:the|these|those)(?: \w+){0,2}? (?:critical )?zones?\b)",
+    re.IGNORECASE,
+)
 
 _HEADING = re.compile(r"## (?P<title>.+)")
 _FENCE = re.compile(r"```(?P<tag>\S*)")
@@ -115,6 +127,24 @@ class Blueprint:
     @property
     def words(self) -> int:
         return sum(len(section.text.split()) for section in self.sections)
+
+
+def says_none(zones: str, declared: Sequence[str]) -> bool:
+    """Whether a closing section opens on the statement that the plan touches no critical zone.
+
+    The paragraph that opens the section states the zones the plan touches, or that it touches
+    none. It says none when it says so outright, or by a "none" or a "neither" that comes
+    before any zone the host declares, named by one of the phrases given. After a zone is
+    named, such a word says how far the plan goes into it, "which changes none of its fields",
+    "which neither computes nor rounds the fine": the zone is touched.
+    """
+    opening = zones.split("\n\n", 1)[0].lower()
+    if _NONE_OUTRIGHT.search(opening) is not None:
+        return True
+    said = NONE_TOUCHED.search(opening)
+    if said is None:
+        return False
+    return not any(phrase.lower() in opening[: said.start()] for phrase in declared)
 
 
 def parse(text: str) -> Blueprint:

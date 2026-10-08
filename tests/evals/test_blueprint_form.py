@@ -2,9 +2,11 @@
 
 from pathlib import Path
 
+import pytest
 import toy
 
-from surface_evals.blueprint import CLOSING, OPENING, parse
+from surface_evals.blueprint import CLOSING, OPENING, parse, says_none
+from surface_evals.measure import ZONES
 
 TEMPLATE = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
 
@@ -71,3 +73,65 @@ def test_a_section_longer_than_a_glance_with_no_title_is_told() -> None:
     short = parse("## A run\n\nOne.\n\n```mermaid\nflowchart LR\n```\n\nTwo.\n").body[0]
     assert not short.untitled_and_long
     assert short.inner_titles == 0
+
+
+# What a page may write to say that the plan touches no critical zone, and what it writes of a
+# zone it touches that holds the same words.
+SAYS_NONE = (
+    "Critical zones touched, among those `AGENTS.md` declares: none.",
+    "Critical zones touched (i.e. among those `AGENTS.md` declares): none.",
+    (
+        "**Critical zones**. None is touched: the fine computation and the format of"
+        " `loans.jsonl` stay as they are."
+    ),
+    (
+        "The plan changes `lending/reports.py` and its tests. None of them holds the code of a"
+        " critical zone."
+    ),
+    "Of the critical zones that `AGENTS.md` declares, the plan touches none.",
+    (
+        "The plan touches neither of the two critical zones that `AGENTS.md` declares: the fine"
+        " computation (`lending/fines.py`) and the format of `loans.jsonl`."
+    ),
+    "The command only reads `loans.jsonl`, and the plan touches none of the critical zones.",
+    (
+        "Critical zones touched: none. The fine computation (`lending/fines.py`) is called, not"
+        " changed."
+    ),
+    "The plan touches no critical zone.",
+)
+NAMES_A_ZONE = (
+    (
+        "Critical zones touched: the format of `loans.jsonl`, through `lending/loans.py`, which"
+        " changes none of its fields."
+    ),
+    (
+        "Critical zones touched: the fine computation, through `lending/__main__.py`, which"
+        " neither computes nor rounds the fine."
+    ),
+    (
+        "Critical zones touched, among those `AGENTS.md` declares: the format of `loans.jsonl`,"
+        " through `lending/loans.py`. The plan changes only the borrow check in that file and"
+        " touches none of the fields of a loan line: the zone is touched, its rule is not."
+    ),
+    (
+        "The plan touches the fine computation (`lending/fines.py`), a critical zone: its rules"
+        " are criteria 1 to 8."
+    ),
+    "Critical zones touched, among those `AGENTS.md` declares:",
+)
+
+
+@pytest.mark.parametrize("statement", SAYS_NONE)
+def test_a_page_says_none_outright_or_before_it_names_any_zone(statement: str) -> None:
+    assert says_none(statement, ZONES)
+    # Only the paragraph that opens the section states it: what follows says something else.
+    assert says_none(f"{statement}\n\nThe mailer finds a new kind of notice.", ZONES)
+
+
+@pytest.mark.parametrize("statement", NAMES_A_ZONE)
+def test_a_none_that_says_how_far_the_plan_goes_into_a_zone_is_not_the_statement(
+    statement: str,
+) -> None:
+    assert not says_none(statement, ZONES)
+    assert not says_none(f"{statement}\n\nNone of the mailer changes.", ZONES)

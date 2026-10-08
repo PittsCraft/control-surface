@@ -79,8 +79,11 @@ class Case:
     summary: str
     body_sections: tuple[int, int]  # the fewest and the most sections a good cut would have
     diagram: Diagram
-    critical_zones: tuple[str, ...]  # key phrases of the declared zones the feature touches
-    critical_files: tuple[str, ...]  # the files of those zones it must change
+    # Key phrases of the declared zones the need asks to change, and the files of those
+    # zones it must change. A plan may change a file of another zone on its way: a zone is
+    # touched as soon as a file that holds its code changes, which the need does not tell.
+    critical_zones: tuple[str, ...]
+    critical_files: tuple[str, ...]
     amendment: str | None  # what the developer asks for after reading the blueprint
     expected_correction: ExpectedCorrection | None  # when the need states the wrong rule
 

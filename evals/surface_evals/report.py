@@ -57,9 +57,9 @@ DIRECTION = {
     "gh_not_played": -1,
     "plan_minimum": 1,
     "zones_named": 1,
-    "zones_none_said": 1,
     "zones_files_listed": 1,
     "zones_announced": 1,
+    "zones_files_announced": 1,
     "frame": 1,
     "numbered_headings": -1,
     "body_in_range": 1,
@@ -95,9 +95,9 @@ GOALS = (
     "pr_marked_ready",
     "gh_not_played",
     "zones_named",
-    "zones_none_said",
     "zones_files_listed",
     "zones_announced",
+    "zones_files_announced",
     "frame",
     "body_sections",
     "body_in_range",
@@ -321,14 +321,37 @@ def compare(after: Mapping[str, object], before: Mapping[str, object]) -> list[M
     return [move for move in moves if move.measure != CORRECTIONS or move.scope not in apart]
 
 
+def _one_sided(after: Mapping[str, object], before: Mapping[str, object]) -> list[str]:
+    """Name the measures of the script that one summary alone holds, over all its runs.
+
+    A measure is compared only where both campaigns hold it. One that the harness no longer
+    makes, or did not make yet, or that no run of a campaign gave, is in one summary alone:
+    said of nothing, it would read as a measure that did not move.
+    """
+    held = [
+        set(cast("dict[str, object]", cast("dict[str, object]", summary["all"])["measures"]))
+        for summary in (after, before)
+    ]
+    lines: list[str] = []
+    for names, without in (
+        (held[0] - held[1], "the campaign before"),
+        (held[1] - held[0], "this campaign"),
+    ):
+        if names:
+            named = ", ".join(f"`{name}`" for name in sorted(names))
+            lines.append(f"Not compared: {named}, which {without} does not hold.")
+    return lines
+
+
 def uncompared(after: Mapping[str, object], before: Mapping[str, object]) -> list[str]:
     """Say what two summaries cannot be compared on, where silence would read as "unchanged".
 
-    The counts, when one of them holds none: a campaign judged before the judge counted has no
-    count. The corrections of a case that expects one, when one of the two summaries was kept
-    before the case said so and counts it with the others.
+    The measures of the script that one of them alone holds. The counts, when one of them holds
+    none: a campaign judged before the judge counted has no count. The corrections of a case
+    that expects one, when one of the two summaries was kept before the case said so and counts
+    it with the others.
     """
-    left_out: list[str] = []
+    left_out = _one_sided(after, before)
     now, then = (
         bool(cast("dict[str, object]", summary["all"]).get("count")) for summary in (after, before)
     )
