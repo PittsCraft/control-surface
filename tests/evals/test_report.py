@@ -197,8 +197,10 @@ def test_a_run_that_stopped_at_the_hand_over_joins_no_spread_of_the_execution(
     assert measures["questions"]["n"] == 2
     assert measures["planning_usd"] == {"mean": 1.25, "low": 1.0, "high": 1.5, "n": 2}
     # One alone was played whole: the other counts in nothing the execution gives. The list of
-    # the critical files is told, never folded.
-    assert set(EXECUTION) - set(measures) == {"critical_files"}
+    # the critical files is told, never folded, and with no file in it, under a page that says
+    # none, no file was to be announced and none was.
+    unfolded = {"critical_files", "zones_files_announced", "zones_announced_listed"}
+    assert set(EXECUTION) - set(measures) == unfolded
     assert {measures[key]["n"] for key in EXECUTION if key in measures} == {1}
     assert measures["conformant"]["mean"] == 1.0
     assert measures["usd"]["mean"] == 3.0
@@ -298,6 +300,33 @@ def test_corrections_are_not_compared_with_a_summary_that_counted_the_expected_o
         ("other", "corrections"),
         ("all", "corrections"),
     }
+
+
+def test_a_measure_one_summary_alone_holds_is_said_not_compared() -> None:
+    # A measure the harness no longer makes stands in the summaries kept, and one it makes now
+    # stands in none of them. Compared with nothing and said of nothing, each would read as a
+    # measure that did not move.
+    def summary(**measures: list[float]) -> dict[str, object]:
+        made = _summary({"case": measures})
+        folded = {key: Spread.of(found).to_dict() for key, found in measures.items()}
+        cast("dict[str, object]", made["all"])["measures"] = folded
+        return made
+
+    before = summary(conformant=[1, 1], zones_none_said=[1, 1])
+    after = summary(conformant=[1, 1], zones_files_announced=[1, 1], zones_announced=[1, 1])
+    assert compare(after, before) == []
+    new, gone = uncompared(after, before)
+    held = "`zones_announced`, `zones_files_announced`, which the campaign before does not hold."
+    assert new == f"Not compared: {held}"
+    assert gone == "Not compared: `zones_none_said`, which this campaign does not hold."
+    text = render(after, compare(after, before), uncompared(after, before))
+    assert f"Nothing lies outside the spread between runs.\n\n{new}\n\n{gone}" in text
+    # The other way round, each is said of the other campaign, and two alike leave nothing out.
+    assert uncompared(before, after) == [
+        "Not compared: `zones_none_said`, which the campaign before does not hold.",
+        f"Not compared: {held}".replace("the campaign before", "this campaign"),
+    ]
+    assert uncompared(after, after) == []
 
 
 def test_the_report_holds_no_em_dash_whatever_a_model_wrote() -> None:

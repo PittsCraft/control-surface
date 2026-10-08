@@ -31,6 +31,7 @@ from chain_contract import (
     SLICE_ON_ITS_COMMIT,
     TAUGHT_WORDS,
     THE_DEVELOPERS_RULES,
+    ZONES_LEAD_IN,
 )
 from prompt_support import (
     AGENTS,
@@ -705,9 +706,16 @@ def test_the_blueprint_template_names_the_aspects_left_alone_in_one_closing_line
 def test_the_blueprint_template_says_which_critical_zones_the_plan_touches() -> None:
     template = _template("blueprint.md")
     zones = template[template.index(f"## {BLUEPRINT_CLOSING}") :]
-    said = "Critical zones touched, among those the repository's agent instructions declare: none."
-    assert said in zones
-    assert zones.index(said) < zones.index(CLOSING_LINE)
+    # One line opens the section, and says none or names the zones with their files: a zone is
+    # touched as soon as the plan changes a file that holds its code. How far comes after it, a
+    # sentence per zone, so that the statement itself stays a bare line.
+    # The lead-in is fixed, and the section opens on it: what reads the page reads it there.
+    assert zones.split("\n\n", 2)[1].startswith(f"{ZONES_LEAD_IN} <none, or each zone the plan")
+    named = "<none, or each zone the plan touches, named as they name it, with in backticks its"
+    how_far = "<Then, for each zone named, one sentence on how far the plan goes: "
+    assert f"{ZONES_LEAD_IN} {named} files the plan changes>. {how_far}" in zones
+    assert "into what the zone protects, or only into something else its file holds.>" in zones
+    assert zones.index(ZONES_LEAD_IN) < zones.index(CLOSING_LINE)
 
 
 # Git and pull request.
@@ -831,6 +839,9 @@ def test_the_plan_template_leaves_the_rest_to_the_agent_that_drafts_it() -> None
     assert "The agent that drafts the plan designs it and lays it out as it sees fit" in opening
     assert "each as long as the feature needs, none filled for its own sake" in opening
     assert "The chain reads three things only" in opening
+    # Not all by the script: the files of a slice are read by the agents that draw the blueprint.
+    read = "the script reads the markers of the slices and the `gates` block"
+    assert f"{read}, and agents read the rest, the files each slice changes among it" in opening
     assert "No code beyond a signature or a schema fragment" in opening
     assert "it returns the plan whole as its answer, and nothing around it" in opening
     assert "the command that launched it writes `plan.md`" in opening

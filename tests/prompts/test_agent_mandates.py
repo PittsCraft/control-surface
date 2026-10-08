@@ -10,11 +10,13 @@ from pathlib import Path
 
 import pytest
 from chain_contract import (
+    ALLOWED_IS_NOT_CHANGED,
     ASSUMPTION_OF_THE_PLAN,
     BLUEPRINT_ASPECTS,
     BLUEPRINT_CLOSING,
     BLUEPRINT_ON_THE_COMMITS,
     BLUEPRINT_OPENING,
+    BREAK_FOR_AN_UNTOUCHED_ZONE,
     BREAK_QUESTION,
     CHAIN_REPORTS,
     COMMIT_FORM,
@@ -22,13 +24,27 @@ from chain_contract import (
     CRITICAL_ZONES_OF_THE_PLAN,
     DEFECT_QUESTION,
     DOCUMENTS_LANGUAGE,
+    HOLDS_THE_CODE,
+    HOW_FAR,
+    INDEPENDENT_LIST,
+    LISTED_BY_FILE,
+    NO_BREAK_FOR_A_FILE,
     NO_FINDING_END,
+    NO_PROMISE_ON_FILES,
+    ONLY_DESCRIBES,
+    ONLY_THE_FILES_CHANGED,
+    ONLY_USES_THE_CODE,
     REFUSED_LIST,
     REVIEWER_MODES,
     REVIEWER_WRITES,
+    SLICE_NAMES_ITS_FILES,
+    SLICE_WITHOUT_FILES,
+    TOUCHED_BY_FILE,
     TOUCHES_NONE,
     UNNAMED_ZONE,
     WORK_FROM_TRANSLATION,
+    ZONE_FILES_MARK,
+    ZONES_STATEMENT,
 )
 from prompt_support import (
     ROLES,
@@ -341,18 +357,103 @@ def test_checker_never_counts_a_cut_a_short_section_or_the_absence_of_a_diagram(
 def test_extractor_opens_the_sensitive_zones_with_the_critical_zones_the_plan_touches() -> None:
     _, body = read_agent("surface-extractor")
     zones = next(line for line in body.splitlines() if line.startswith(f"- {BLUEPRINT_CLOSING}"))
-    assert f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it" in zones
+    named = f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it"
+    assert f"{named}, with its files the plan changes and how far" in zones
     assert f"or the statement that {TOUCHES_NONE}" in zones
     assert "then what the developer would not see go by" in zones
     assert "what the developer still reads themselves once the work is conformant" in body
+    assert "this is where they learn which code that will be" in body
+
+
+def test_extractor_and_checker_read_a_zone_as_touched_by_the_files_that_hold_its_code() -> None:
+    # The reviewer lists by file. An extractor that read a zone as what it protects said none of
+    # a plan whose branch then sent the developer to a file of one: both ends of planning hold
+    # the reviewer's test, in the same words, and find the files in the code the plan changes.
+    for name in ("surface-extractor", "surface-checker"):
+        _, body = read_agent(name)
+        assert f"{TOUCHED_BY_FILE}: at conformity the developer is sent to every such file" in body
+        assert "Which files that makes is your reading: open the files the slices change" in body
+        # The plan names the files a slice changes. One that names none is read from what it
+        # does, and a file it only allows to change is not announced.
+        assert f"{SLICE_WITHOUT_FILES}. {ALLOWED_IS_NOT_CHANGED}." in body, name
+        reads = section(body, "What you read")
+        assert "the code as well, as far as the files the slices of `plan.md` change" in reads
+    _, extractor = read_agent("surface-extractor")
+    writing = section(extractor, "What you write")
+    assert 'one who was told "none" takes that list for a mistake' in writing
+    none = f"say that {TOUCHES_NONE} only when not one of them holds the code of a declared zone"
+    assert none in writing
+    # The other way round costs too: a zone announced for code no list will send them to.
+    assert "Announce no zone for a file that holds none of its code" in writing
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/plan.md"
+    slices = section(template.read_text(encoding="utf-8"), "Slices")
+    assert f"what it delivers, {SLICE_NAMES_ITS_FILES}, the precedent it copies" in slices
+    named = "Those files are named by their path, the ones it creates or deletes included"
+    assert f"{named}: the blueprint tells from them which critical zones the plan touches" in slices
+
+
+@pytest.mark.parametrize("name", ["surface-extractor", "surface-checker", "surface-reviewer"])
+def test_the_three_agents_hold_one_definition_of_a_file_that_holds_the_code_of_a_zone(
+    name: str,
+) -> None:
+    # The list of the reviewer is the reference, and the page announces what it will hold: one
+    # definition, word for word, so that the two ends cannot drift apart again.
+    _, body = read_agent(name)
+    _, reviewer = read_agent("surface-reviewer")
+    held = marked_block(body, ZONE_FILES_MARK)
+    assert held == marked_block(reviewer, ZONE_FILES_MARK)
+    # Narrow on purpose, and held whole: a file that prints a fine or tests a format was
+    # announced and never listed, and a README that states a format was listed once.
+    assert held == f"{HOLDS_THE_CODE}. {ONLY_USES_THE_CODE}. {ONLY_DESCRIBES}."
+
+
+def test_extractor_says_how_far_the_plan_goes_into_a_zone_in_one_sentence() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # "Touched" alone would read as a change of the rule of the zone: the page says which of its
+    # files the plan changes, and whether what the zone protects changes with them. One sentence,
+    # which points to the rule and tells nothing again.
+    said = [
+        # One first sentence of fixed form, which the developer and the harness read.
+        "The section opens on one sentence of fixed form, the one the template gives",
+        ZONES_STATEMENT,
+        "The developer finds there at once which files they will read",
+        "and what reads the page reads it there",
+        "So a file stands in backticks there only when the plan changes it",
+        "name the zone without that file",
+        f"After that sentence, for each zone touched, {HOW_FAR}",
+        "which points to the criterion or the section that holds the rule instead of telling it",
+        "the plan changes what the zone protects",
+        "or it changes something else the file holds, said in a few words",
+        "and leaves what the zone protects as it is",
+        'The page then says "touched" where the rule of a zone stays as it is, and says so',
+        # Of files, that and no more: every file the page names is frozen with it.
+        ONLY_THE_FILES_CHANGED,
+        "what the page says of files tells the developer which code they will read",
+        "and is no promise on the layout of the code, which a fix may still change",
+    ]
+    positions = [writing.index(sentence) for sentence in said]
+    assert positions == sorted(positions)
 
 
 def test_checker_counts_a_touched_critical_zone_missing_from_the_sensitive_zones() -> None:
     _, body = read_agent("surface-checker")
     counting = section(body, "What counts as an omission")
     assert f"names {CRITICAL_ZONES_OF_THE_PLAN}, or says that {TOUCHES_NONE}" in counting
+    # It reads the zones the page names where the page is held to state them.
+    opens = "It says so in the sentence it opens on, the lead-in of the template, then `none`"
+    assert f"{opens}, or each zone touched with in backticks its files the plan changes" in counting
+    assert "read there which zones the page names as touched" in counting
     assert f"{UNNAMED_ZONE}, even when another section shows the change" in counting
-    assert "says none while the plan touches one" in counting
+    # The omission is a page that denies it: none, or not touched, of a zone whose file changes.
+    denied = "or that says none, or says of a zone that the plan does not touch it"
+    assert f"{denied}, while the plan changes a file that holds its code" in counting
+    # The form the extractor is asked for is none: touched through a file, its rule unchanged.
+    asked = "A zone named as touched through a file, its rule said to stay as it is"
+    assert f"{asked}, is the form the page is asked for, and no omission" in counting
+    # The zone is what the developer has to learn: how the page tells it is the extractor's.
+    unsaid = "Nor is a zone named without its files, or without how far the plan goes into it"
+    assert f"{unsaid}: the developer has learned which zone they will read" in counting
     # The rule shared with the reviewer's amendment check stays as it was.
     assert "sensitive zones" not in marked_block(counting, "checker-rule").lower()
 
@@ -363,7 +464,11 @@ def test_reviewer_lists_the_changed_files_of_the_critical_zones_in_a_block() -> 
     assert f"When you write `conformity.md`, end it with {CRITICAL_FILES_OF_THE_BRANCH}" in writing
     assert "the developer reads their code themselves" in writing
     assert "the state script shows them in the pull request description" in writing
-    assert "Which files a zone covers is your reading" in writing
+    # By file, and on its own reading: a list that weighed what the branch changed in a file, or
+    # that followed the blueprint, could hide code the developer was to read.
+    listed = f"{LISTED_BY_FILE}: a list that weighed the change could hide code"
+    assert f"{listed} the developer was to read. {INDEPENDENT_LIST}." in writing
+    assert writing.index(f"<!-- {ZONE_FILES_MARK} -->") < writing.index(LISTED_BY_FILE)
     assert f"keeps its `{CRITICAL_FILES_TAG}` tag in any language" in writing
     assert "one path per line from the root of the repository" in writing
     assert "a file the branch deleted included" in writing
@@ -371,6 +476,32 @@ def test_reviewer_lists_the_changed_files_of_the_critical_zones_in_a_block() -> 
     assert "or when the repository declares no critical zone" in writing
     refusal = "The script refuses `conformant` on a second block, an unclosed one, or a path"
     assert f"{refusal} the branch did not change" in writing
+
+
+def test_reviewer_holds_no_break_against_what_the_page_says_of_the_files_of_a_zone() -> None:
+    _, body = read_agent("surface-reviewer")
+    classifying = section(body, "Classifying a finding")
+    # The page is frozen with the files it names, and a fix may still change another file of a
+    # zone or leave a named one alone: the list at conformity tells the developer, no proposal.
+    told = "of the files of a critical zone they name as touched tells the developer which code"
+    assert f"{told} they will read: {NO_PROMISE_ON_FILES}" in classifying
+    assert f"For such a zone, a branch, or an amendment of the plan, {NO_BREAK_FOR_A_FILE}" in (
+        classifying
+    )
+    # A zone the page says is not touched is the contract: the developer approved a page that
+    # told them they would not read that code, and a list that grew there would surprise them
+    # by rule.
+    falsified = "a branch or an amendment that changes a file that holds its code"
+    assert f"{BREAK_FOR_AN_UNTOUCHED_ZONE}: {falsified}" in classifying
+    assert "makes the blueprint false. That is a contract break like any other" in classifying
+    assert "they approved a page that told them they would not read that code" in classifying
+    # The amendment check agrees with it.
+    check = section(body, "The amendment check")
+    reaches = "One that makes the plan change a file that holds the code of a critical zone"
+    said = "the sensitive zones say the plan does not touch, or of any zone when they say none"
+    assert f"{reaches} {said}, contradicts it" in check
+    within = "One that changes another file of a zone they name as touched, or leaves alone one"
+    assert f"{within} they name, does not, for that alone" in check
 
 
 def test_the_block_the_reviewer_is_shown_is_one_the_script_reads() -> None:

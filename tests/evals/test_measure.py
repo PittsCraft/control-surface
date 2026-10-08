@@ -89,8 +89,11 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert found["usd"] == pytest.approx(1.5)
     # Planning is the session resumed to the hand over, the launch apart.
     assert found["planning_usd"] == pytest.approx(1.0)
-    # A run played whole gives every measure of the execution.
-    assert [name for name in EXECUTION if found[name] is None] == []
+    # A run played whole gives every measure of the execution, but the two that need a file
+    # of a critical zone, listed by its proof of conformity or announced by its page: this
+    # one lists none, under a page that says none.
+    empty = ["zones_files_announced", "zones_announced_listed"]
+    assert [name for name in EXECUTION if found[name] is None] == empty
     # The loop: one question, one rework in planning, one fix after a first review.
     assert found["questions"] == 1
     assert found["questions_handed_back"] == 0
@@ -116,9 +119,11 @@ def test_a_conformant_run_is_measured_from_its_journal_its_documents_and_its_str
     assert found["cut_kept"] is None
     # The critical zones: none expected, none named, none listed.
     assert found["zones_named"] is None
-    assert found["zones_none_said"] is True
     assert found["critical_files"] == []
     assert found["zones_announced"] is True
+    # The rule of the page this measure held is gone with it: none is said by the files the
+    # plan changes, which the need of a case does not tell.
+    assert "zones_none_said" not in found
     assert found["contaminated"] is False
     # The pull request: a draft at each hand over, described there, then by the stop of the loop.
     assert (found["pr_draft_at_hand_over"], found["pr_described"]) == (True, True)
@@ -304,22 +309,73 @@ def test_a_critical_zone_is_named_at_approval_and_its_files_listed_at_conformity
     )
     found = measure(named, zone)
     assert found["zones_named"] is True
-    assert found["zones_none_said"] is None
     assert found["critical_files"] == ["lending/fines.py"]
     assert found["zones_files_listed"] is True
-    assert found["zones_announced"] is True
+    assert (found["zones_announced"], found["zones_files_announced"]) == (True, True)
     # The blueprint said none, and the proof of conformity lists a file of a zone all the same.
     silent = kept_run(tmp_path / "silent", journal=JOURNAL, conformity=CONFORMITY)
     found = measure(silent, zone)
     assert found["zones_named"] is False
     assert found["zones_files_listed"] is True
-    assert found["zones_announced"] is False
+    assert (found["zones_announced"], found["zones_files_announced"]) == (False, False)
     # So did a blueprint that speaks of the zone to say the plan leaves it alone: a zone the
-    # closing section mentions is not a zone it names as touched.
+    # closing section mentions is not a zone it names as touched, and a path it gives after its
+    # first sentence, to say that the file is not changed, is not a file it announces.
     spoken = kept_run(
         tmp_path / "spoken", journal=JOURNAL, blueprints=(UNTOUCHED,), conformity=CONFORMITY
     )
-    assert measure(spoken, zone)["zones_announced"] is False
+    found = measure(spoken, zone)
+    assert (found["zones_announced"], found["zones_files_announced"]) == (False, False)
+    # A page that says none announces no file: the measure of what it announced is empty.
+    assert found["zones_announced_listed"] is None
+
+
+def test_the_files_listed_at_conformity_and_those_the_page_announced_are_read_both_ways(
+    tmp_path: Path,
+) -> None:
+    # The need asks nothing of a zone, and the plan changes a file that holds the code of one.
+    # The page names the zone with its file in the sentence it opens its closing section on,
+    # then says how far: "none" there is not the statement that the plan touches no zone, and
+    # the file it names there to say that the plan leaves it alone is not one it announces.
+    asks_nothing = case(tmp_path)
+    by_file = BLUEPRINT.replace(
+        NONE,
+        "Critical zones touched, among those `AGENTS.md` declares: the fine computation, in"
+        " `lending/fines.py`. The plan changes its imports and none of the computation, and"
+        " does not change `lending/loans.py`.",
+    )
+    measured = ("zones_announced", "zones_files_announced", "zones_announced_listed")
+
+    def read(name: str, conformity: str) -> tuple[object, ...]:
+        run = kept_run(
+            tmp_path / name, journal=JOURNAL, blueprints=(by_file,), conformity=conformity
+        )
+        found = measure(run, asks_nothing)
+        return tuple(found[key] for key in measured)
+
+    # The proof lists the file the page announced, and no other.
+    assert read("named", CONFORMITY) == (True, True, True)
+    # A file listed for one zone under a page that named another: announced, since the page did
+    # not say none, and not file by file. What the page announced is listed all the same.
+    both = "# Conformity\n\n```critical-files\nlending/fines.py\nlending/loans.py\n```\n"
+    assert read("other", both) == (True, False, True)
+    # The other way round: the page announced a file, and the proof lists another, or none. No
+    # listed file was to be announced there, and the measure of those is empty, where a truth
+    # would count a run that had nothing to tell among those that told it.
+    elsewhere = "# Conformity\n\n```critical-files\nlending/loans.py\n```\n"
+    assert read("elsewhere", elsewhere) == (True, False, False)
+    assert read("unlisted", "# Conformity\n") == (True, None, False)
+    # A page outside the form is read as free prose: a file is announced wherever its path
+    # stands in the section, and what the page announces beyond the list is not told.
+    outside = kept_run(
+        tmp_path / "outside", journal=JOURNAL, blueprints=(ZONED,), conformity=CONFORMITY
+    )
+    found = measure(outside, asks_nothing)
+    assert tuple(found[key] for key in measured) == (True, True, None)
+    # Both are measures of the execution: a run that did not reach conformity has neither.
+    for name in ("zones_files_announced", "zones_announced_listed"):
+        assert name in EXECUTION
+        assert (DIRECTION[name], name in GOALS) == (1, True)
 
 
 def test_the_host_declares_the_zones_the_measures_look_for() -> None:
@@ -366,7 +422,6 @@ def test_a_run_that_stops_at_the_hand_over_holds_no_measure_of_the_execution(
     assert found["approved_by_sentence"] is False
     assert found["plan_minimum"] is True
     assert found["frame"] is True
-    assert found["zones_none_said"] is True
     assert found["contaminated"] is False
     assert found["planning_usd"] == pytest.approx(1.01)
     # Nothing of the execution is a 0 or a False, which would read as a run that did not conform.

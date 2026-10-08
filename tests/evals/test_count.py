@@ -172,7 +172,16 @@ def test_the_method_names_what_is_counted_and_every_place_a_statement_may_stand_
     # What the frame asks for is not counted: its two lines, and the boundaries the page shows.
     assert "Two lines of the frame are not statements of it" in asked
     assert "and the closing line that names what does not change" in asked
+    # Nor the sentence the page is asked for on a zone it touches: any other still counts.
+    how_far = "Nor is the one sentence that says how far the plan goes into a zone it touches"
+    assert f"{how_far}, even where it says that the rule of the zone is left as it is" in asked
+    assert "Any other sentence that says again that it is unchanged is one" in asked
+    assert "and so is the rule of a zone told again in full" in asked
+    assert "that sentence on a zone the plan touches" in asked.split("are not to skip")[0]
     assert "These are not such details" in asked
+    # Nor what the page is asked to say of a file of a zone the plan touches.
+    in_a_zone = "what the one sentence on a zone the plan touches says the plan changes in a file"
+    assert f"{in_a_zone} of that zone" in asked.split("These are not such details")[1]
     assert "the boundaries between components" in asked.split("These are not such details")[1]
     assert "are not to skip" in asked
     # A count, beside the scores: the method gives no scale, and the rubric is asked as before.
@@ -586,8 +595,10 @@ def test_a_campaign_kept_before_the_count_is_compared_without_a_word_on_counts_t
     assert [move for move in compare(new, old) if move.measure in named] == []
     assert [move for move in compare(old, new) if move.measure in named] == []
     told = "Not compared: the counts of the blueprint, which the campaign before does not hold."
-    assert uncompared(new, old) == [told]
-    assert uncompared(old, new) == [told.replace("the campaign before", "this campaign")]
+    # The two campaigns do not hold the same measures of the script either, which is said
+    # first: the counts are the last thing left out.
+    assert uncompared(new, old)[-1] == told
+    assert uncompared(old, new)[-1] == told.replace("the campaign before", "this campaign")
     assert uncompared(new, new) == []
     assert uncompared(old, old) == []
     _, report = write(after, OLD)
@@ -596,7 +607,7 @@ def test_a_campaign_kept_before_the_count_is_compared_without_a_word_on_counts_t
     assert moved.rstrip().endswith(told)
     # With nothing else to tell, the report does not leave "nothing moved" to cover the counts.
     assert (
-        render(new, [], uncompared(new, old))
+        render(new, [], [told])
         .rstrip()
         .endswith(f"Nothing lies outside the spread between runs.\n\n{told}")
     )

@@ -24,7 +24,7 @@ In the plan folder your mandate gives:
 
 Where `specs.md` or `interview.md` quotes the developer in another language, work from its translation: the original is the reference when the two disagree.
 
-And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
+And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones. When they declare critical zones, the code as well, as far as the files the slices of `plan.md` change: what those files hold tells which zones the plan touches.
 
 ## What you write
 
@@ -48,9 +48,19 @@ It opens with three sections, in this order:
 
 It closes with one:
 
-- Sensitive zones: first each critical zone the repository's agent instructions declare that the plan touches, named as they name it, or the statement that the plan touches none; then what the developer would not see go by and that touches their control, their work or their time, when there is any
+- Sensitive zones: first each critical zone the repository's agent instructions declare that the plan touches, named as they name it, with its files the plan changes and how far, or the statement that the plan touches none; then what the developer would not see go by and that touches their control, their work or their time, when there is any
 
-Sensitive zones opens with the critical zones because their code is what the developer still reads themselves once the work is conformant: this is where they learn which zones that will be.
+Sensitive zones opens with the critical zones because their code is what the developer still reads themselves once the work is conformant: this is where they learn which code that will be. The plan touches a zone as soon as a slice changes, creates or deletes a file that holds its code, whatever it changes there: at conformity the developer is sent to every such file the branch changed, and one who was told "none" takes that list for a mistake.
+
+<!-- zone-files -->
+A file holds the code of a zone when the agent instructions place it in the zone, by its name, its folder or a pattern, whatever it holds, or when code there defines or computes what the zone protects, in whole or in part, before the change or after it. Among the files the instructions do not place, one that only uses that code does not hold it: one that calls it, that prints, stores or builds on what it returns, or that tests it. Nor does one that describes what the zone protects, a README or any other document.
+<!-- /zone-files -->
+
+Which files that makes is your reading: open the files the slices change to tell, and say that the plan touches none only when not one of them holds the code of a declared zone. Where a slice names no file, tell from what it does and from the code where it lands. A file a slice only allows to change is not one the plan changes. Announce no zone for a file that holds none of its code: the developer would be told of code that no list at conformity sends them to.
+
+The section opens on one sentence of fixed form, the one the template gives: its lead-in, then `none`, or each zone touched, named as the agent instructions name it, with in backticks its files the plan changes. The developer finds there at once which files they will read, and what reads the page reads it there. So a file stands in backticks there only when the plan changes it: where the instructions name a zone with a file the plan leaves alone, name the zone without that file.
+
+After that sentence, for each zone touched, say how far the plan goes into it, in one sentence, which points to the criterion or the section that holds the rule instead of telling it again: the plan changes what the zone protects, or it changes something else the file holds, said in a few words, and leaves what the zone protects as it is. The page then says "touched" where the rule of a zone stays as it is, and says so. Say nothing else of the files of a zone, not that another of them stays as it is: what the page says of files tells the developer which code they will read, and is no promise on the layout of the code, which a fix may still change.
 
 ### The body
 

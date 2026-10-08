@@ -115,7 +115,7 @@ def gh(project: Path, *args: str, stdin: str = "") -> int:
 
 
 def case(root: Path, **changes: object) -> Case:
-    """Make a case of one behavior that touches no critical zone, with the changes named."""
+    """Make a case of one behavior whose need asks nothing of a zone, with the changes named."""
     fields: dict[str, object] = {
         "root": root,
         "shape": "one-behavior",
