@@ -53,6 +53,7 @@ EXECUTION = (
     "zones_files_listed",
     "zones_announced",
     "zones_files_announced",
+    "zones_announced_listed",
     # The description at the stops of the loop, which such a run has none of.
     "pr_refreshed",
     # Never marked ready is a promise to the end of the chain, and the hand back at conformity,
@@ -191,9 +192,11 @@ def _plan(folder: Path, logs: Sequence[SessionLog]) -> Measures:
 def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant: bool) -> Measures:
     """Whether the critical zones were named at approval, and their files listed at conformity."""
     closing = "" if drawn is None else drawn.zones
-    # The section opens on the critical zones the plan touches, or on the statement that it
-    # touches none. A zone it speaks of is not a zone it names as touched: it may say "not
-    # changed", and after a zone it names, "none of its fields" says how far the plan goes.
+    # The section opens on one sentence of fixed form, which states the zones the plan touches
+    # with their files, or that it touches none: what the page announces is read there. A page
+    # outside the form is read as free prose, a file announced wherever its path stands in the
+    # section, and what it announces beyond the list is not told.
+    stated = form.statement(closing, ZONES)
     said_none = form.says_none(closing, ZONES)
     expected = [phrase.lower() in closing.lower() for phrase in case.critical_zones]
     listed: list[str] | None = None
@@ -205,6 +208,7 @@ def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant
             listed = None
     # The files the developer is sent to read, where a page was there to announce them.
     sent = None if listed is None or drawn is None else listed
+    announced = closing if stated is None else stated.files
     return {
         "zones_named": None if drawn is None or not expected else all(expected),
         "critical_files": listed,
@@ -214,10 +218,18 @@ def _zones(case: Case, drawn: form.Blueprint | None, folder: Path, *, conformant
         # The code the developer is sent to read at conformity was announced at approval: no
         # file is listed under a blueprint that said the plan touches no critical zone.
         "zones_announced": None if sent is None else not (sent and said_none),
-        # And file by file: each one the proof lists is named by its path in the closing
-        # section, which tells a file listed for one zone under a page that named another.
-        # Empty when the proof lists none: there was nothing to announce.
-        "zones_files_announced": all(path in closing for path in sent) if sent else None,
+        # And file by file: each one the proof lists is one the page announced, which tells a
+        # file listed for one zone under a page that named another. Empty when the proof lists
+        # none: there was nothing to announce.
+        "zones_files_announced": all(path in announced for path in sent) if sent else None,
+        # The other way round: each file the page announced is one the proof lists, where a
+        # page that announces too much sends the developer to no code. Empty when the page
+        # announces none, and for a page outside the form.
+        "zones_announced_listed": (
+            None
+            if sent is None or stated is None or not stated.files
+            else all(path in sent for path in stated.files)
+        ),
     }
 
 

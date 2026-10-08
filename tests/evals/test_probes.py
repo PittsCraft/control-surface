@@ -6,7 +6,8 @@ import pytest
 import toy
 
 from surface_evals import probes
-from surface_evals.blueprint import NONE_TOUCHED, parse
+from surface_evals.blueprint import parse, says_none
+from surface_evals.measure import ZONES
 from surface_evals.probes import CHECKER_PROBES, CLASSES, REVIEWER_PROBES
 from surface_evals.runner import state_of
 from surface_status.plan_folder import parse_gates, parse_slice_markers
@@ -20,7 +21,9 @@ def test_one_faithful_blueprint_and_three_that_hide_what_matters() -> None:
     assert column.blueprint() == toy.BLUEPRINT
     assert "`title,author,year,isbn`" in column.plan()
     assert zone.plan() == toy.PLAN
-    assert NONE_TOUCHED.search(parse(zone.blueprint()).zones)
+    # Read as the measures read a page: the spoiled one says none, the faithful one does not.
+    assert says_none(parse(zone.blueprint()).zones, ZONES)
+    assert not says_none(parse(faithful.blueprint()).zones, ZONES)
     assert effect.blueprint() == toy.BLUEPRINT
     assert "rewrites the shelf file" in effect.plan()
     for probe in CHECKER_PROBES:

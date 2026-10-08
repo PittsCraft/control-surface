@@ -5,7 +5,15 @@ from pathlib import Path
 import pytest
 import toy
 
-from surface_evals.blueprint import CLOSING, OPENING, parse, says_none
+from surface_evals.blueprint import (
+    CLOSING,
+    LEAD_IN,
+    OPENING,
+    Statement,
+    parse,
+    says_none,
+    statement,
+)
 from surface_evals.measure import ZONES
 
 TEMPLATE = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
@@ -75,8 +83,54 @@ def test_a_section_longer_than_a_glance_with_no_title_is_told() -> None:
     assert short.inner_titles == 0
 
 
+def test_the_closing_section_of_the_template_opens_on_the_lead_in_the_harness_looks_for() -> None:
+    assert parse(TEMPLATE.read_text(encoding="utf-8")).zones.startswith(f"{LEAD_IN}, among those")
+
+
+def test_the_sentence_a_closing_section_opens_on_states_the_zones_and_their_files() -> None:
+    lead = "Critical zones touched, among those `AGENTS.md` declares:"
+    # None, and nothing announced, whatever the page says after its first sentence.
+    none = f"{lead} none. The plan does not change `lending/fines.py` (criterion 9)."
+    assert statement(none, ZONES) == Statement(none=True, files=())
+    # Each zone with in backticks its files the plan changes. A full stop inside a path ends
+    # no sentence, and the word the host names a zone with is no file the page announces.
+    touched = (
+        f"{lead} the fine computation, in `lending/fines.py` and `lending/__main__.py`, and the"
+        " format of `loans.jsonl`, in `lending/loans.py`. In `lending/fines.py` the plan changes"
+        " only how the file loads the loans module, and no critical zone rule changes: `README.md`"
+        " is not a file of a zone."
+    )
+    files = ("lending/fines.py", "lending/__main__.py", "lending/loans.py")
+    assert statement(touched, ZONES) == Statement(none=False, files=files)
+    assert not says_none(touched, ZONES)
+    # The lead-in may hold a full stop or a file of its own: the statement follows its colon.
+    assert statement("Critical zones touched (i.e. in `AGENTS.md`): none.", ZONES) == Statement(
+        none=True, files=()
+    )
+    # A sentence that runs to the end of the paragraph, on two lines, is read whole.
+    wrapped = f"{lead} the fine computation,\nin `lending/fines.py`\n\nThe mailer changes."
+    assert statement(wrapped, ZONES) == Statement(none=False, files=("lending/fines.py",))
+
+
+@pytest.mark.parametrize(
+    "zones",
+    [
+        "The plan touches no critical zone.",
+        "**Critical zones**. None is touched.",
+        "Critical zone touched: the CSV export (`AGENTS.md`).",
+        "Critical zones touched by the plan are none.",
+        "Critical zones touched, among those `AGENTS.md` declares:\n\n- The fine computation.",
+        "Critical zones touched, among those `AGENTS.md` declares:\n- The fine computation.",
+        "",
+    ],
+)
+def test_a_section_that_opens_otherwise_is_outside_the_form(zones: str) -> None:
+    assert statement(zones, ZONES) is None
+
+
 # What a page may write to say that the plan touches no critical zone, and what it writes of a
-# zone it touches that holds the same words.
+# zone it touches that holds the same words: in the form, read by its first sentence, and
+# outside it, read as free prose.
 SAYS_NONE = (
     "Critical zones touched, among those `AGENTS.md` declares: none.",
     "Critical zones touched (i.e. among those `AGENTS.md` declares): none.",

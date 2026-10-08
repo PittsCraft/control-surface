@@ -197,8 +197,10 @@ def test_a_run_that_stopped_at_the_hand_over_joins_no_spread_of_the_execution(
     assert measures["questions"]["n"] == 2
     assert measures["planning_usd"] == {"mean": 1.25, "low": 1.0, "high": 1.5, "n": 2}
     # One alone was played whole: the other counts in nothing the execution gives. The list of
-    # the critical files is told, never folded, and with no file in it none was to be announced.
-    assert set(EXECUTION) - set(measures) == {"critical_files", "zones_files_announced"}
+    # the critical files is told, never folded, and with no file in it, under a page that says
+    # none, no file was to be announced and none was.
+    unfolded = {"critical_files", "zones_files_announced", "zones_announced_listed"}
+    assert set(EXECUTION) - set(measures) == unfolded
     assert {measures[key]["n"] for key in EXECUTION if key in measures} == {1}
     assert measures["conformant"]["mean"] == 1.0
     assert measures["usd"]["mean"] == 3.0

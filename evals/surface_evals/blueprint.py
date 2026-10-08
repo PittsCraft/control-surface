@@ -12,7 +12,15 @@ from dataclasses import dataclass
 OPENING = ("The idea in one sentence", "Acceptance criteria", "Scope and out of scope")
 CLOSING = "Sensitive zones"
 CLOSING_LINE = "No change:"
-# How a blueprint says the plan touches no critical zone: none, or neither of two.
+# The words the closing section opens on, the head of the lead-in the template gives: the
+# statement of the critical zones follows them, after a colon. A test holds them to the template.
+LEAD_IN = "Critical zones touched"
+# What that statement says when the plan touches none, and what it holds between backticks.
+_NONE = re.compile(r"\W*none\b", re.IGNORECASE)
+_SPAN = re.compile(r"`[^`\n]+`")
+_SENTENCE_END = re.compile(r"[.!?](?=\s|$)")
+# Outside the form, how a blueprint says the plan touches no critical zone: none, or neither of
+# two.
 NONE_TOUCHED = re.compile(r"\b(none|neither|no critical zone)\b", re.IGNORECASE)
 # The same said outright, of the zones and of nothing else: "Critical zones touched: none",
 # "None is touched", "the plan touches neither of the two critical zones".
@@ -129,15 +137,58 @@ class Blueprint:
         return sum(len(section.text.split()) for section in self.sections)
 
 
+@dataclass(frozen=True, slots=True)
+class Statement:
+    """What a closing section states of the critical zones, in the sentence it opens on."""
+
+    none: bool  # it says that the plan touches none
+    files: tuple[str, ...]  # the files it announces, as written between backticks
+
+
+def statement(zones: str, declared: Sequence[str]) -> Statement | None:
+    """Read the sentence a closing section opens on, or None when it is outside the form.
+
+    The form is the one the extractor is held to: the lead-in of the template, a colon, then
+    `none`, or each zone the plan touches with in backticks its files the plan changes, to the
+    end of the sentence. The colon and that end are looked for outside backticks, since a path
+    holds a full stop. What stands between backticks there is a file the page announces, but
+    for a word the host names a zone with, `loans.jsonl`, one of the phrases given. What
+    follows the sentence says how far the plan goes, and names a file only to tell of it.
+
+    A section that opens on other words is outside the form, and so is one whose lead-in ends
+    its line, the zones in a list under it: no one sentence states them there.
+    """
+    opening = zones.lstrip().split("\n\n", 1)[0]
+    if not opening.lower().startswith(LEAD_IN.lower()):
+        return None
+    # The same text with nothing to find between backticks, at the same places.
+    bare = _SPAN.sub(lambda span: "`" * len(span[0]), opening)
+    colon = bare.find(":")
+    if colon < 0 or not bare[colon + 1 :].split("\n", 1)[0].strip():
+        return None
+    end = _SENTENCE_END.search(bare, colon + 1)
+    said = opening[colon + 1 : len(opening) if end is None else end.start()].strip()
+    names = {phrase.lower() for phrase in declared}
+    files = (span[1:-1] for span in _SPAN.findall(said))
+    return Statement(
+        none=_NONE.match(said) is not None,
+        files=tuple(file for file in files if file.lower() not in names),
+    )
+
+
 def says_none(zones: str, declared: Sequence[str]) -> bool:
     """Whether a closing section opens on the statement that the plan touches no critical zone.
 
-    The paragraph that opens the section states the zones the plan touches, or that it touches
-    none. It says none when it says so outright, or by a "none" or a "neither" that comes
-    before any zone the host declares, named by one of the phrases given. After a zone is
-    named, such a word says how far the plan goes into it, "which changes none of its fields",
-    "which neither computes nor rounds the fine": the zone is touched.
+    In the form, the sentence the section opens on says it: `none` after the lead-in, and no
+    other wording. A page outside the form is read as free prose, by the paragraph it opens
+    on: it says none when it says so outright, or by a "none" or a "neither" that comes before
+    any zone the host declares, named by one of the phrases given. After a zone is named, such
+    a word says how far the plan goes into it, "which changes none of its fields": the zone is
+    touched. That reading guesses, and is kept for the pages drawn before the form.
     """
+    stated = statement(zones, declared)
+    if stated is not None:
+        return stated.none
     opening = zones.split("\n\n", 1)[0].lower()
     if _NONE_OUTRIGHT.search(opening) is not None:
         return True
