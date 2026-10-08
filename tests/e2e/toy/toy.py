@@ -7,7 +7,7 @@ and records each event through the installed state script, so the journal is a r
 drafted has its draft pull request too, kept by the stand-in `gh` of `gh_stand_in.py`. Run as a
 script, it builds a project and prints its path, or runs one headless session in it:
 
-    python3 tests/e2e/toy/toy.py build <state> <dest>
+    python3 tests/e2e/toy/toy.py build <state> <dest> [--slow]
     python3 tests/e2e/toy/toy.py run <project> <log> <prompt> [--resume <session id>]
 
 A session is launched the way ADR 0025 describes, by the end to end tests and by hand
@@ -15,12 +15,14 @@ alike: it bypasses permissions, so it runs only in the container of `tests/e2e/D
 """
 
 import argparse
+import contextlib
 import json
 import os
 import signal
 import subprocess
 import sys
-from collections.abc import Mapping, Sequence
+import time
+from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
@@ -30,11 +32,13 @@ import gh_stand_in
 
 CLONE = Path(__file__).resolve().parents[3]
 SLUG = "csv-export"
+SECOND_SLUG = "count-books"  # the other plan of a branch that carries two
 BRANCH = f"feat/{SLUG}"
 PULL_TITLE = "Export the shelf as CSV"
 GATE_COMMAND = "python3 -m unittest discover -s tests -q"
 STATE_SCRIPT = Path(".claude/skills/surface-status/scripts/surface-status")
 SESSION_TIMEOUT = 30 * 60  # seconds: a session still running then is killed
+KILL_ROUNDS = 50  # how many times a kill looks for what a session left at work
 GIT_ENV = {
     **os.environ,
     "GIT_AUTHOR_NAME": "Toy Developer",
@@ -66,18 +70,34 @@ class State(StrEnum):
     """The prepared states, each named after the scenario that starts from it."""
 
     SPECS = "specs"  # the main branch, the chain installed, no plan yet
+    SPECS_CI = "specs-ci"  # the same, with a CI that runs on every push and pull request
+    # Planning under way: the plan folder is in the working tree, nothing of it committed yet.
+    PLAN_WRITTEN = "plan-written"  # the interview closed and the plan written, no blueprint
+    BLUEPRINT_DRAWN = "blueprint-drawn"  # the blueprint drawn too, and not cross-checked
+    PLANNING_CEILING = "planning-ceiling"  # two cross-checks with an omission, a ceiling of one
     AWAITING = "awaiting-approval"  # a plan drafted at revision 1, pushed, its draft opened
+    UNPUSHED = "unpushed"  # that plan drafted and committed, never pushed: no draft opened
+    UNPUSHED_CI = "unpushed-ci"  # the same, under the CI that runs on every push
+    TWO_PLANS = "two-plans"  # a second plan drafted on the same branch
+    SLICE_UNCOMMITTED = "slice-uncommitted"  # approved, slice 1 recorded and not committed
+    SUSPECTED_BREAK = "suspected-break"  # slice 2 stopped on a break its executor suspects
+    UNFOUNDED_SUSPICION = "unfounded-suspicion"  # the same, on a suspicion that is none
     BLUEPRINT_MODIFIED = "blueprint-modified"  # approved, slice 1 done, then the blueprint edited
     DEVELOPER_BREAK = "developer-break"  # every slice done, then a commit against the schema
+    PROPOSED = "plan-change-proposed"  # that break raised by a review, committed, not pushed
+    FIXING = "fixing"  # a defect and the review that found it: a fix is due
     CEILING = "ceiling"  # a defect, its review, a fix that missed it, a ceiling of one pass
+    BLOCKED = "blocked"  # the ceiling reached: a second review finds the defect, then blocked
     # The states the evaluations review: every slice done, nothing reviewed yet.
     DONE = "done"  # the work as planned
     DEFECT = "defect"  # a defect the tests do not see: lines sorted by title only
     DEVIATION = "deviation"  # the tests of slice 1 in another file than the plan names
+    REVIEW_UNRECORDED = "review-unrecorded"  # gates green, a clean review written, not recorded
+    CONFORMANT_UNPUSHED = "conformant-unpushed"  # conformant, committed, and never pushed
 
 
-def plan_name() -> str:
-    return f"{datetime.now(UTC).date().isoformat()}-{SLUG}"
+def plan_name(slug: str = SLUG) -> str:
+    return f"{datetime.now(UTC).date().isoformat()}-{slug}"
 
 
 # The toy project, before the feature.
@@ -216,6 +236,40 @@ AGENTS_MD = """\
 
 Critical zone: the CSV export is read by the bookshop's spreadsheet import. Its columns, their
 order and their names are a contract with the bookshop.
+"""
+
+# A CI that reacts to a push of any branch and to a pull request, a draft included: what
+# /surface-plan warns about before the first push of a branch.
+CI_PATH = ".github/workflows/ci.yml"
+CI = """\
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s tests -q
+"""
+
+# A test that lasts, on the main branch of a project built slow. The gate, and the tests an
+# agent runs before it commits, then last long enough for a session to be killed in them,
+# however the agent cuts its commands. No review meets the file: the branch leaves it alone.
+SLOW_SECONDS = 20
+TEST_SLOW = f"""\
+import time
+import unittest
+
+
+class SlowTest(unittest.TestCase):
+    def test_the_shelf_takes_its_time(self) -> None:
+        time.sleep({SLOW_SECONDS})
+
+
+if __name__ == "__main__":
+    unittest.main()
 """
 
 # The plan folder, as /surface-plan leaves it at revision 1.
@@ -423,6 +477,182 @@ The blueprint shows what the plan does: the command, the three columns and their
 order of the lines, the quoting, the empty shelf, and the ISBN left out.
 """
 
+DOCUMENTS = {
+    "specs.md": SPECS,
+    "exploration.md": EXPLORATION,
+    "interview.md": INTERVIEW,
+    "plan.md": PLAN,
+    "blueprint.md": BLUEPRINT,
+}
+
+# Under the CI of `CI`, the exploration names it: a session reads there what triggers it.
+EXPLORATION_CI = EXPLORATION.replace(
+    "- CI: none.",
+    f"- CI: `{CI_PATH}` runs the gate on every push, of any branch, and on every pull\n"
+    "  request, a draft included.",
+)
+
+# The plan of the planning ceiling: the specs ask for an effect on the developer's file, the plan
+# does it, and the blueprint, left as it is, says the file is never written.
+SPECS_REWRITING = SPECS.replace(
+    "The ISBN stays out of it for now.\n",
+    "The ISBN stays out of it for now. Once the\n"
+    "CSV is printed, the command rewrites the shelf file with its books in that same order.\n",
+)
+
+PLAN_REWRITING = (
+    PLAN.replace(
+        "6. An empty shelf prints the header alone (Q2).\n",
+        "6. An empty shelf prints the header alone (Q2).\n"
+        "7. Once the CSV is printed, the shelf file is rewritten with its books in that order.\n",
+    )
+    .replace(
+        "- Standard library only, as the README requires.\n",
+        "- Standard library only, as the README requires.\n"
+        "- Once the CSV is printed, the command rewrites the shelf file with its books in the\n"
+        "  sorted order, replacing the file the developer gave.\n",
+    )
+    .replace(
+        "which writes `to_csv(load(path))`.\n",
+        "which writes `to_csv(load(path))`,\n"
+        "  then rewrites the shelf file in the sorted order (criterion 7).\n",
+    )
+)
+
+# The two cross-checks that found it: the second is the pass after a ceiling of one.
+CHECK_OMISSION = """\
+omissions: 1
+
+## Omission 1: the shelf file is rewritten
+
+`plan.md`, acceptance criterion 7 and the last point of its design: once the CSV is printed, the
+command rewrites the shelf file with its books in the sorted order, replacing the file the
+developer gave. The blueprint shows no such effect, and says in "The export command" that the
+shelf file and its books are read and never written: an irreversible operation on the developer's
+data that the person who validates the blueprint has not seen. It belongs in "The export command",
+with an acceptance criterion that states it.
+"""
+
+CHECK_OMISSION_AGAIN = CHECK_OMISSION.replace(
+    "## Omission 1: the shelf file is rewritten",
+    "## Omission 1: the shelf file is rewritten, still not shown",
+)
+
+# The other plan of a branch that carries two: a command that counts the books.
+SECOND_DOCUMENTS = {
+    "specs.md": """\
+# Count the books of a shelf
+
+Add a command that prints how many books a shelf file holds: a whole number, alone on its line.
+""",
+    # The rules of the repository are the same for both plans.
+    "exploration.md": EXPLORATION.partition("## What the feature touches")[0].replace(
+        "export the shelf as CSV", "count the books of a shelf"
+    )
+    + """\
+## What the feature touches
+
+- Domain objects: `Book`, read only. Precedent: the `list` command of `shelf/__main__.py`.
+- Settled by the code: a shelf file is read by `load`, which skips its blank lines. Left open:
+  nothing.
+
+## Project declarations
+
+`AGENTS.md`: the CSV export is a contract with the bookshop. The count does not touch it.
+
+## Read
+
+README.md, AGENTS.md, shelf/books.py, shelf/__main__.py, tests/test_cli.py.
+""",
+    "interview.md": """\
+# Interview: count the books of a shelf
+
+## Questions
+
+The specs and the code leave nothing open.
+
+## Amendments
+
+## Plan change decisions
+
+## Instructions after a block
+
+## Git
+""",
+    "plan.md": """\
+# Plan: count the books of a shelf
+
+Revision 1. Sources: `specs.md`, `exploration.md`, `interview.md`.
+
+`python3 -m shelf count <file>` prints how many books a shelf file holds.
+
+## Acceptance criteria
+
+1. `python3 -m shelf count <file>` prints the number of books of the file, alone on its line, and
+   exits with 0.
+2. An empty shelf prints `0`.
+
+## Design
+
+- The `count` subcommand of `shelf/__main__.py` prints `len(load(path))`. Standard library only.
+
+## Slices
+
+<!-- slice:1 -->
+### Slice 1: the count command
+
+- Goal: the `count` subcommand of `shelf/__main__.py`.
+- Files: `shelf/__main__.py`, `tests/test_cli.py`.
+- Precedent: the `list` subcommand.
+- Tests: the command on a temporary shelf file, and on an empty one.
+- Done when: the tests of criteria 1 and 2 pass.
+
+## Gates
+
+The gate the README names, the only one.
+
+```gates
+python3 -m unittest discover -s tests -q
+```
+""",
+    "blueprint.md": """\
+# Count the books of a shelf: blueprint
+
+Revision 1, drawn from `plan.md`.
+
+## The idea in one sentence
+
+A new command prints how many books a shelf file holds.
+
+## Acceptance criteria
+
+1. `python3 -m shelf count <file>` prints the number of books of the file, alone on its line, and
+   exits with 0.
+2. An empty shelf prints `0`.
+
+## Scope and out of scope
+
+In scope: the `count` command. Out of scope: any filter, any other output.
+
+## The count command
+
+`python3 -m shelf count <file>` loads the books of the file and prints how many they are. The
+shelf file is read and never written.
+
+## Sensitive zones
+
+Critical zones touched: none. The CSV export (`AGENTS.md`) is left as it is.
+
+No change: data schema, sequences, state machines, algorithms.
+""",
+}
+
+SECOND_CHECK = """\
+omissions: 0
+
+The blueprint shows what the plan does: the command, and what an empty shelf prints.
+"""
+
 # The feature, as the executors would have written it.
 
 EXPORT = '''\
@@ -464,6 +694,101 @@ title differs. Fix: sort by `(book.author, book.title)`, with a test that tells 
 ## Counts
 
 defects 1, deviations 0, breaks 0
+"""
+
+# The second review of the ceiling, once the fix missed the defect: the pass after the ceiling.
+REVIEW_OF_THE_MISSED_FIX = """\
+# Review 2
+
+## Finding 1: the lines are still sorted by title alone
+
+Class: defect. The fix after review 1 left `to_csv` in `shelf/export.py` as it was: it still sorts
+by `book.title` alone, against acceptance criterion 4, and still no test has two authors whose
+order by title differs. Fix: sort by `(book.author, book.title)`, with a test that tells the two
+apart.
+
+## Counts
+
+defects 1, deviations 0, breaks 0
+"""
+
+WHY_BLOCKED = "the lines are still sorted by title alone after a fix: criterion 4 is not met"
+
+# The review of the break scenario, and the plan change it proposes to the developer.
+REVIEW_OF_THE_BREAK = """\
+# Review 1
+
+## Finding 1: the export has a fourth column, `isbn`
+
+Class: contract break. Acceptance criterion 2 of the blueprint fixes the header as
+`title,author,year`, and criterion 3 says the ISBN is not exported. Since the commit "export: add
+the isbn column, the bookshop asked for it", which belongs to no plan and so is the developer's,
+`HEADER` in `shelf/export.py` holds `isbn` and `to_csv` writes `book.isbn` in every row. The CSV
+export is the critical zone `AGENTS.md` declares: its columns are a contract with the bookshop.
+The code does what that commit means, so the blueprint must change for it to stay true:
+`plan-changes/01.md`.
+
+## Counts
+
+defects 0, deviations 0, breaks 1
+"""
+
+PROPOSAL = """\
+# Plan change proposal 1: export the ISBN as a fourth column
+
+## What would change in the blueprint
+
+- Acceptance criterion 2: the header becomes `title,author,year,isbn`.
+- Acceptance criterion 3: one line per book holds its title, author, year and ISBN, in that order.
+- Scope: the ISBN moves in scope.
+- The table of the columns gains a fourth row: `isbn`, from `Book.isbn`, text.
+
+## Why
+
+A commit of the developer, "export: add the isbn column, the bookshop asked for it", adds the
+column to `shelf/export.py` and to its tests. The blueprint the developer approved says the ISBN
+is not exported. Both cannot hold: either the blueprint takes the column, or the code drops it.
+
+## Proof
+
+`shelf/export.py`: `HEADER = ("title", "author", "year", "isbn")`, and each row ends with
+`book.isbn`. `tests/test_export.py` and `tests/test_cli.py` expect the four columns, and the gates
+are green: `gates/run-01.txt`.
+"""
+
+# A review that finds nothing, and the proof of conformity its reviewer leaves with it.
+REVIEW_CLEAN = """\
+# Review 1
+
+No finding. The branch does what the plan says, the plan stays consistent with the blueprint, and
+`blueprint.md` is the approved one. The gates are green: `gates/run-01.txt`.
+
+## Counts
+
+defects 0, deviations 0, breaks 0
+"""
+
+CONFORMITY = """\
+# Conformity: export the shelf as CSV
+
+Blueprint revision 1, approved and unchanged. Review: `reviews/pass-01.md`. Gates:
+`gates/run-01.txt`, green.
+
+1. `python3 -m shelf export <file>` prints the CSV and exits with 0: the `export` subcommand of
+   `shelf/__main__.py`; `tests/test_cli.py`, `ExportTest.test_prints_the_csv`.
+2. The header is `title,author,year`: `HEADER` in `shelf/export.py`; `tests/test_export.py`,
+   `test_header_alone_for_an_empty_shelf`.
+3. One line per book, its title, author and year, without the ISBN: `to_csv` in
+   `shelf/export.py`; `test_one_row_per_book_without_the_isbn`.
+4. Sorted by author, then by title: the key of `sorted` in `to_csv`;
+   `test_sorted_by_author_then_title`, whose books come in the other order by title.
+5. Quoted as the `csv` module does by default: `csv.writer` in `to_csv`; `test_a_comma_is_quoted`.
+6. An empty shelf prints the header alone: `test_header_alone_for_an_empty_shelf`.
+
+```critical-files
+shelf/__main__.py
+shelf/export.py
+```
 """
 
 TEST_EXPORT = """\
@@ -561,6 +886,101 @@ TEST_CLI_WITH_ISBN = TEST_CLI_AFTER.replace(
 BLUEPRINT_EDITED = BLUEPRINT.replace(
     "3. One line per book: its title, author and year, in that order. The ISBN is not exported.",
     "3. One line per book: its title, author, year and ISBN, in that order.",
+)
+
+# The project of the suspected break: an `export` command exists before the feature, and prints
+# the shelf as JSON for a backup. The plan and its blueprint, which call the command new, were
+# drafted without seeing it: carrying out slice 2 would replace it, which the blueprint must say.
+README_WITH_JSON_EXPORT = README.replace(
+    "    python3 -m shelf list books.jsonl\n",
+    "    python3 -m shelf list books.jsonl\n"
+    "    python3 -m shelf export books.jsonl    # the shelf as JSON, read by the nightly backup\n",
+)
+
+MAIN_WITH_JSON_EXPORT = (
+    MAIN_BEFORE.replace(
+        "import argparse\nimport sys\n", "import argparse\nimport json\nimport sys\n"
+    )
+    .replace(
+        "from pathlib import Path\n", "from dataclasses import asdict\nfrom pathlib import Path\n"
+    )
+    .replace(
+        """    args = parser.parse_args(argv)
+    for book in load(args.path):
+""",
+        """    exporting = commands.add_parser("export", help="the books as JSON, for the backup")
+    exporting.add_argument("path", type=Path)
+    args = parser.parse_args(argv)
+    if args.command == "export":
+        json.dump([asdict(book) for book in load(args.path)], sys.stdout)
+        sys.stdout.write("\\n")
+        return 0
+    for book in load(args.path):
+""",
+    )
+)
+
+TEST_CLI_WITH_JSON_EXPORT = TEST_CLI_BEFORE.replace(
+    """
+
+if __name__ == "__main__":""",
+    """
+
+class ExportTest(unittest.TestCase):
+    def test_prints_the_shelf_as_json_for_the_backup(self) -> None:
+        self.assertEqual([book["title"] for book in json.loads(run("export"))], ["Dune", "Emma"])
+
+
+if __name__ == "__main__":""",
+).replace("import io\n", "import io\nimport json\n")
+
+# What the executor of slice 2 left when it stopped on that break: the test of the command it
+# was about to write, and its reason in the journal.
+TEST_CLI_OF_THE_SUSPECTED_BREAK = TEST_CLI_WITH_JSON_EXPORT.replace(
+    """
+
+if __name__ == "__main__":""",
+    """
+
+class ExportCsvTest(unittest.TestCase):
+    def test_prints_the_csv(self) -> None:
+        expected = "title,author,year\\nEmma,Austen,1815\\nDune,Herbert,1965\\n"
+        self.assertEqual(run("export"), expected)
+
+
+if __name__ == "__main__":""",
+)
+
+WHY_SUSPECTED = (
+    "the export command exists already: it prints the shelf as JSON, which the README says the"
+    " nightly backup reads; slice 2 would replace it, and the blueprint, which calls the command"
+    " new, shows neither that the JSON export goes nor another name for the CSV one"
+)
+
+# A suspicion that is none: the executor of slice 2 wants a test helper the plan does not name,
+# which changes nothing the blueprint shows.
+TEST_SHELVES = '''\
+"""Shelf files for the tests of the command line."""
+
+import tempfile
+from pathlib import Path
+
+LINES = (
+    '{"title": "Dune", "author": "Herbert", "year": 1965, "isbn": "9780441013593"}\\n'
+    '{"title": "Emma", "author": "Austen", "year": 1815, "isbn": "9780141439587"}\\n'
+)
+
+
+def shelf_file() -> Path:
+    """Write a shelf of two books in a temporary folder and return its path."""
+    path = Path(tempfile.mkdtemp()) / "books.jsonl"
+    path.write_text(LINES, encoding="utf-8")
+    return path
+'''
+
+WHY_UNFOUNDED = (
+    "slice 2 needs a helper module for its tests, tests/shelves.py, which builds the shelf files:"
+    " neither the plan nor the diagram of the blueprint names that file"
 )
 
 
@@ -663,8 +1083,28 @@ def critical_files(project: Path) -> list[str]:
     ]
 
 
-def _base(dest: Path, settings: Mapping[str, object]) -> Path:
-    """Make the project on its main branch, pushed, with the chain installed and committed."""
+def check(project: Path) -> tuple[int, list[str]]:
+    """Run the conformity check of the host's CI: its exit code, and the codes of what fails it."""
+    done = subprocess.run(
+        [str(project / STATE_SCRIPT), "--json", "check", "--require", "conformant"],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    problems = [
+        str(problem["code"])
+        for plan in json.loads(done.stdout)["plans"]
+        for problem in plan["problems"]
+    ]
+    return done.returncode, problems
+
+
+def _base(dest: Path, settings: Mapping[str, object], more: Mapping[str, str]) -> Path:
+    """Make the project on its main branch, pushed, with the chain installed and committed.
+
+    `more` holds the files a state adds to the project before the feature: a CI, a slow test.
+    """
     project = dest / "shelf"
     remote = dest / "origin.git"
     project.mkdir(parents=True)
@@ -689,6 +1129,7 @@ def _base(dest: Path, settings: Mapping[str, object]) -> Path:
             "tests/test_books.py": TEST_BOOKS,
             "tests/test_cli.py": TEST_CLI_BEFORE,
             ".gitignore": "__pycache__/\n",
+            **more,
         },
     )
     git(project, "add", ".")
@@ -709,35 +1150,71 @@ def _base(dest: Path, settings: Mapping[str, object]) -> Path:
     return project
 
 
-def _awaiting(project: Path) -> str:
+def _open(project: Path, slug: str, documents: Mapping[str, str]) -> str:
+    """Open a plan folder with its documents and close its interview; nothing is committed."""
+    plan = f"docs/plans/{plan_name(slug)}"
+    write(project, {f"{plan}/{name}": text for name, text in documents.items()})
+    record(project, plan, "plan-opened")
+    record(project, plan, "interview-closed")
+    return plan
+
+
+def _check(project: Path, plan: str, number: int, report: str, omissions: int) -> None:
+    name = f"checks/rev-01-{number:02d}.md"
+    write(project, {f"{plan}/{name}": report})
+    record(project, plan, "check-done", "--report", name, "--omissions", str(omissions))
+
+
+def _draft(project: Path, plan: str, check: str, message: str) -> None:
+    """Record a cross-check that found nothing, then the draft, and commit the plan folder."""
+    _check(project, plan, 1, check, 0)
+    record(project, plan, "plan-drafted")
+    commit(project, message, [plan])
+
+
+def _undrafted(project: Path, state: State) -> None:
+    """Leave planning under way on the feature branch, as a session that died there would.
+
+    Nothing of the plan folder is committed: /surface-plan commits at the draft and at the
+    ceiling only.
+    """
+    git(project, "switch", "--quiet", "--create", BRANCH)
+    if state is State.PLAN_WRITTEN:
+        _open(
+            project, SLUG, {name: DOCUMENTS[name] for name in DOCUMENTS if name != "blueprint.md"}
+        )
+    elif state is State.BLUEPRINT_DRAWN:
+        _open(project, SLUG, DOCUMENTS)
+    else:
+        # The plan does what the specs ask and the blueprint does not show it. A ceiling of one
+        # lets one rework run: the second check that finds it is the pass after the ceiling.
+        documents = {**DOCUMENTS, "specs.md": SPECS_REWRITING, "plan.md": PLAN_REWRITING}
+        plan = _open(project, SLUG, documents)
+        _check(project, plan, 1, CHECK_OMISSION, 1)
+        _check(project, plan, 2, CHECK_OMISSION_AGAIN, 1)
+
+
+def _drafted(project: Path, state: State) -> str:
     """Draft a plan at revision 1 on its feature branch, push it and open its draft pull request.
 
     As /surface-plan would: the pull request is the one it opens at the first `plan-drafted`,
     kept by the stand-in `gh`, with the description of that moment. The later states leave it
     as it is, since the loop they prepare has not stopped yet, and a stop is what refreshes it.
+    An unpushed state stops before the push, and so has no pull request.
     """
-    plan = f"docs/plans/{plan_name()}"
     git(project, "switch", "--quiet", "--create", BRANCH)
-    write(
-        project,
-        {
-            f"{plan}/specs.md": SPECS,
-            f"{plan}/exploration.md": EXPLORATION,
-            f"{plan}/interview.md": INTERVIEW,
-            f"{plan}/plan.md": PLAN,
-            f"{plan}/blueprint.md": BLUEPRINT,
-            f"{plan}/checks/rev-01-01.md": CHECK,
-        },
-    )
-    record(project, plan, "plan-opened")
-    record(project, plan, "interview-closed")
-    record(project, plan, "check-done", "--report", "checks/rev-01-01.md", "--omissions", "0")
-    record(project, plan, "plan-drafted")
-    commit(project, "plan: export the shelf as CSV, revision 1", [plan])
-    git(project, "push", "--quiet", "--set-upstream", "origin", BRANCH)
-    gh_stand_in.open_pull(
-        project, head=BRANCH, base="main", title=PULL_TITLE, body=pr_body(project), draft=True
-    )
+    under_ci = state is State.UNPUSHED_CI
+    documents = {**DOCUMENTS, "exploration.md": EXPLORATION_CI} if under_ci else DOCUMENTS
+    plan = _open(project, SLUG, documents)
+    _draft(project, plan, CHECK, "plan: export the shelf as CSV, revision 1")
+    if state is State.TWO_PLANS:
+        second = _open(project, SECOND_SLUG, SECOND_DOCUMENTS)
+        _draft(project, second, SECOND_CHECK, "plan: count the books of a shelf, revision 1")
+    if state not in {State.UNPUSHED, State.UNPUSHED_CI}:
+        git(project, "push", "--quiet", "--set-upstream", "origin", BRANCH)
+        gh_stand_in.open_pull(
+            project, head=BRANCH, base="main", title=PULL_TITLE, body=pr_body(project), draft=True
+        )
     return plan
 
 
@@ -752,14 +1229,18 @@ def _slice(project: Path, plan: str, number: int, message: str, files: Mapping[s
     commit(project, message, [*files, f"{plan}/journal.jsonl"])
 
 
-def _slice_one(project: Path, plan: str, *, defect: bool, deviation: bool = False) -> None:
+def _slice_one_files(*, defect: bool, deviation: bool = False) -> dict[str, str]:
     # The deviation keeps the blueprint true, which says nothing of the tests: only the plan
     # names their file.
     tests = "tests/test_csv_rows.py" if deviation else "tests/test_export.py"
-    files = {
+    return {
         "shelf/export.py": EXPORT_DEFECT if defect else EXPORT,
         tests: TEST_EXPORT_DEFECT if defect else TEST_EXPORT,
     }
+
+
+def _slice_one(project: Path, plan: str, *, defect: bool, deviation: bool = False) -> None:
+    files = _slice_one_files(defect=defect, deviation=deviation)
     _slice(project, plan, 1, "export: write a list of books as CSV", files)
 
 
@@ -771,49 +1252,175 @@ def _slice_two(project: Path, plan: str, *, defect: bool) -> None:
     _slice(project, plan, 2, "export: add the export command", files)
 
 
+def _developer_commit(project: Path, _plan: str) -> None:
+    """Commit, as the developer, a fourth column the blueprint leaves out."""
+    files = {
+        "shelf/export.py": EXPORT_WITH_ISBN,
+        "tests/test_export.py": TEST_EXPORT_WITH_ISBN,
+        "tests/test_cli.py": TEST_CLI_WITH_ISBN,
+    }
+    write(project, files)
+    commit(project, "export: add the isbn column, the bookshop asked for it", list(files))
+
+
+def _review(  # noqa: PLR0913 (what a review leaves, each by its name)
+    project: Path,
+    plan: str,
+    number: int,
+    report: str,
+    message: str,
+    *,
+    defects: int = 0,
+    proposal: str | None = None,
+) -> None:
+    """Run the gates, record a review that left `report`, and commit both with the journal."""
+    run = gate(project, plan)
+    name = f"reviews/pass-{number:02d}.md"
+    files = {f"{plan}/{name}": report}
+    counts = ["--defects", str(defects), "--deviations", "0"]
+    if proposal is None:
+        counts += ["--breaks", "0"]
+    else:
+        files[f"{plan}/plan-changes/01.md"] = proposal
+        counts += ["--breaks", "1", "--proposal", "plan-changes/01.md"]
+    write(project, files)
+    record(project, plan, "review-done", "--report", name, *counts)
+    commit(project, message, [run, *files, f"{plan}/journal.jsonl"])
+
+
+def _found_the_defect(project: Path, plan: str) -> None:
+    """Record a review that finds the defect: a fix is due, and one pass is spent."""
+    _review(project, plan, 1, REVIEW_OF_THE_DEFECT, "review: pass 1, one defect", defects=1)
+
+
 def _reviewed_then_missed(project: Path, plan: str) -> None:
     """Record a review that finds the defect, then a fix that misses it: one pass is spent."""
-    report = f"{plan}/reviews/pass-01.md"
-    run = gate(project, plan)
-    write(project, {report: REVIEW_OF_THE_DEFECT})
-    review = ("--report", "reviews/pass-01.md", "--defects", "1", "--deviations", "0")
-    record(project, plan, "review-done", *review, "--breaks", "0")
-    commit(project, "review: pass 1, one defect", [run, report, f"{plan}/journal.jsonl"])
+    _found_the_defect(project, plan)
     run = gate(project, plan)
     record(project, plan, "fix-done")
     commit(project, "export: a fix that leaves the order as it was", [run, f"{plan}/journal.jsonl"])
 
 
-def build(state: State, dest: Path) -> Path:
-    """Build the toy project under `dest` in `state` and return its path."""
-    settings: dict[str, object] = {}
-    if state is State.CEILING:
-        settings["max_autonomous_passes"] = 1
-    project = _base(dest, settings)
-    if state is State.SPECS:
-        return project
-    plan = _awaiting(project)
-    if state is State.AWAITING:
-        return project
+def _blocked(project: Path, plan: str) -> None:
+    """Go past the ceiling of one: a second review finds the defect again, and the loop blocks."""
+    _reviewed_then_missed(project, plan)
+    _review(project, plan, 2, REVIEW_OF_THE_MISSED_FIX, "review: pass 2, one defect", defects=1)
+    record(project, plan, "blocked", "--why", WHY_BLOCKED)
+    commit(project, "plan: blocked at the ceiling", [f"{plan}/journal.jsonl"])
+
+
+def _break_raised(project: Path, plan: str) -> None:
+    """Record the review that raises the developer's commit as a break, with its proposal.
+
+    Committed and not pushed: the session that raised it died before the push of its stop.
+    """
+    _review(
+        project, plan, 1, REVIEW_OF_THE_BREAK, "review: pass 1, a contract break", proposal=PROPOSAL
+    )
+
+
+def _review_left_unrecorded(project: Path, plan: str) -> None:
+    """Leave what a reviewer wrote before its session died: a clean review, and its proof."""
+    run = gate(project, plan)
+    commit(project, "gates: run 1, green", [run, f"{plan}/journal.jsonl"])
+    write(
+        project, {f"{plan}/reviews/pass-01.md": REVIEW_CLEAN, f"{plan}/conformity.md": CONFORMITY}
+    )
+
+
+def _conformant_left_unpushed(project: Path, plan: str) -> None:
+    """Record a clean review, then the conformity, and commit both: the push never came."""
+    _review(project, plan, 1, REVIEW_CLEAN, "review: pass 1, no finding")
+    write(project, {f"{plan}/conformity.md": CONFORMITY})
+    record(project, plan, "conformant", "--conformity", "conformity.md")
+    commit(project, "plan: conformant", [f"{plan}/conformity.md", f"{plan}/journal.jsonl"])
+
+
+# What follows the slices in a state, before the push of the branch and after it.
+_PUSHED: Mapping[State, Callable[[Path, str], None]] = {
+    State.DEVELOPER_BREAK: _developer_commit,
+    State.PROPOSED: _developer_commit,
+    State.FIXING: _found_the_defect,
+    State.CEILING: _reviewed_then_missed,
+    State.BLOCKED: _blocked,
+}
+_NOT_PUSHED: Mapping[State, Callable[[Path, str], None]] = {
+    State.PROPOSED: _break_raised,
+    State.REVIEW_UNRECORDED: _review_left_unrecorded,
+    State.CONFORMANT_UNPUSHED: _conformant_left_unpushed,
+}
+# What the executor of slice 2 left in the working tree, and the reason it recorded.
+_SUSPICIONS: Mapping[State, tuple[Mapping[str, str], str]] = {
+    State.SUSPECTED_BREAK: ({"tests/test_cli.py": TEST_CLI_OF_THE_SUSPECTED_BREAK}, WHY_SUSPECTED),
+    State.UNFOUNDED_SUSPICION: ({"tests/shelves.py": TEST_SHELVES}, WHY_UNFOUNDED),
+}
+_ONE_PASS = frozenset({State.PLANNING_CEILING, State.CEILING, State.BLOCKED})
+_WITH_THE_DEFECT = frozenset({State.FIXING, State.CEILING, State.BLOCKED, State.DEFECT})
+_UNDRAFTED = frozenset({State.PLAN_WRITTEN, State.BLUEPRINT_DRAWN, State.PLANNING_CEILING})
+_DRAFTED = frozenset({State.AWAITING, State.UNPUSHED, State.UNPUSHED_CI, State.TWO_PLANS})
+
+
+def _executed(project: Path, plan: str, state: State) -> None:
+    """Approve the plan and carry the loop to the state asked for."""
     _approve(project, plan)
-    defect = state in {State.CEILING, State.DEFECT}
+    if state is State.SLICE_UNCOMMITTED:
+        # The executor died between its record and its commit: the work and the journal line
+        # are in the working tree.
+        write(project, _slice_one_files(defect=False))
+        record(project, plan, "slice-done", "--slice", "1", "--gates", GATE_COMMAND)
+        return
+    defect = state in _WITH_THE_DEFECT
     _slice_one(project, plan, defect=defect, deviation=state is State.DEVIATION)
+    if state in _SUSPICIONS:
+        # The executor recorded its reason and stopped: only a reviewer qualifies a break, and
+        # the work of the slice waits for the verdict, uncommitted.
+        left, why = _SUSPICIONS[state]
+        write(project, left)
+        record(project, plan, "break-suspected", "--slice", "2", "--why", why)
+        return
     if state is State.BLUEPRINT_MODIFIED:
         write(project, {f"{plan}/blueprint.md": BLUEPRINT_EDITED})
         commit(project, "blueprint: export the isbn too", [f"{plan}/blueprint.md"])
     else:
         _slice_two(project, plan, defect=defect)
-    if state is State.DEVELOPER_BREAK:
-        files = {
-            "shelf/export.py": EXPORT_WITH_ISBN,
-            "tests/test_export.py": TEST_EXPORT_WITH_ISBN,
-            "tests/test_cli.py": TEST_CLI_WITH_ISBN,
-        }
-        write(project, files)
-        commit(project, "export: add the isbn column, the bookshop asked for it", list(files))
-    if state is State.CEILING:
-        _reviewed_then_missed(project, plan)
+    if state in _PUSHED:
+        _PUSHED[state](project, plan)
     git(project, "push", "--quiet", "origin", BRANCH)
+    if state in _NOT_PUSHED:
+        _NOT_PUSHED[state](project, plan)
+
+
+def _more(state: State) -> dict[str, str]:
+    """Give the files a state adds to the project before the feature."""
+    if state in {State.SPECS_CI, State.UNPUSHED_CI}:
+        return {CI_PATH: CI}
+    if state is State.SUSPECTED_BREAK:
+        return {
+            "README.md": README_WITH_JSON_EXPORT,
+            "shelf/__main__.py": MAIN_WITH_JSON_EXPORT,
+            "tests/test_cli.py": TEST_CLI_WITH_JSON_EXPORT,
+        }
+    return {}
+
+
+def build(state: State, dest: Path, *, slow: bool = False) -> Path:
+    """Build the toy project under `dest` in `state` and return its path.
+
+    Built slow, its tests last: a session can be killed while a gate or an agent runs them.
+    """
+    settings: dict[str, object] = {"max_autonomous_passes": 1} if state in _ONE_PASS else {}
+    more = _more(state)
+    if slow:
+        more["tests/test_slow.py"] = TEST_SLOW
+    project = _base(dest, settings, more)
+    if state in {State.SPECS, State.SPECS_CI}:
+        return project
+    if state in _UNDRAFTED:
+        _undrafted(project, state)
+        return project
+    plan = _drafted(project, state)
+    if state not in _DRAFTED:
+        _executed(project, plan, state)
     return project
 
 
@@ -863,9 +1470,40 @@ def start_claude(
     )
 
 
-def kill(session: subprocess.Popen[str]) -> None:
+def at_work(project: Path) -> dict[int, str]:
+    """Give the processes at work in a project, each with its command line.
+
+    Read in `/proc`, so it finds them in the container only: a session, the commands it runs,
+    and a gate, which the state script runs in a process group of its own (ADR 0034).
+    """
+    found: dict[int, str] = {}
+    for entry in Path("/proc").glob("[0-9]*"):
+        try:
+            where = (entry / "cwd").readlink()
+            command = (entry / "cmdline").read_bytes().replace(b"\0", b" ").decode().strip()
+        except OSError:
+            continue  # gone meanwhile
+        if int(entry.name) != os.getpid() and where.is_relative_to(project):
+            found[int(entry.name)] = command
+    return found
+
+
+def kill(session: subprocess.Popen[str], project: Path | None = None) -> None:
+    """Kill a session and, when its project is given, what it left at work there.
+
+    The group of the session does not hold a gate under way, nor a command a session started in
+    a group of its own: they would go on writing in the project the next session takes up.
+    """
     os.killpg(session.pid, signal.SIGKILL)
     session.wait()
+    for _ in range(KILL_ROUNDS):
+        left = {} if project is None else at_work(project)
+        if not left:
+            break
+        for pid in left:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(pid, signal.SIGKILL)
+        time.sleep(0.1)
 
 
 def run_session(project: Path, prompt: str, log: Path, *, resume: str | None = None) -> int | None:
@@ -897,6 +1535,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     builder = commands.add_parser("build", help="build the toy project in a chosen state")
     builder.add_argument("state", type=State, choices=list(State))
     builder.add_argument("dest", type=Path, help="an empty or missing folder")
+    builder.add_argument("--slow", action="store_true", help="with a test that lasts")
     runner = commands.add_parser("run", help="run one headless session to its end")
     runner.add_argument("project", type=Path)
     runner.add_argument("log", type=Path, help="where the stream of the session goes")
@@ -909,7 +1548,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         dest: Path = args.dest.resolve()
         if dest.exists() and any(dest.iterdir()):
             parser.error(f"{dest} is not empty")
-        sys.stdout.write(f"{build(args.state, dest)}\n")
+        sys.stdout.write(f"{build(args.state, dest, slow=args.slow)}\n")
         return 0
     code = run_session(args.project.resolve(), args.prompt, args.log, resume=args.resume)
     result = session_result(args.log)

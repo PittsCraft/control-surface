@@ -13,7 +13,7 @@ The chain is made of prompts. The unit tests hold the state script, the installe
 
 Sessions run with `--permission-mode bypassPermissions`, so a scenario fails on the chain's behavior and not on an agent's exploration. Since bypassing is not safe on a developer's machine, they run in the container of `tests/e2e/Dockerfile`, as a user that is not root, with the clone mounted read-only and the token passed from the environment. `toy.py` refuses to start a session outside the container.
 
-The scenarios one session can play are pytest tests, outside the default run: `scripts/gate.sh e2e` runs them on demand, never in CI. Those that need the developer's answers are played by hand from the same states, following `tests/e2e/README.md`.
+The scenarios are pytest tests, outside the default run: `scripts/gate.sh e2e` runs them on demand, never in CI. Those that need the developer's answers give them written, one session per answer: every question of the chain carries a recommendation, so a reply that takes it answers a question that changes from run to run, and no model plays the developer there, which is what the evaluations do ([ADR 0036](0036-evaluations-on-real-sessions.md)).
 
 ## Consequences
 
