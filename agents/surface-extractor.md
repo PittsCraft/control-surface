@@ -24,7 +24,7 @@ In the plan folder your mandate gives:
 
 Where `specs.md` or `interview.md` quotes the developer in another language, work from its translation: the original is the reference when the two disagree.
 
-And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones.
+And the repository's agent instructions, `AGENTS.md` or `CLAUDE.md` at its root, when they exist: its conventions and its critical zones. When they declare critical zones, the code as well, as far as the files the slices of `plan.md` change: what those files hold tells which zones the plan touches.
 
 ## What you write
 
@@ -48,9 +48,11 @@ It opens with three sections, in this order:
 
 It closes with one:
 
-- Sensitive zones: first each critical zone the repository's agent instructions declare that the plan touches, named as they name it, or the statement that the plan touches none; then what the developer would not see go by and that touches their control, their work or their time, when there is any
+- Sensitive zones: first each critical zone the repository's agent instructions declare that the plan touches, named as they name it, with its files the plan changes and how far, or the statement that the plan touches none; then what the developer would not see go by and that touches their control, their work or their time, when there is any
 
-Sensitive zones opens with the critical zones because their code is what the developer still reads themselves once the work is conformant: this is where they learn which zones that will be.
+Sensitive zones opens with the critical zones because their code is what the developer still reads themselves once the work is conformant: this is where they learn which code that will be. The plan touches a zone as soon as a slice changes, creates or deletes a file that holds its code, whatever it changes there: at conformity the developer is sent to every such file the branch changed, and one who was told "none" takes that list for a mistake. Which files hold the code of a zone is your reading: the file the agent instructions name for it, and the files whose code defines, computes or writes what they say it protects, as the code stands or as the plan leaves it. Open the files the slices change to tell, and say that the plan touches none only when not one of them holds the code of a declared zone.
+
+For each zone touched, name those files, then say how far the plan goes into it, in one sentence, which points to the criterion or the section that holds the rule instead of telling it again: the plan changes what the zone protects, or it changes something else the file holds, said in a few words, and leaves what the zone protects as it is. The page then says "touched" where the rule of a zone stays as it is, and says so.
 
 ### The body
 

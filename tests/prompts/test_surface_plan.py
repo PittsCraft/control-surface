@@ -705,8 +705,14 @@ def test_the_blueprint_template_names_the_aspects_left_alone_in_one_closing_line
 def test_the_blueprint_template_says_which_critical_zones_the_plan_touches() -> None:
     template = _template("blueprint.md")
     zones = template[template.index(f"## {BLUEPRINT_CLOSING}") :]
-    said = "Critical zones touched, among those the repository's agent instructions declare: none."
-    assert said in zones
+    # One line opens the section, and says none or names the zones with their files: a zone is
+    # touched as soon as the plan changes a file that holds its code. How far comes after it, a
+    # sentence per zone, so that the statement itself stays a bare line.
+    said = "Critical zones touched, among those the repository's agent instructions declare: "
+    named = "<none, or each zone a file of which the plan changes, named as they name it, with"
+    how_far = "<For each zone named, one sentence on how far the plan goes: "
+    assert f"{said}{named} that file>. {how_far}" in zones
+    assert "into what the zone protects, or only into something else its file holds.>" in zones
     assert zones.index(said) < zones.index(CLOSING_LINE)
 
 

@@ -37,7 +37,7 @@ CONFORMANT_WITHOUT_PULL_REQUEST = (
 CONFORMANT_EXCEPTION = (
     "a conformant plan leaves nothing to check, except the code of the critical zones"
 )
-# So the developer learns at approval which zones those will be: the closing section of the
+# So the developer learns at approval which code that will be: the closing section of the
 # blueprint, the sensitive zones, names each declared critical zone the plan touches, or says the
 # plan touches none, and the cross-check counts a touched zone it does not name as an omission.
 CRITICAL_ZONES_OF_THE_PLAN = (
@@ -45,11 +45,31 @@ CRITICAL_ZONES_OF_THE_PLAN = (
 )
 TOUCHES_NONE = "the plan touches none"
 UNNAMED_ZONE = "A critical zone the plan touches and the sensitive zones do not name is an omission"
+# Both read "touches" by file, as the reviewer lists at conformity: a zone is touched as soon as
+# the plan changes a file that holds its code, even when what the zone protects stays as it is.
+# Read as what a zone protects, a page said none and the developer was then sent to a file of
+# one. Which files hold the code of a zone is each agent's reading, of the same things. The page
+# names the files and says how far the plan goes, so that "touched" is read for what it is.
+TOUCHED_BY_FILE = (
+    "The plan touches a zone as soon as a slice changes, creates or deletes a file that holds its"
+    " code, whatever it changes there"
+)
+FILES_OF_A_ZONE = (
+    "Which files hold the code of a zone is your reading: the file the agent instructions name"
+    " for it, and the files whose code defines, computes or writes what they say it protects"
+)
+HOW_FAR = "say how far the plan goes into it, in one sentence"
 # At conformity the reviewer lists the files the branch changed inside those zones, in a fenced
 # block of `conformity.md` that the state script alone takes up, in the pull request description.
+# It lists by file, whatever the branch changed there and whatever the blueprint named: a list
+# that weighed the change, or trusted the page, could hide code the developer was to read.
 CRITICAL_FILES_OF_THE_BRANCH = (
     "the files the branch changed inside the critical zones the repository's agent instructions"
     " declare"
+)
+LISTED_BY_FILE = "such a file is listed as soon as the branch changed it, whatever it changed there"
+INDEPENDENT_LIST = (
+    "Which files a zone covers is your reading, whatever the sensitive zones of the blueprint name"
 )
 # A list the script refuses is an agent's mechanical mistake, never the developer's to repair:
 # they are told not to open `conformity.md`. `/surface-execute` sends it to a fresh reviewer,

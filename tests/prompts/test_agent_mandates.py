@@ -22,10 +22,15 @@ from chain_contract import (
     CRITICAL_ZONES_OF_THE_PLAN,
     DEFECT_QUESTION,
     DOCUMENTS_LANGUAGE,
+    FILES_OF_A_ZONE,
+    HOW_FAR,
+    INDEPENDENT_LIST,
+    LISTED_BY_FILE,
     NO_FINDING_END,
     REFUSED_LIST,
     REVIEWER_MODES,
     REVIEWER_WRITES,
+    TOUCHED_BY_FILE,
     TOUCHES_NONE,
     UNNAMED_ZONE,
     WORK_FROM_TRANSLATION,
@@ -341,10 +346,49 @@ def test_checker_never_counts_a_cut_a_short_section_or_the_absence_of_a_diagram(
 def test_extractor_opens_the_sensitive_zones_with_the_critical_zones_the_plan_touches() -> None:
     _, body = read_agent("surface-extractor")
     zones = next(line for line in body.splitlines() if line.startswith(f"- {BLUEPRINT_CLOSING}"))
-    assert f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it" in zones
+    named = f"first {CRITICAL_ZONES_OF_THE_PLAN}, named as they name it"
+    assert f"{named}, with its files the plan changes and how far" in zones
     assert f"or the statement that {TOUCHES_NONE}" in zones
     assert "then what the developer would not see go by" in zones
     assert "what the developer still reads themselves once the work is conformant" in body
+    assert "this is where they learn which code that will be" in body
+
+
+def test_extractor_and_checker_read_a_zone_as_touched_by_the_files_that_hold_its_code() -> None:
+    # The reviewer lists by file. An extractor that read a zone as what it protects said none of
+    # a plan whose branch then sent the developer to a file of one: both ends of planning hold
+    # the reviewer's test, in the same words, and find the files in the code the plan changes.
+    for name in ("surface-extractor", "surface-checker"):
+        _, body = read_agent(name)
+        assert f"{TOUCHED_BY_FILE}: at conformity the developer is sent to every such file" in body
+        # A file the plan creates, or gives code of a zone to, is one the reviewer will list.
+        assert f"{FILES_OF_A_ZONE}, as the code stands or as the plan leaves it." in body, name
+        assert "Open the files the slices change to tell" in body, name
+        reads = section(body, "What you read")
+        assert "the code as well, as far as the files the slices of `plan.md` change" in reads
+    _, extractor = read_agent("surface-extractor")
+    writing = section(extractor, "What you write")
+    assert 'one who was told "none" takes that list for a mistake' in writing
+    none = f"say that {TOUCHES_NONE} only when not one of them holds the code of a declared zone"
+    assert none in writing
+
+
+def test_extractor_says_how_far_the_plan_goes_into_a_zone_in_one_sentence() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # "Touched" alone would read as a change of the rule of the zone: the page says which of its
+    # files the plan changes, and whether what the zone protects changes with them. One sentence,
+    # which points to the rule and tells nothing again.
+    said = [
+        f"For each zone touched, name those files, then {HOW_FAR}",
+        "which points to the criterion or the section that holds the rule instead of telling it",
+        "the plan changes what the zone protects",
+        "or it changes something else the file holds, said in a few words",
+        "and leaves what the zone protects as it is",
+        'The page then says "touched" where the rule of a zone stays as it is, and says so',
+    ]
+    positions = [writing.index(sentence) for sentence in said]
+    assert positions == sorted(positions)
 
 
 def test_checker_counts_a_touched_critical_zone_missing_from_the_sensitive_zones() -> None:
@@ -353,6 +397,10 @@ def test_checker_counts_a_touched_critical_zone_missing_from_the_sensitive_zones
     assert f"names {CRITICAL_ZONES_OF_THE_PLAN}, or says that {TOUCHES_NONE}" in counting
     assert f"{UNNAMED_ZONE}, even when another section shows the change" in counting
     assert "says none while the plan touches one" in counting
+    assert "or names a zone the plan touches only to say that it is left alone" in counting
+    # The zone is what the developer has to learn: how the page tells it is the extractor's.
+    unsaid = "A zone named without its files, or without how far the plan goes into it"
+    assert f"{unsaid}, is no omission" in counting
     # The rule shared with the reviewer's amendment check stays as it was.
     assert "sensitive zones" not in marked_block(counting, "checker-rule").lower()
 
@@ -363,7 +411,11 @@ def test_reviewer_lists_the_changed_files_of_the_critical_zones_in_a_block() -> 
     assert f"When you write `conformity.md`, end it with {CRITICAL_FILES_OF_THE_BRANCH}" in writing
     assert "the developer reads their code themselves" in writing
     assert "the state script shows them in the pull request description" in writing
-    assert "Which files a zone covers is your reading" in writing
+    # By file, and on its own reading: a list that weighed what the branch changed in a file, or
+    # that followed the blueprint, could hide code the developer was to read.
+    assert f"A zone covers every file that holds its code, and {LISTED_BY_FILE}" in writing
+    assert "a list that weighed the change could hide code the developer was to read" in writing
+    assert INDEPENDENT_LIST in writing
     assert f"keeps its `{CRITICAL_FILES_TAG}` tag in any language" in writing
     assert "one path per line from the root of the repository" in writing
     assert "a file the branch deleted included" in writing
