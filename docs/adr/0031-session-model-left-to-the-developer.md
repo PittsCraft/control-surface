@@ -5,7 +5,9 @@ Date: 2026-09-29
 
 ## Context
 
-The chain first pinned models in the commands: `/surface-plan` set Opus and the effort `high` and warned when a later turn left them; `/surface-execute` set Sonnet and reported when a later turn ran on another model. The Claude Code documentation of skills (read on 2026-09-29) applies a skill's `model` and `effort` to the turn that invokes it only. Every later turn runs on the developer's session: each answer in the interview, and each background agent that hands back. The warnings could not be reliable either: a model does not know for sure which model it runs on, nor where a turn ended, and a headless run reported a model switch that its log disproved.
+The chain first pinned models in the commands: `/surface-plan` set Opus and the effort `high` and warned when a later turn left them; `/surface-execute` set Sonnet and reported when a later turn ran on another model. The Claude Code documentation of skills (read on 2026-09-29) applies a skill's `model` and `effort` to the turn that invokes it only. Every later turn runs on the developer's session: each answer in the interview, and each background agent that hands back.
+
+The warnings could not be reliable either: a model does not know for sure which model it runs on, nor where a turn ended, and a headless run reported a model switch that its log disproved.
 
 The agents are not affected. A subagent's model is, in order, the `model` of the Agent call, of its definition, then of the environment, then of the session. The Agent call takes no effort; the definition's frontmatter does.
 

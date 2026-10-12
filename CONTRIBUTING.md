@@ -44,7 +44,7 @@ Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and `.
 
 No em dash in any file of the repository, checked by the gates. Commit messages carry no em dash and no attribution to Claude, checked by the `commit-msg` hook. What the hook accepts and refuses is in `scripts/check_commit_msg.py`.
 
-The gates bound the size of a paragraph of `ARCHITECTURE.md`, and of the page: `tests/prompts/test_document_form.py` holds the bounds, which only the developer raises.
+The gates bound the size of a paragraph and of each page a person reads, `ARCHITECTURE.md`, the guides and the decision records among them: `tests/prompts/test_document_form.py` holds the bounds, which only the developer raises. `AGENTS.md` says what each page holds.
 
 ## Decisions
 

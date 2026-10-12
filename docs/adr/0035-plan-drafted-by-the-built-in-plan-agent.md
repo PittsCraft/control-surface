@@ -5,7 +5,9 @@ Date: 2026-10-03
 
 ## Context
 
-`/surface-plan` wrote `plan.md` itself, from a template of seven numbered sections: goal and scope, architecture decisions, slices, tests, definition of done, risks and assumptions, gates. Nothing in the chain read most of that form. The state script reads the slice markers and the `gates` block; the extractor, the checker and the reviewer read the acceptance criteria; an executor reads its slice. What the template held beyond that, a good plan, is what the `Plan` agent built into Claude Code already produces: it explores the code and designs an implementation, read only, and it follows the releases of Claude Code without the chain doing anything.
+`/surface-plan` wrote `plan.md` itself, from a template of seven numbered sections: goal and scope, architecture decisions, slices, tests, definition of done, risks and assumptions, gates. Nothing in the chain read most of that form. The state script reads the slice markers and the `gates` block; the extractor, the checker and the reviewer read the acceptance criteria; an executor reads its slice.
+
+What the template held beyond that, a good plan, is what the `Plan` agent built into Claude Code already produces: it explores the code and designs an implementation, read only, and it follows the releases of Claude Code without the chain doing anything.
 
 Two other ways were open. Keeping the command as the writer left the plan to the session that held the interview, on a form the chain had to maintain. An agent of the chain's own, a fifth definition, would have been one more prompt to keep at the state of the art, for the one step where the chain adds nothing.
 
@@ -26,4 +28,6 @@ The plans it drafts are not judged, no more than those the command wrote. The cr
 
 ## Consequences
 
-One prompt less to write and maintain, and plans that improve with Claude Code. The form of a plan is no longer fixed: no prompt names a section of a plan by a number, nor counts on a heading beyond the three of the template, and two plans may be laid out two ways. The chain depends on an agent it does not own: a release that renames it, removes it or changes what it returns changes this step, and in a host that denies it planning stops at the plan, where the command says so. A plan costs one more agent launch, and the code the feature touches is read twice, by the command for the interview and by the agent for the plan.
+One prompt less to write and maintain, and plans that improve with Claude Code. The form of a plan is no longer fixed: no prompt names a section of a plan by a number, nor counts on a heading beyond the three of the template, and two plans may be laid out two ways.
+
+The chain depends on an agent it does not own: a release that renames it, removes it or changes what it returns changes this step, and in a host that denies it planning stops at the plan, where the command says so. A plan costs one more agent launch, and the code the feature touches is read twice, by the command for the interview and by the agent for the plan.
