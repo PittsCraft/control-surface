@@ -23,6 +23,6 @@ A zone the page says is not touched is held as the contract: a branch or an amen
 
 The page says "touched" for a change that leaves the rule of a zone alone, and says so. A fix or an amendment that reaches a zone the page said was not touched stops the loop on a plan change proposal, where the file was listed without a word.
 
-The definition is narrow on purpose. A wider wording announced a zone for a file that prints a fine and for a test file, and listed a README that states the fields of a format: the developer was sent to read as critical code what holds none. Widening it again brings those back.
+The definition is narrow on purpose. A wider wording announced a zone for a file that prints a fine and for a test file, and listed a README that states the fields of a format: the developer was sent to read as critical code what holds none.
 
 The three prompts carry the definition word for word, so a change to one is a change to all three, and the evaluations measure both ends: every file listed was announced, and every file announced is listed.

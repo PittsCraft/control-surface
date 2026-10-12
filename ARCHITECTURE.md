@@ -31,7 +31,8 @@ install.py --copies--> host .claude/skills/surface-*/ and .claude/agents/surface
   - `/surface-status` reports, runs the conformity check, and abandons a plan on confirmation.
 - **Agents** are four roles of the chain, each an `agents/surface-*.md`, and one agent built into Claude Code.
   - The `Plan` agent, built in, drafts the plan in the form it chooses. The chain ships no definition for it and holds the plan only to the minimum it reads: the numbered acceptance criteria, the slices behind their markers, each enough for an agent that starts fresh, and the `gates` block ([ADR 0035](docs/adr/0035-plan-drafted-by-the-built-in-plan-agent.md)).
-  - That agent has no write tool and cannot ask the developer anything. It returns the plan and `/surface-plan` writes `plan.md`. A rule it has to settle on its own is marked in the plan as an assumption, and the blueprint shows it as one that approving the page confirms: a question sent back would cost the developer a turn.
+  - That agent has no write tool: it returns the plan, and `/surface-plan` writes `plan.md`.
+  - It cannot ask the developer anything. A rule a user of the feature would see applied, which neither the specs, an answer of the developer nor the code settles, it settles and marks as an assumption of the plan. The blueprint shows it as one that approving the page confirms: a question sent back would cost the developer a turn.
   - The extractor draws `blueprint.md` from `plan.md`: a fixed frame, the idea, the acceptance criteria and the scope first, the sensitive zones last, around a body cut for the feature. Its prompt and `skills/surface-plan/templates/blueprint.md` hold the form of the page.
   - The checker looks for what the plan does and the blueprint does not show, never for a cut, a short section or a diagram that is not there.
   - The executor carries out a slice or a fix.
@@ -74,8 +75,9 @@ install.py --copies--> host .claude/skills/surface-*/ and .claude/agents/surface
 - Each step goes to a fresh agent that reads files, never a conversation, one agent at a time.
 - Prompts run every command from the repository root, with paths from there, since the dispatcher and its agents share one shell. They say nothing else of how an agent writes a command, nor of the tool it changes a file with: the agent judges, and what stops for an approval is the permission mode's call ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)).
 - The chain acts on nothing of the host's CI: it reads its configuration for the commands that check the project and their order, reads no trigger, asks nothing before a push, and gives the host no job to run, since each would bind the chain to what every host does its own way ([ADR 0037](docs/adr/0037-the-host-ci-left-to-the-host.md)). `check --require conformant` is the developer's command before merging, which a CI can call.
-- The chain never marks a pull request ready: what the host runs then is the developer's to start, so the developer does it, when they want, once the plan is conformant. `conformity.md` is the audit trail the `conformant` event cites, never a required reading.
-- No test asserts the prose of the README or of these documents: one may read their form, where a pointer leads or the size of a paragraph, never a sentence ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)).
+- The chain never marks a pull request ready: what the host runs then is the developer's to start, so the developer does it, when they want, once the plan is conformant.
+- `conformity.md` is the audit trail the `conformant` event cites, never a required reading.
+- No test asserts the prose of the README or of these documents ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)). One may read their form, where a pointer leads or the size of a paragraph, never a sentence.
 - No file holds an em dash, and no commit message carries an attribution.
 
 ## Crosscutting concerns
@@ -108,13 +110,13 @@ The report names the repository root `.` and the home directory `~`, since it is
 
 ### Plans of a branch
 
-The plans of a branch are the plan folders it adds against its merge base with the main branch, so a plan kept on main after an earlier merge is never the branch's. The main branch is `origin/HEAD`, else `main`, `master`, `origin/main`, `origin/master`, with no setting. Three subcommands read them:
+The plans of a branch are the plan folders it adds against its merge base with the main branch, so a plan kept on main after an earlier merge is never the branch's. The main branch is `origin/HEAD`, else `main`, `master`, `origin/main`, `origin/master`, with no setting. Among the subcommands that read them:
 
 - `resolve` designates the plan a command acts on, or hands the choice to the developer. It finds a plan for a command only in a state that command's skill takes, so a relaunch without an argument finds what the command would resume.
 - `commits` assigns each commit to the plans whose journal it touches ([ADR 0016](docs/adr/0016-plans-of-a-branch-from-git-objects.md)).
 - `pr-body` describes them in the pull request, refreshed whole at every stop: each plan's state and links, for a conformant plan the changed files of the critical zones, under a heading that says they are for the developer to read themselves, then the decisions agents took within the contract.
 
-Those decisions are one line each, for information, read from the journal: a `plan-amended` with its reason, a `suspicion-dismissed` with the reason of the suspicion and its note. The developer did not see them go by.
+Those decisions are one line each, for information, since the developer does not see them go by. They are read from the journal: a `plan-amended` with its reason, a `suspicion-dismissed` with the reason of the suspicion and its note.
 
 ### Critical zones
 
@@ -122,19 +124,21 @@ The developer reads the blueprint and not the code, except where a mistake would
 
 **Declared in prose.** The zones are declared in the host's `AGENTS.md` or `CLAUDE.md`, and which files they cover is an agent's reading. A setting listing critical paths, which the script could match against the diff, would be one more thing to configure and a second place that declares the zones.
 
-**Touched by file.** A zone is touched as soon as the plan changes a file that holds its code: a file the host places in the zone, by its name, its folder or a pattern, or one whose code defines or computes what the zone protects. The extractor, the checker and the reviewer hold that definition in the same words, in their prompts, with what does not count: a file that only uses that code, tests it or describes it ([ADR 0038](docs/adr/0038-a-critical-zone-touched-by-file.md)).
+**Touched by file.** A zone is touched as soon as the plan changes a file that holds its code: a file the host places in the zone, by its name, its folder or a pattern, or one whose code defines or computes what the zone protects. The extractor, the checker and the reviewer hold that definition in the same words, in their prompts, with what does not count among the files the host does not place: one that only uses that code, tests it or describes it ([ADR 0038](docs/adr/0038-a-critical-zone-touched-by-file.md)).
 
 **Announced at approval.** The closing section of the blueprint, the sensitive zones, opens on one sentence of fixed form: none, or each zone touched with the files of it the plan changes. The page then says how far the change goes, into what the zone protects or only into something else the file holds. So the developer learns at approval which code they will read, and the cross-check and the evaluations read the zones in that sentence. The cross-check counts a touched zone the page does not name as an omission.
 
 **What the page binds.** A zone the page says is not touched is held as the contract: a branch or an amendment that changes a file of it makes the page false, a break like any other, and the developer decides. The files the page names for a touched zone are neither a criterion nor a promise on the layout of the code: the list at conformity is the reference.
 
-**Listed at conformity.** The reviewer lists the files the branch changed inside the zones, whatever the blueprint named, in a `critical-files` fenced block of `conformity.md`: one path from the project root per line, at most one block, none when there is no such file. The script is the block's only reader.
+**Listed at conformity.** The reviewer lists the files the branch changed inside the zones, whatever the branch changed in them and whatever the blueprint named, in a `critical-files` fenced block of `conformity.md`: one path from the project root per line, at most one block, none when there is no such file. The script is the block's only reader.
 
 **Checked by the script.** `conformant` is refused with the code `critical-files` when the block is malformed or lists a file the branch did not add, modify or delete against its merge base, since a wrong list would hide code to read or send the developer to code that did not change. Outside a git work tree only the form is checked.
 
-**A refused list corrected by an agent.** It is an agent's mechanical mistake, and the developer is never sent to `conformity.md` to repair it. `/surface-execute` launches a fresh reviewer whose only mandate is to correct that block, then records `conformant` again, up to `max_autonomous_passes` times, and hands back when the list is still refused. The prompt keeps that count, since a refused `conformant` leaves no journal line: these attempts raise no pass counter, and need no new gate run and no new review.
+**A refused list corrected by an agent.** It is an agent's mechanical mistake, and the developer is never sent to `conformity.md` to repair it. `/surface-execute` launches a fresh reviewer whose only mandate is to correct that block, then records `conformant` again, up to `max_autonomous_passes` times, and hands back when the list is still refused. Its prompt keeps that count, since a refused `conformant` leaves no journal line, and these attempts raise no pass counter.
 
-**Shown to the developer.** `pr-body` shows the list of each conformant plan, a deleted file named as gone, and stops on a `conformity.md` broken after the record instead of saying there is nothing to read. `/surface-execute` hands back at conformity in one line that names those files, read from `pr-body --json`. Nothing is written into the frozen blueprint after its approval.
+**Shown to the developer.** `pr-body` shows the list of each conformant plan, a deleted file named as gone, and stops on a `conformity.md` broken after the record instead of saying there is nothing to read. `/surface-execute` hands back at conformity in one line that names those files, read from `pr-body --json`.
+
+Nothing of this is written into the frozen blueprint after its approval.
 
 ### Command line contract
 
@@ -152,7 +156,7 @@ The chain needs no configuration. `.claude/surface.json` is optional and the dev
 
 Plan documents are written in the repository's language, since they are committed next to its code and documentation: a language the host's agent instructions declare, else that of its documentation, else that of `specs.md`. `/surface-plan` finds it once and writes it in `exploration.md`, where every agent reads it.
 
-The conversation stays in the developer's language and in the words the README and the guide teach them: the commands keep the chain's insides, the names of the agents and the paths of the reports, out of what they tell the developer.
+The conversation stays in the developer's language and in the words the README and the guide teach them. `/surface-plan` and `/surface-execute` keep the chain's insides, the names of the agents and the paths of the reports, out of what they tell the developer, with the exceptions their prompts name.
 
 The developer's own words, in `specs.md` and `interview.md`, are quoted as given, then translated, so the evidence of what was said survives. What a script reads (markers, the gates and critical-files tags, the journal) never depends on either language.
 
@@ -168,9 +172,11 @@ The attribution Claude Code adds to a commit is the host's setting too: no promp
 
 Unit and hypothesis property tests cover each part of the script and the installer, with sockets blocked; the `ci` profile runs 500 examples. Golden journals replay to their expected states. `tests/ci/` proves the conformity check in a checkout shaped like a CI's, and the `conformity` job of `ci.yml` runs it again on a real runner.
 
-Prompt tests hold the frontmatter, the contract the prompts carry (`tests/prompts/chain_contract.py`), host neutrality and privacy. The privacy check reads plan folders, where a path of the machine is a leak too, while the decision-link check skips them, since a plan names decisions still to come. A form check bounds each paragraph of this page and the page itself, in bytes, so that a pull request cuts or moves before it adds.
+Prompt tests hold the frontmatter, the contract the prompts carry (`tests/prompts/chain_contract.py`), host neutrality and privacy. The privacy check reads plan folders, where a path of the machine is a leak too, while the decision-link check skips them, since a plan names decisions still to come.
 
-End to end tests run real sessions on a toy project, in a container, on demand only, since they are billed ([ADR 0025](docs/adr/0025-end-to-end-on-a-toy-project.md)). The developer's answers are written in the test, one session per answer, and a path a kill would have to hit between two commands of one step starts from a prepared state that holds what a death there leaves. `tests/e2e/README.md` is their guide.
+A form check, `tests/prompts/test_document_form.py`, bounds each paragraph of this page and the page itself, in bytes, so that a pull request cuts or moves before it adds.
+
+End to end tests run real sessions on a toy project, in a container, on demand only, since they are billed ([ADR 0025](docs/adr/0025-end-to-end-on-a-toy-project.md)). Where a scenario needs the developer's answers, they are written in the test, one session per answer. A path a kill would have to hit between two commands of one step starts from a prepared state that holds what a death there leaves. `tests/e2e/README.md` is their guide.
 
 Their image reaches no GitHub. A stand-in, `tests/e2e/toy/gh_stand_in.py`, first on its `PATH`, answers the pull request calls of the prompts, refuses the others and keeps a record of every call, which the scenarios and the evaluations read. `tests/gh/` holds it without a session. It belongs to the test image only: nothing of it is installed in a host.
 
@@ -178,11 +184,13 @@ Their image reaches no GitHub. A stand-in, `tests/e2e/toy/gh_stand_in.py`, first
 
 The tests say that the chain works, not that it is worth using. The evaluations of `evals/` answer that after a change of the prompts, on real sessions and with no human in them, in the container of the end to end tests, on demand and never in CI ([ADR 0036](docs/adr/0036-evaluations-on-real-sessions.md)). `evals/README.md` is their guide.
 
-A run plays the developer's side on a synthetic host. It types the need of a case, has a model answer each question from a written brief, then read the blueprint and send back what contradicts the brief, and launches `/surface-execute`. A campaign that measures a change of planning alone stops its runs at the hand over. Three things measure a run:
+A run plays the developer's side on a synthetic host. It types the need of a case, has a model answer each question from a written brief, then read the blueprint and send back what contradicts the brief, and launches `/surface-execute`. A campaign that measures a change of planning alone stops its runs at the hand over. A run is measured three ways:
 
-- A script measures what a script can, from the journal, the plan folder, the streams, the delivered code and what the stand-in `gh` kept: the outcome, the passes, acceptance tests kept from the agents, the critical zones, the form of the blueprint and the state of the pull request. On the toy, it tells whether a fault put there on purpose is found by the cross-check and classified by the review.
+- A script measures what a script can, from the journal, the plan folder, the streams, the delivered code and what the stand-in `gh` kept: the outcome, the passes, acceptance tests kept from the agents, the critical zones, the form of the blueprint and the state of the pull request.
 - A model judges the rest against a written rubric, the blueprint, the interview, the messages, each judgement with the passage it rests on.
-- In a call of its own, that judge counts what the developer would skip on the blueprint: the facts said more than once in prose and the details of implementation that are not theirs to decide.
+- In a call of its own, that judge counts what the developer would skip on the blueprint: the facts said more than once in prose, the details of implementation that are not theirs to decide, the share of the page.
+
+Apart from the runs, on the toy, a script tells whether a fault put there on purpose is found by the cross-check and classified by the review.
 
 The judge is itself checked: a document spoiled in a known way must score below its original, and the padded blueprint must count more than the lean one.
 
@@ -192,4 +200,7 @@ A measure is kept as its spread over the runs, and the report says what lies out
 
 `scripts/gate.sh` is the one entry point and CI runs it, so CI only confirms a local run. It runs ruff with `select = ["ALL"]`, so new rules are not missed; mypy and pyright, both strict, since they disagree in useful places; the `claude` plugin validation when the CLI is present; then pytest on 3.11 with coverage and on the newest Python.
 
-Coverage is printed, never a threshold, which would get padded with empty tests. uv holds the toolchain in a committed lock. CI pins its actions by SHA, reads only, and skips drafts. A `commit-msg` hook refuses an em dash or an attribution.
+- Coverage is printed, never a threshold, which would get padded with empty tests.
+- uv holds the toolchain in a committed lock.
+- CI pins its actions by SHA, reads only, and skips drafts.
+- A `commit-msg` hook refuses an em dash or an attribution.
