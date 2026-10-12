@@ -15,7 +15,20 @@ from test_repo_text import ROOT
 # Bytes, for a paragraph, a list item or a table row.
 PARAGRAPH_BOUND = 600
 # Bytes, for a page. Only the developer raises a bound (AGENTS.md).
-PAGE_BOUNDS = {"ARCHITECTURE.md": 28_700}
+PAGE_BOUNDS = {
+    "AGENTS.md": 4_300,
+    "ARCHITECTURE.md": 28_700,
+    "CONTRIBUTING.md": 4_700,
+    "README.md": 6_100,
+    "docs/guide.md": 14_300,
+    "evals/README.md": 26_300,
+    "tests/e2e/README.md": 28_400,
+}
+# Bytes, for a decision record: a record is short.
+RECORD_BOUND = 4_700
+# The pages that grow with what they list, the index of the records and the notes on the
+# campaigns kept: their paragraphs are bounded, not their size.
+LISTS = ("docs/adr/README.md", "evals/reports/README.md")
 
 _FENCE = "```"
 _HEADING = re.compile(r"#{1,6} ")
@@ -46,6 +59,15 @@ def blocks(text: str) -> list[tuple[int, str]]:
     return [(number, " ".join(lines)) for number, lines in found]
 
 
+def records() -> list[str]:
+    found = (ROOT / "docs" / "adr").glob("[0-9]*.md")
+    return sorted(path.relative_to(ROOT).as_posix() for path in found)
+
+
+def pages() -> list[str]:
+    return sorted([*PAGE_BOUNDS, *LISTS, *records()])
+
+
 def size(text: str) -> int:
     return len(text.encode("utf-8"))
 
@@ -55,8 +77,8 @@ def over_the_bound(text: str, bound: int) -> list[tuple[int, int]]:
     return [(number, size(block)) for number, block in blocks(text) if size(block) > bound]
 
 
-@pytest.mark.parametrize("page", sorted(PAGE_BOUNDS))
-def test_no_paragraph_of_a_bounded_page_is_over_the_bound(page: str) -> None:
+@pytest.mark.parametrize("page", pages())
+def test_no_paragraph_of_a_page_is_over_the_bound(page: str) -> None:
     long = over_the_bound((ROOT / page).read_text(encoding="utf-8"), PARAGRAPH_BOUND)
     assert not long, (
         f"{page}: (line, bytes) of each paragraph over {PARAGRAPH_BOUND} bytes: {long}."
@@ -71,6 +93,21 @@ def test_no_bounded_page_is_over_its_bound(page: str, bound: int) -> None:
         f"{page} holds {held} bytes, over {bound}."
         " Cut or move before adding (AGENTS.md): only the developer raises a bound."
     )
+
+
+@pytest.mark.parametrize("record", records())
+def test_no_record_is_over_the_bound(record: str) -> None:
+    held = size((ROOT / record).read_text(encoding="utf-8"))
+    assert held <= RECORD_BOUND, (
+        f"{record} holds {held} bytes, over {RECORD_BOUND}: a record is short."
+        " Cut it (AGENTS.md): only the developer raises a bound."
+    )
+
+
+def test_every_record_and_every_guide_is_read() -> None:
+    read = pages()
+    assert "docs/adr/0001-python-311-standard-library.md" in read
+    assert {"ARCHITECTURE.md", "docs/guide.md", "evals/reports/README.md"} <= set(read)
 
 
 def test_a_fence_and_a_heading_are_no_paragraph() -> None:

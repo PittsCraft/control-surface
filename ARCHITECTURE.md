@@ -55,7 +55,7 @@ install.py --copies--> host .claude/skills/surface-*/ and .claude/agents/surface
 - `agents/surface-*.md`: the four roles.
 - `install.py`: install, update, `--check`, and the one-line form.
 - `tests/`: one folder per part (`state`, `journal`, `cli`, `git`, `gates`, `install`, `prompts`, `evals`), `ci/`, `e2e/`, `gh/` for the stand-in `gh` of the end to end image, and golden files in `fixtures/`.
-- `evals/`: the evaluations of the chain on real sessions. `host/`, a synthetic project the chain is installed in; `cases/`, one need per shape, each with a brief, acceptance tests the agents never see and a reference implementation; `judge/`, the rubric, the method of the count and the spoiled documents that check the judge; `surface_evals/`, the harness; `reports/`, the campaigns kept; `run.py`, its command line.
+- `evals/`: the evaluations of the chain on real sessions. `host/`, a synthetic project the chain is installed in; `cases/`, one need per shape, each with a brief, acceptance tests the agents never see and a reference implementation; `judge/`, the rubric, the method of the count and the spoiled documents that check the judge; `surface_evals/`, the harness; `reports/`, the campaigns kept and what each compares on; `run.py`, its command line.
 - `scripts/gate.sh`: every gate. `scripts/check_commit_msg.py`: the commit message hook.
 
 ## Invariants
@@ -174,7 +174,7 @@ Unit and hypothesis property tests cover each part of the script and the install
 
 Prompt tests hold the frontmatter, the contract the prompts carry (`tests/prompts/chain_contract.py`), host neutrality and privacy. The privacy check reads plan folders, where a path of the machine is a leak too, while the decision-link check skips them, since a plan names decisions still to come.
 
-A form check, `tests/prompts/test_document_form.py`, bounds each paragraph of this page and the page itself, in bytes, so that a pull request cuts or moves before it adds.
+A form check, `tests/prompts/test_document_form.py`, bounds in bytes each paragraph and each page a person reads, this one, the guides and the decision records, so that a pull request cuts or moves before it adds.
 
 End to end tests run real sessions on a toy project, in a container, on demand only, since they are billed ([ADR 0025](docs/adr/0025-end-to-end-on-a-toy-project.md)). Where a scenario needs the developer's answers, they are written in the test, one session per answer. A path a kill would have to hit between two commands of one step starts from a prepared state that holds what a death there leaves. `tests/e2e/README.md` is their guide.
 
