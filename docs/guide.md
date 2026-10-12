@@ -30,7 +30,16 @@ Everything lands in one folder per plan, `docs/plans/<date>-<slug>/` by default.
 
 ### 2. Read the blueprint, amend or approve
 
-`blueprint.md` is your control surface, and the only thing you have to read. It holds every decision that matters, and is as long as the feature needs and no longer. It always opens with the idea in one sentence, the acceptance criteria and the scope, and closes with the sensitive zones: first the critical zones you declared that the plan touches, by name, or that it touches none, then the points that touch your control, your work or your time and that you did not see go by. Between them, what will be built is cut for the feature, by flow, by component or by decision, with a diagram wherever one is clearer than prose. Its last line names what the feature leaves alone among the data schema, the boundaries, the sequences, the state machines and the algorithms, so you see it at a glance. A revision keeps the cut of the one before, and you can ask for another cut like any other change. It does not show the order of construction: that stays in the plan. A rule the plan had to settle on its own, since neither your specs, your answers nor your code settle it, is marked on the blueprint as an assumption of the plan: approving the blueprint confirms it, and you correct a wrong one like any other change. A critical zone counts as touched as soon as the plan changes a file that holds its code, even when the rule it protects stays as it is: the blueprint names that file and says how far the change goes, so you learn at approval which files you will read. The list you are given once the work conforms is the reference: a fix after your approval may add to it another file of a zone the blueprint named. A change that reaches a zone the blueprint said was not touched comes back to you first, like any change that would make the blueprint false.
+`blueprint.md` is your control surface, and the only thing you have to read. It holds every decision that matters, and is as long as the feature needs and no longer.
+
+- **It always opens** with the idea in one sentence, the acceptance criteria and the scope.
+- **Its body** is what will be built, cut for the feature, by flow, by component or by decision, with a diagram wherever one is clearer than prose. A revision keeps the cut of the one before, and you can ask for another cut like any other change. It does not show the order of construction: that stays in the plan.
+- **It closes** with the sensitive zones: first the critical zones you declared that the plan touches, by name, or that it touches none, then the points that touch your control, your work or your time and that you did not see go by.
+- **Its last line** names what the feature leaves alone among the data schema, the boundaries, the sequences, the state machines and the algorithms, so you see it at a glance.
+
+**Assumptions.** A rule the plan had to settle on its own, since neither your specs, your answers nor your code settle it, is marked on the blueprint as an assumption of the plan: approving the blueprint confirms it, and you correct a wrong one like any other change.
+
+**A critical zone touched.** A zone counts as touched as soon as the plan changes a file that holds its code, even when the rule it protects stays as it is: the blueprint names that file and says how far the change goes, so you learn at approval which files you will read. The list you are given once the work conforms is the reference: a fix after your approval may add to it another file of a zone the blueprint named. A change that reaches a zone the blueprint said was not touched comes back to you first, like any change that would make the blueprint false.
 
 - To change something, say what in the conversation: `/surface-plan` stays in the conversation after it hands over. It records your amendment, produces the next revision of the plan and of the blueprint, then asks again. A question is answered and changes nothing. In a new session, run `/surface-plan` with your amendment.
 - To approve, run `/surface-execute`. Launching it counts as approval, gates included: it names the plan, the revision and the gates it approves, then freezes the blueprint. No sentence of the conversation approves a revision.
@@ -116,7 +125,14 @@ you      mark the PR ready when you want, merge
 
 ## Settings
 
-The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the `planner` and the judgment roles, `sonnet` for the `executor`). During execution, a pass is one time the loop sends work back to an agent on its own, to fix a review's findings or a failed gate run, or to resume a slice after a dismissed suspicion; a clean review or a green gate run costs none. During planning, a pass is a cross-check that finds omissions, which sends the blueprint or the plan back for rework; a clean check costs none. In both, the loop sends work back `max_autonomous_passes` times on its own, and hands back to you at the pass after them.
+The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the `planner` and the judgment roles, `sonnet` for the `executor`).
+
+What counts as a pass:
+
+- During execution, a pass is one time the loop sends work back to an agent on its own, to fix a review's findings or a failed gate run, or to resume a slice after a dismissed suspicion. A clean review or a green gate run costs none.
+- During planning, a pass is a cross-check that finds omissions, which sends the blueprint or the plan back for rework. A clean check costs none.
+
+In both, the loop sends work back `max_autonomous_passes` times on its own, and hands back to you at the pass after them.
 
 ## Update and drift check
 

@@ -5,7 +5,9 @@ Date: 2026-09-29
 
 ## Context
 
-An unattended loop stops at the first command nobody approves. The commands grant the state script, git and `gh` in their `allowed-tools`, but that grant clears at the next turn (Claude Code documentation of skills, read on 2026-09-29), and the loop often goes on in a later turn, when a background agent hands back. The chain first had the README give a block of rules to paste into the project settings, with a test holding it against the commands' `allowed-tools`, and had the end to end harness allow those rules and nothing more. The runs kept stopping on commands agents chose to explore the code with, which depend on the model and on the host: closing that list is a race the chain cannot win. Claude Code already answers it with its permission modes. A session also cannot read the rules in force, which come from several settings files and the command line.
+An unattended loop stops at the first command nobody approves. The commands grant the state script, git and `gh` in their `allowed-tools`, but that grant clears at the next turn (Claude Code documentation of skills, read on 2026-09-29), and the loop often goes on in a later turn, when a background agent hands back.
+
+The chain first had the README give a block of rules to paste into the project settings, with a test holding it against the commands' `allowed-tools`, and had the end to end harness allow those rules and nothing more. The runs kept stopping on commands agents chose to explore the code with, which depend on the model and on the host: closing that list is a race the chain cannot win. Claude Code already answers it with its permission modes. A session also cannot read the rules in force, which come from several settings files and the command line.
 
 Several tests asserted the README's sentences and snippets. They held the text equal to itself, proved nothing about the product, and turned every rewording into a test edit.
 

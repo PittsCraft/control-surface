@@ -42,7 +42,9 @@ A state that holds work not committed or not pushed, `plan-written`, `slice-unco
 
 `build` takes `--slow`, whatever the state: the main branch then holds a test that sleeps 20 seconds. The gate, and the tests an agent runs before it commits, last long enough for a session to be killed in them, even when the agent writes, tests, records and commits in one command.
 
-`toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain. `run` works in the container only; `build` costs nothing and works anywhere.
+`toy/toy.py run <project> <log> <prompt> [--resume <session id>]` runs one headless session in the project until it ends, killed after 30 minutes, keeps its stream of JSON events in `<log>`, then prints its exit code, its session id, its cost and its final message. `run` works in the container only; `build` costs nothing and works anywhere.
+
+The session leaves out your user settings and MCP servers, and bypasses permissions (`--permission-mode bypassPermissions`): nobody is there to answer a prompt, and what an agent runs to explore the code is left to the permission mode, not listed by the chain.
 
 ## The stand-in `gh`
 
@@ -59,15 +61,26 @@ It answers the calls the prompts make, as `gh` 2.78.0 does when its output is no
 | `gh pr ready`, with `--undo` | marks one ready for review, or back to a draft |
 | `gh repo view`, `gh auth status`, `gh --version`, `--help` | the repository `stand-in/<folder of the project>`, the account `developer`, and the calls it plays |
 
-What it keeps of a project lives in its git directory, `.git/gh-stand-in/`: `pulls.json`, the pull requests, and `calls.jsonl`, one line per call with its arguments, its standard input when the call reads it, the description it gave, its exit code and what it printed. The git directory, and not a folder next to the bare remote, for three reasons. Every repository has one, with or without a remote, so a call refused for want of a remote is recorded too. It belongs to one project, where several run at the same time in one container. And it is out of the work tree: nothing shows in `git status`, nothing can be committed, and a session that explores the code does not meet it. A `gh pr ready` that is not an `--undo` has `marks_ready` true in its line, whatever became of it: the chain must never make one. A call reads its standard input before it holds that folder, so one `gh` may feed another. `gh_stand_in.calls(project)` and `gh_stand_in.pulls(project)` read both.
+What it keeps of a project lives in its git directory, `.git/gh-stand-in/`: `pulls.json`, the pull requests, and `calls.jsonl`, one line per call with its arguments, its standard input when the call reads it, the description it gave, its exit code and what it printed. `gh_stand_in.calls(project)` and `gh_stand_in.pulls(project)` read both.
 
-A prepared state with a drafted plan holds its draft pull request, as `/surface-plan` leaves it at the first `plan-drafted`: `toy.py` opens it in the stand-in, with the description `surface-status pr-body` prints then, and no call is recorded for it. Without it, `/surface-execute` would find no pull request at any stop and take the path of a branch that has none, the only one the runs took before the stand-in. A state past the approval keeps that first description, since the loop it prepares has not stopped yet, and a stop is what refreshes it. The state never pushed, `unpushed`, has none: the push and the opening are what their scenarios wait for.
+The git directory, and not a folder next to the bare remote, for three reasons:
+
+- Every repository has one, with or without a remote, so a call refused for want of a remote is recorded too.
+- It belongs to one project, where several run at the same time in one container.
+- It is out of the work tree: nothing shows in `git status`, nothing can be committed, and a session that explores the code does not meet it.
+
+A `gh pr ready` that is not an `--undo` has `marks_ready` true in its line, whatever became of it: the chain must never make one. A call reads its standard input before it holds that folder, so one `gh` may feed another.
+
+A prepared state with a drafted plan holds its draft pull request, as `/surface-plan` leaves it at the first `plan-drafted`: `toy.py` opens it in the stand-in, with the description `surface-status pr-body` prints then, and no call is recorded for it. Without it, `/surface-execute` would find no pull request at any stop and take the path of a branch that has none.
+
+A state past the approval keeps that first description, since the loop it prepares has not stopped yet, and a stop is what refreshes it. The state never pushed, `unpushed`, has none: the push and the opening are what their scenarios wait for.
 
 What the stand-in does not imitate:
 
 - GitHub. There is no network, no account, no CI, no check, no review, no comment and no label, and nothing merges or closes a pull request. The address it prints, `https://github.com/stand-in/<project>/pull/<number>`, leads nowhere.
 - The remote. It takes `origin`, wherever it points, for the GitHub repository, and reads the remote-tracking branches of the project, never the remote itself.
-- Every other call: `gh api`, `gh pr merge`, `gh pr checks`, `gh issue`, `gh run`, and every flag the table does not name, `--fill`, `--web`, `--repo`, `--template` and `--search` among them. Each gets an error that says the stand-in does not play it, exit code 1, and a line of the record with `played` false, unless it holds `--help`, which prints the calls the stand-in plays whatever the call. `gh pr view` shows no `additions` and no `deletions`, since the stand-in reads no diff. `--jq` is played for paths only, such as `.url` or `.[].headRefName`. `--json` knows the fields the stand-in holds: `number`, `title`, `body`, `state`, `isDraft`, `url`, `headRefName`, `baseRefName`, `author`, `createdAt`, `updatedAt`, and names another as `gh` names an unknown one.
+- Every other call: `gh api`, `gh pr merge`, `gh pr checks`, `gh issue`, `gh run`, and every flag the table does not name, `--fill`, `--web`, `--repo`, `--template` and `--search` among them. Each gets an error that says the stand-in does not play it, exit code 1, and a line of the record with `played` false, unless it holds `--help`, which prints the calls the stand-in plays whatever the call.
+- Every field and every filter. `gh pr view` shows no `additions` and no `deletions`, since the stand-in reads no diff. `--jq` is played for paths only, such as `.url` or `.[].headRefName`. `--json` knows the fields the stand-in holds: `number`, `title`, `body`, `state`, `isDraft`, `url`, `headRefName`, `baseRefName`, `author`, `createdAt`, `updatedAt`, and names another as `gh` names an unknown one.
 - A terminal. It never prompts, and a usage error is one line, without the usage `gh` prints after it.
 - Every wording. The messages of the refusals above are those of `gh`, read in its source or seen on a real repository. The two that are GitHub's own answers to an opening, a branch with nothing to merge and a head the remote does not hold, are written as remembered and were not checked against GitHub.
 - Outside a repository, or in one whose git directory cannot be written, it answers `--version` and `--help` only, and records nothing.
@@ -93,7 +106,9 @@ Some scenarios need the developer's answers. No model plays the developer here: 
 
 ### Killed sessions
 
-A scenario kills a session at a moment it reads in the files of the project or in the stream of the session: its process group first, then whatever it left at work in the project, since a gate runs in a process group of its own and would go on to record its run while the next session works. The relaunch is a fresh session, without `--resume`. Where the moment is uncommitted code or a gate under way, the project is built slow, so that it lasts whatever the agent does. Where the moment is too short to hit, between a record and its commit or between a commit and its push, the scenario starts from a prepared state that holds what a death there leaves.
+A scenario kills a session at a moment it reads in the files of the project or in the stream of the session: its process group first, then whatever it left at work in the project, since a gate runs in a process group of its own and would go on to record its run while the next session works. The relaunch is a fresh session, without `--resume`.
+
+Where the moment is uncommitted code or a gate under way, the project is built slow, so that it lasts whatever the agent does. Where the moment is too short to hit, between a record and its commit or between a commit and its push, the scenario starts from a prepared state that holds what a death there leaves.
 
 ### The loop
 
@@ -143,7 +158,9 @@ A scenario kills a session at a moment it reads in the files of the project or i
 | `test_a_draft_committed_and_never_pushed_is_pushed_at_the_relaunch` | `unpushed` | `/surface-plan` | nothing recorded, the branch pushed, and one draft pull request with the description `surface-status pr-body` prints |
 | `test_a_conformant_plan_committed_and_never_pushed_is_pushed_at_the_relaunch` | `conformant-unpushed` | `/surface-execute` | nothing recorded, the branch pushed, the description refreshed |
 
-The push of a stop of `/surface-execute` that never came is played twice. `test_an_accepted_plan_change_goes_back_to_planning` starts from a proposal committed and not pushed, which the relaunch pushes before it asks. The last test of the table starts from a conformity committed and not pushed, and fails as the chain stands: `/surface-execute` finds no plan once the only one of the branch is conformant, so its relaunch stops before any push, and the pull request keeps the description of a plan in progress. The test is marked as expected to fail, strictly: the day the chain takes that push up, it passes, the mark fails, and the mark goes. No scenario plays the same death after `/surface-status` recorded an abandonment.
+The push of a stop of `/surface-execute` that never came is played twice. `test_an_accepted_plan_change_goes_back_to_planning` starts from a proposal committed and not pushed, which the relaunch pushes before it asks. The last test of the table starts from a conformity committed and not pushed.
+
+That last test fails as the chain stands (#114): `/surface-execute` finds no plan once the only one of the branch is conformant, so its relaunch stops before any push, and the pull request keeps the description of a plan in progress. The test is marked as expected to fail, strictly: the day the chain takes that push up, it passes, the mark fails, and the mark goes. No scenario plays the same death after `/surface-status` recorded an abandonment.
 
 ### The ceiling in planning, and a break an executor suspects
 
@@ -165,9 +182,11 @@ scripts/gate.sh e2e -k "prepared or bypasses or left_at_work"
 
 ## Playing a scenario by hand
 
-To look into a scenario that failed, or to play a path no test covers yet, run the sessions yourself, one session per answer: `run` prints the session id, and `--resume <session id>` gives the next answer to the same conversation. A fresh session, without `--resume`, is how a relaunch after a dead session is tested. To kill a session mid-way, run it in the background and kill its process group (`kill -9 -<pid>`), watching the plan folder to choose the moment. A gate under way runs in a process group of its own, which that kill misses: the scenarios kill it too, and left alive it records its run under the session that takes over.
+To look into a scenario that failed, or to play a path no test covers yet, run the sessions yourself, one session per answer: `run` prints the session id, and `--resume <session id>` gives the next answer to the same conversation. A fresh session, without `--resume`, is how a relaunch after a dead session is tested.
 
-They are played in the container too, from a shell in it, at the root of the clone:
+To kill a session mid-way, run it in the background and kill its process group (`kill -9 -<pid>`), watching the plan folder to choose the moment. A gate under way runs in a process group of its own, which that kill misses: the scenarios kill it too, and left alive it records its run under the session that takes over.
+
+The sessions you run yourself are played in the container too, from a shell in it, at the root of the clone:
 
 ```sh
 mkdir -p .e2e

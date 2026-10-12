@@ -19,4 +19,6 @@ The chain acts on nothing of the host's CI.
 
 ## Consequences
 
-In a host whose CI runs on every push, the first push of a plan starts a run nobody announced: that is a configuration of its CI, not a thing the chain guesses. Whether the conformity check runs in a CI, and at which moment, is the developer's call, and so is the moment a finished plan leaves the plans in progress. A plan whose developer declined its first push, when the chain still asked, is pushed by the next launch that finishes its draft: the answer kept in its `interview.md` is no longer read. The end to end tests keep one project with a CI, to hold that planning pushes there without a question, and nothing of the chain is left to exercise on a hosted CI.
+In a host whose CI runs on every push, the first push of a plan starts a run nobody announced: that is a configuration of its CI, not a thing the chain guesses. Whether the conformity check runs in a CI, and at which moment, is the developer's call, and so is the moment a finished plan leaves the plans in progress.
+
+A plan whose developer declined its first push, when the chain still asked, is pushed by the next launch that finishes its draft: the answer kept in its `interview.md` is no longer read. The end to end tests keep one project with a CI, to hold that planning pushes there without a question, and nothing of the chain is left to exercise on a hosted CI.
