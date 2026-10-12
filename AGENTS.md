@@ -7,9 +7,17 @@ Everything committed to this repository is in English, whatever the language of 
 ## Architecture and decisions
 
 - Read `ARCHITECTURE.md` first. Read an ADR of `docs/adr/` only when the task touches the decision it records.
-- A change to the architecture updates `ARCHITECTURE.md` in the same pull request: the parts, the codemap, an invariant, a crosscutting concern, with its reason in one sentence.
-- Write an ADR only for a decision that is hard to reverse, is structural or bears on a key quality, was chosen against credible alternatives, or is likely to be "fixed" by someone who does not know why. Everything else goes in `ARCHITECTURE.md`.
+- `ARCHITECTURE.md` says what the chain is now: its parts, where their code is, what they never do, how they work together. A change to one of these rewrites the passage that describes it, in the same pull request, and removes what the change made false.
+- A change to the wording of a prompt, to the form of a document an agent writes or to the detail of a test leaves the page alone.
+- Every sentence there is true of the code today, in the present tense. A reason says what the alternative would cost, never what happened when it was tried: that goes in the pull request, or in an ADR when the criteria below are met.
+- The page points and does not repeat: what a prompt, a template or a guide says stays there, and the page names the file.
+- One subject per paragraph. The gates bound the size of a paragraph and of the page (`tests/prompts/test_document_form.py`): to add, cut or move first. Only the developer raises a bound.
+- Write an ADR only for a decision that is hard to reverse, is structural or bears on a key quality, was chosen against credible alternatives, or is likely to be "fixed" by someone who does not know why.
 - An ADR is short: context, decision, consequences. It has no amendment log: a replaced record is marked superseded, `ARCHITECTURE.md` changes in the same pull request, and git keeps the history.
+
+## Critical zones
+
+- The architecture page (`ARCHITECTURE.md`): what every task reads first. A sentence there that tells history, repeats a prompt or is no longer true of the code misleads every agent after it, and no test tells one from a statement of the state.
 
 ## Commits and pull requests
 

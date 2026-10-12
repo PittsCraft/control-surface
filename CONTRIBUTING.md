@@ -44,6 +44,10 @@ Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and `.
 
 No em dash in any file of the repository, checked by the gates. Commit messages carry no em dash and no attribution to Claude, checked by the `commit-msg` hook. What the hook accepts and refuses is in `scripts/check_commit_msg.py`.
 
+The gates bound the size of a paragraph of `ARCHITECTURE.md`, and of the page: `tests/prompts/test_document_form.py` holds the bounds, which only the developer raises.
+
 ## Decisions
 
-A pull request that changes the architecture updates `ARCHITECTURE.md` in the same pull request. An ADR in `docs/adr/` is rare: only for a decision that is hard to reverse, is structural or bears on a key quality, was chosen against credible alternatives, or is one a reader is likely to "fix". It is short (context, decision, consequences) and has no amendment log: a replaced record is marked superseded, and `ARCHITECTURE.md` changes with it.
+A pull request that changes the architecture rewrites the passage of `ARCHITECTURE.md` that describes it, in the same pull request. The page holds the state of the chain, not its history, and one that only rewords a prompt leaves it alone: `AGENTS.md` says what belongs there.
+
+An ADR in `docs/adr/` is rare: only for a decision that is hard to reverse, is structural or bears on a key quality, was chosen against credible alternatives, or is one a reader is likely to "fix". It is short (context, decision, consequences) and has no amendment log: a replaced record is marked superseded, and `ARCHITECTURE.md` changes with it.
