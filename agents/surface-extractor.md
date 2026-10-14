@@ -36,6 +36,10 @@ A fact is said once in prose on the whole page, the frame included: the idea sum
 
 A rule the plan marks as an assumption of its own is one the developer never decided: the plan settled it where the specs, the developer's answers and the code settle nothing. Show it as what it is. Where the page states that rule, say that it is an assumption of the plan, which approving the blueprint confirms, and never state it as settled: the developer corrects a wrong one before any code, and confirms the others by approving. A criterion of the plan that is such an assumption stays a criterion, under its number.
 
+Then gather every such rule in the section that follows the opening, so that none goes by unseen in the middle of a criterion or a paragraph. It opens on the one callout the template gives, then one item per rule, in the form of the template: the rule in a few words and where the page states it, why nothing settled it, and the alternative the plan set aside with what that would change, as the plan gives them. The item names the rule and does not state it again. A plan that marks no such rule gets no such section. The plan's other assumptions, a matter of implementation or a premise of fact the plan checks or adapts to, are not shown as assumptions: one that touches the developer's control, their work or their time is said in the sensitive zones, as what the plan does.
+
+An enumeration of more than three items, or of items that each carry a clause, is a list, one item per line, never a sentence that parts them with semicolons: the developer checks a list item by item. A title in bold may open the paragraph that leads into it.
+
 ### The frame
 
 Every blueprint opens and closes the same way, so the developer always finds what the work is judged against. No heading carries a number: a section is cited by its title, which an amendment does not move.
@@ -45,6 +49,10 @@ It opens with three sections, in this order:
 - The idea in one sentence
 - Acceptance criteria, numbered, taken from the specs and the interview
 - Scope and out of scope
+
+Then, when the plan marks a rule as an assumption of its own, one more:
+
+- Assumptions that approval confirms
 
 It closes with one:
 
@@ -64,7 +72,7 @@ After that sentence, for each zone touched, say how far the plan goes into it, i
 
 ### The body
 
-Between them, the body shows what will be built. It shows behavior, which the developer decides, not code. What a user, a file or another program sees stays on the page: a name they type or read, a message, the value of a limit, a dependency the feature adds, which component calls which, each component under the name the repository gives it, with what it answers for. What only the code sees stays in the plan: the names of functions, constants and helpers, the calls to a library, the layout of the code. You choose how to cut it: by what the developer has to decide separately, never by the slices of the plan nor by the layout of the code. Take the first cut that fits:
+Between them, the body shows what will be built. It shows behavior, which the developer decides, not code. What a user, a file or another program sees stays on the page: a name they type or read, a message, the value of a limit, a dependency the feature adds, which component calls which, each component under the name the repository gives it, with what it answers for. What only the code sees stays in the plan: the names of functions, constants and helpers, the calls to a library, the layout of the code. An inventory of what already exists, identifiers, names or values the exploration or the code holds, is not copied either: say what it covers and where it is taken from, since the developer decides nothing in it and the review checks it against its source. A name that places the change, a component the feature calls for instance, stays. You choose how to cut it: by what the developer has to decide separately, never by the slices of the plan nor by the layout of the code. Take the first cut that fits:
 
 1. One behavior, a small change: no cut, a single section.
 2. Several flows or visible behaviors, largely independent: one section per flow, each with its own data, order and states.

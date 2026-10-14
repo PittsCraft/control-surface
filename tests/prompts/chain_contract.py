@@ -208,6 +208,10 @@ BLUEPRINT_OPENING = (
     "Scope and out of scope",
 )
 BLUEPRINT_CLOSING = "Sensitive zones"
+# When the plan marks a rule as an assumption of its own, one section follows the opening and
+# gathers them, under a single callout: one mark in a criterion or a paragraph goes by unseen. Its
+# title stays true once the page is frozen, as the mark does: nothing on it waits for an answer.
+BLUEPRINT_ASSUMPTIONS = "Assumptions that approval confirms"
 # Between them the extractor cuts the body by what the developer decides separately, and keeps
 # the cut of the previous revision. Inside a section, a title in bold opens each thing the
 # developer would come back for on its own. Whatever the cut, it goes through these aspects, and

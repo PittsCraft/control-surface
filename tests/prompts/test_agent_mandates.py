@@ -13,6 +13,7 @@ from chain_contract import (
     ALLOWED_IS_NOT_CHANGED,
     ASSUMPTION_OF_THE_PLAN,
     BLUEPRINT_ASPECTS,
+    BLUEPRINT_ASSUMPTIONS,
     BLUEPRINT_CLOSING,
     BLUEPRINT_ON_THE_COMMITS,
     BLUEPRINT_OPENING,
@@ -158,6 +159,8 @@ def test_extractor_frames_the_blueprint_with_sections_that_carry_no_number() -> 
     for heading in (*BLUEPRINT_OPENING, BLUEPRINT_CLOSING):
         assert any(line.startswith(f"- {heading}") for line in lines), heading
     assert "It opens with three sections, in this order" in writing
+    assert "when the plan marks a rule as an assumption of its own, one more" in writing
+    assert f"- {BLUEPRINT_ASSUMPTIONS}" in lines
     assert "It closes with one" in writing
     assert "No heading carries a number" in writing
     assert "a section is cited by its title, which an amendment does not move" in writing
@@ -267,9 +270,49 @@ def test_extractor_shows_an_assumption_of_the_plan_as_one_that_approving_confirm
     form = template.read_text(encoding="utf-8")
     shown = "A rule the plan marks as an assumption of its own is shown as one where it is stated"
     assert f"{shown}, never as settled: approving the blueprint confirms it" in form
+    # Gathered under one callout after the opening, each with what the developer judges it by.
+    gathered = [
+        "Then gather every such rule in the section that follows the opening",
+        "so that none goes by unseen in the middle of a criterion or a paragraph",
+        "It opens on the one callout the template gives",
+        "where the page states it, why nothing settled it, and the alternative the plan set aside",
+        "The item names the rule and does not state it again",
+        "A plan that marks no such rule gets no such section",
+    ]
+    positions = [writing.index(sentence) for sentence in gathered]
+    assert positions == sorted(positions)
+    assumptions = form.split(f"## {BLUEPRINT_ASSUMPTIONS}\n", 1)[1].split("\n## ", 1)[0]
+    assert assumptions.lstrip().startswith("> [!IMPORTANT]")
+    for part in ("Why:", "Otherwise:"):
+        assert part in assumptions
+    # A label and a pointer name the rule; a line that told it again would say it twice.
+    assert "The plan:" not in assumptions
+    # What is no rule of the developer's is not shown as one: it would crowd out those that are.
+    others = "The plan's other assumptions, a matter of implementation or a premise of fact"
+    assert f"{others} the plan checks or adapts to, are not shown as assumptions" in writing
+    assert "is said in the sensitive zones, as what the plan does" in writing
     # The cross-check is left as it was: how a rule is shown is no omission.
     _, checker = read_agent("surface-checker")
     assert "assumption" not in checker.lower()
+
+
+def test_extractor_lists_an_enumeration_and_copies_no_inventory() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # A sentence that chains its items with semicolons is read through, never checked item by
+    # item.
+    listed = "An enumeration of more than three items, or of items that each carry a clause"
+    assert f"{listed}, is a list, one item per line" in writing
+    assert "never a sentence that parts them with semicolons" in writing
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
+    assert f"{listed}, is a list, never a sentence" in template.read_text(encoding="utf-8")
+    # What already exists is the source's, and the review checks it there: the developer decides
+    # nothing in a copy of it.
+    shown = writing.split("\n### The body\n", 1)[1].split("\n### ", 1)[0]
+    assert "An inventory of what already exists" in shown
+    assert "say what it covers and where it is taken from" in shown
+    assert "the review checks it against its source" in shown
+    assert "A name that places the change" in shown
 
 
 def test_extractor_keeps_the_cut_of_the_previous_revision() -> None:

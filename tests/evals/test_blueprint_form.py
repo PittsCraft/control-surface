@@ -6,6 +6,7 @@ import pytest
 import toy
 
 from surface_evals.blueprint import (
+    ASSUMPTIONS,
     CLOSING,
     LEAD_IN,
     OPENING,
@@ -22,6 +23,7 @@ TEMPLATE = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/
 def test_the_frame_is_the_one_of_the_template_the_extractor_is_given() -> None:
     template = parse(TEMPLATE.read_text(encoding="utf-8"))
     assert template.titles[: len(OPENING)] == OPENING
+    assert template.titles[len(OPENING)] == ASSUMPTIONS
     assert template.titles[-1] == CLOSING
     assert template.framed
     assert len(template.body) == 1
@@ -38,6 +40,19 @@ def test_the_toys_blueprint_has_one_section_in_its_body_and_one_diagram() -> Non
     assert drawn.criteria == 6
     assert drawn.closing_line == "state machines."
     assert "Critical zone touched: the CSV export" in drawn.zones
+
+
+def test_the_assumptions_after_the_opening_belong_to_the_frame_and_not_to_the_body() -> None:
+    opening = "".join(f"## {title}\n\nText.\n\n" for title in OPENING)
+    rest = f"## Export\n\nIt.\n\n## {CLOSING}\n\nNone.\n"
+    with_them = parse(f"{opening}## {ASSUMPTIONS}\n\n- **A rule.**\n\n{rest}")
+    without = parse(f"{opening}{rest}")
+    for drawn in (with_them, without):
+        assert drawn.framed
+        assert [section.title for section in drawn.body] == ["Export"]
+    # Further down, the same title is a section of the body like any other.
+    late = parse(f"{opening}## Export\n\nIt.\n\n## {ASSUMPTIONS}\n\nA.\n\n## {CLOSING}\n\nN.\n")
+    assert [section.title for section in late.body] == ["Export", ASSUMPTIONS]
 
 
 def test_a_blueprint_without_its_frame_is_told_and_all_its_sections_are_its_body() -> None:
