@@ -654,6 +654,31 @@ def test_the_branch_is_found_with_plain_commands_and_no_setting() -> None:
     assert "surface.json" not in branch
 
 
+def _folder_step() -> str:
+    steps = section(_body(), "First launch, with specs")
+    start = steps.index("\n3. Folder.")
+    return steps[start : steps.index("\n4. ", start)]
+
+
+def test_the_plans_folder_follows_the_repository_and_the_command_writes_its_setting() -> None:
+    # The state script finds the plans only through `plans_dir`: a host that keeps them
+    # elsewhere gets the setting from this command, never a request to write it.
+    folder = _folder_step()
+    order = [
+        "`plans_dir` from `.claude/surface.json`",
+        "the folder for plans that what step 1 read names",
+        "the plan folders the repository already keeps, those holding a `journal.jsonl`",
+        "otherwise `docs/plans`",
+    ]
+    positions = _positions(folder, order)
+    assert positions == sorted(positions)
+    assert "is written as `plans_dir` into `.claude/surface.json`" in folder
+    assert "its other keys kept" in folder
+    assert "Never ask the developer to write it" in folder
+    commit = _git_steps()[0]
+    assert "`.claude/surface.json` when step 3 wrote it and git does not ignore it" in commit
+
+
 def test_an_amendment_when_it_is_not_the_developers_turn_is_explained_and_refused() -> None:
     body = _body()
     outside = section(body, "Not your turn")
@@ -771,6 +796,7 @@ def test_commits_hold_only_the_plan_folder_with_its_journal_lines() -> None:
 def test_the_command_writes_only_in_the_plan_folder() -> None:
     opening = _body().split("\n## ", 1)[0]
     assert "You write only in the plan folder" in opening
+    assert "and in `.claude/surface.json` the one setting step 3 writes" in opening
     assert "never the code, never `blueprint.md`" in opening
     assert "never `journal.jsonl` (the state script alone writes it)" in opening
 
