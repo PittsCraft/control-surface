@@ -154,6 +154,8 @@ It owns `.claude/skills/surface-*/` and `.claude/agents/surface-*.md`, removes w
 
 The chain needs no configuration. `.claude/surface.json` is optional and the developer's: `plans_dir`, `max_autonomous_passes` (3) and `models`. An unknown key is refused with the closest known one, a removed key with what replaced it. The agents read the host's conventions and critical zones in `AGENTS.md` or `CLAUDE.md`.
 
+`/surface-plan` writes `plans_dir` itself, and commits it with the plan, when the host's conventions, or the plans it already keeps, put its plans outside `docs/plans`: the script finds the plans through that setting alone, and the developer would otherwise write it before planning.
+
 Plan documents are written in the repository's language, since they are committed next to its code and documentation: a language the host's agent instructions declare, else that of its documentation, else that of `specs.md`. `/surface-plan` finds it once and writes it in `exploration.md`, where every agent reads it.
 
 The conversation stays in the developer's language and in the words the README and the guide teach them. `/surface-plan` and `/surface-execute` keep the chain's insides, the names of the agents and the paths of the reports, out of what they tell the developer, with the exceptions their prompts name.

@@ -125,7 +125,7 @@ you      mark the PR ready when you want, merge
 
 ## Settings
 
-The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the `planner` and the judgment roles, `sonnet` for the `executor`).
+The chain needs no configuration: the gates are found at planning and approved with the plan, and the agents read your critical zones and conventions in your `AGENTS.md` or `CLAUDE.md`. To tune something, write `.claude/surface.json` with any of `plans_dir` (`docs/plans`), `max_autonomous_passes` (`3`) and `models` (`opus` for the `planner` and the judgment roles, `sonnet` for the `executor`). When your agent instructions or the plans you already keep place plans elsewhere, `/surface-plan` writes `plans_dir` itself and commits it with the plan.
 
 What counts as a pass:
 
