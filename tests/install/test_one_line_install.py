@@ -116,7 +116,6 @@ def test_piped_check_reports_drift_exactly_as_a_clone_does(tmp_path: Path, archi
         "drift : .claude/skills/surface-plan/SKILL.md",
         "missing : .claude/agents/surface-executor.md",
         "orphan : .claude/agents/surface-old.md",
-        "uncommitted : .claude/skills/surface-plan/SKILL.md",
     ):
         assert line in piped.stdout
 

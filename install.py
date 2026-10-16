@@ -19,8 +19,8 @@ comes from; `{ref}` in it stands for the version.
 Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and
 `.claude/agents/surface-*.md`. It removes owned files the source no longer has and never touches
 anything else. It creates no settings file: the chain runs without one, and `.claude/surface.json`
-is the developer's to write if they want to tune something. Unless `--force` is given, it also
-refuses to overwrite or remove an owned file that has uncommitted changes or is not tracked by git.
+is the developer's to write if they want to tune something. What git holds of the namespace changes
+nothing: the installer overwrites and removes there whatever is committed or not.
 
 Standard library only. Written to stay parseable by older interpreters so that the version
 message below can be shown instead of a syntax error.
@@ -34,7 +34,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -153,107 +152,17 @@ def same_as_source(source_file: Path, dest: Path) -> bool:
     )
 
 
-class GitUnavailableError(Exception):
-    """git cannot answer for a host that sits in a git work tree."""
-
-
-def inside_git_tree(host: Path) -> bool:
-    """Whether a `.git` (a folder, or a file for a linked work tree) sits in the host or above it.
-
-    Read from the file system, since it must hold when git itself cannot run or refuses to read.
-    """
-    real_host = host.resolve()
-    return any((folder / ".git").exists() for folder in (real_host, *real_host.parents))
-
-
-def git_output(host: Path, *args: str) -> str | None:
-    """Return the output of a git command run in the host.
-
-    None when the host sits outside any git work tree. Raises GitUnavailableError when it sits in
-    one and git cannot answer: git missing, "dubious ownership", any other failure.
-    """
-    try:
-        result = subprocess.run(  # noqa: S603
-            ["git", "-C", str(host), *args],  # noqa: S607
-            capture_output=True,
-            check=False,
-        )
-    except OSError as error:
-        reason = f"git could not run: {error}"
-    else:
-        if result.returncode == 0:
-            return result.stdout.decode("utf-8", errors="surrogateescape")
-        detail = result.stderr.decode("utf-8", errors="replace").strip()
-        reason = detail or f"git exited with status {result.returncode}"
-    if not inside_git_tree(host):
-        return None
-    raise GitUnavailableError(reason)
-
-
-def uncommitted(host: Path, relatives: set[str]) -> set[str]:
-    """Paths among `relatives` that git shows as modified, staged, untracked or ignored.
-
-    Empty when the host is not a git work tree; GitUnavailableError when it is one and git cannot
-    answer. An installation is only finished once it is committed, and an owned file covered by a
-    .gitignore stays out of history for good.
-    """
-    top = git_output(host, "rev-parse", "--show-toplevel")
-    if top is None:
-        return set()
-    top_path = Path(top.strip()).resolve()
-    real_host = host.resolve()
-    listing = git_output(
-        host,
-        "status",
-        "--porcelain=v1",
-        "-z",
-        "--ignored",
-        "--untracked-files=all",
-        "--",
-        ".claude/skills",
-        ".claude/agents",
-    )
-    if listing is None:
-        return set()
-    entries = listing.split("\0")
-    dirty: set[str] = set()
-    index = 0
-    while index < len(entries):
-        entry = entries[index]
-        index += 1
-        if len(entry) < 4:  # noqa: PLR2004 - "XY path" is at least four characters
-            continue
-        if entry[0] in "RC" or entry[1] in "RC":
-            index += 1  # a rename or copy is followed by the original path
-        try:
-            relative = (top_path / entry[3:]).relative_to(real_host).as_posix()
-        except ValueError:
-            continue
-        dirty.add(relative)
-    return dirty & relatives
-
-
 def check(source: Path, host: Path) -> list[str]:
     """One line per difference between the host and the source; nothing is written."""
     expected = expected_files(source)
     lines: list[str] = []
-    present: set[str] = set()
     for relative, source_file in expected.items():
         dest = host / relative
         if not (dest.exists() or dest.is_symlink()):
             lines.append(f"missing : {relative}")
-        else:
-            present.add(relative)
-            if not same_as_source(source_file, dest):
-                lines.append(f"drift : {relative}")
+        elif not same_as_source(source_file, dest):
+            lines.append(f"drift : {relative}")
     lines.extend(f"orphan : {relative}" for relative in sorted(owned_files(host) - set(expected)))
-    dirty: set[str]
-    try:
-        dirty = uncommitted(host, present)
-    except GitUnavailableError:
-        # A check writes nothing: it reports the drift it can see, and install is what refuses.
-        dirty = set()
-    lines.extend(f"uncommitted : {relative}" for relative in sorted(dirty))
     return lines
 
 
@@ -336,37 +245,13 @@ def migration_notes(host: Path) -> list[str]:
     return notes
 
 
-def refuse_unsaved_work(host: Path, touched: set[str]) -> None:
-    """Refuse to overwrite or remove files git does not hold safely (committed and unmodified).
-
-    Outside a git work tree there is nothing to ask, and the guard does not apply. Inside one, when
-    git cannot answer, the guard refuses too: it cannot tell that nothing would be lost.
-    """
-    try:
-        unsaved = sorted(uncommitted(host, touched))
-    except GitUnavailableError as error:
-        message = (
-            f"refusing to install: git cannot tell whether files hold unsaved work ({error})\n"
-            "fix git for this folder, or run again with --force to install without the check"
-        )
-        raise InstallError(message) from error
-    if unsaved:
-        listing = "\n".join(f"  {relative}" for relative in unsaved)
-        message = (
-            "refusing to overwrite or remove files with unsaved work (uncommitted or untracked):\n"
-            f"{listing}\ncommit or stash them, or run again with --force to discard them"
-        )
-        raise InstallError(message)
-
-
-def install(source: Path, host: Path, *, force: bool = False) -> tuple[int, int, bool]:
+def install(source: Path, host: Path) -> tuple[int, int, bool]:
     """Copy the chain into the host; returns (written, removed, fresh) counts.
 
     `fresh` is true when the host held no file of the namespace before. Both counts are zero when
     up to date.
 
-    Before writing or removing anything, refuses when a file it would overwrite or remove has
-    unsaved work in git, unless `force`. Only paths of the namespace are ever removed.
+    Overwrites and removes in the namespace only, whatever git holds of it.
     """
     expected = expected_files(source)
     stale = [
@@ -376,8 +261,6 @@ def install(source: Path, host: Path, *, force: bool = False) -> tuple[int, int,
     ]
     owned = owned_files(host)
     orphans = sorted(owned - set(expected))
-    if not force:
-        refuse_unsaved_work(host, {*stale, *orphans})
     for relative in stale:
         write_file(expected[relative], host / relative)
     for relative in orphans:
@@ -484,11 +367,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--check", action="store_true", help="write nothing, exit 1 on drift")
     parser.add_argument(
-        "--force",
-        action="store_true",
-        help="overwrite or remove files even with uncommitted changes in git",
-    )
-    parser.add_argument(
         "--ref",
         help=f"version to download: a branch, a tag or a commit (default: {DEFAULT_REF})",
     )
@@ -499,7 +377,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run(source: Path, host: Path, *, check_only: bool, force: bool = False) -> int:
+def run(source: Path, host: Path, *, check_only: bool) -> int:
     check_source(source)
     if check_only:
         if not host.is_dir():
@@ -516,7 +394,7 @@ def run(source: Path, host: Path, *, check_only: bool, force: bool = False) -> i
         message = f"{host} is not a directory"
         raise InstallError(message)
     host.mkdir(parents=True, exist_ok=True)
-    written, removed, fresh = install(source, host.resolve(), force=force)
+    written, removed, fresh = install(source, host.resolve())
     say(summary(host.resolve(), written, removed, fresh=fresh))
     for note in migration_notes(host.resolve()):
         say(note)
@@ -541,12 +419,12 @@ def main(argv: list[str], clone_root: Path | None) -> int:
     try:
         if not downloading:
             assert clone_root is not None  # noqa: S101 - `downloading` is False only for a clone
-            return run(clone_root, host, check_only=args.check, force=args.force)
+            return run(clone_root, host, check_only=args.check)
         ref = DEFAULT_REF if args.ref is None else args.ref
         url = archive_url(args.archive_url or DEFAULT_ARCHIVE_URL, ref)
         data = download(url)
         with tempfile.TemporaryDirectory(prefix="control-surface-") as directory:
-            return run(unpack(data, Path(directory)), host, check_only=args.check, force=args.force)
+            return run(unpack(data, Path(directory)), host, check_only=args.check)
     except InstallError as error:
         sys.stderr.write(f"install.py: {error}\n")
         return EXIT_USAGE

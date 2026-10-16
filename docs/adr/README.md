@@ -18,3 +18,4 @@ The current architecture is described in [ARCHITECTURE.md](../../ARCHITECTURE.md
 | 0036 | [Evaluations on real sessions, with a model as the developer and a judge that is checked](0036-evaluations-on-real-sessions.md) |
 | 0037 | [The host's CI left to the host](0037-the-host-ci-left-to-the-host.md) |
 | 0038 | [A critical zone is touched by file](0038-a-critical-zone-touched-by-file.md) |
+| 0039 | [The installer owns its namespace, whatever git holds of it](0039-the-installer-owns-its-namespace-whatever-git-holds.md) |

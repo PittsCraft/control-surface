@@ -68,7 +68,7 @@ install.py --copies--> host .claude/skills/surface-*/ and .claude/agents/surface
 - A suspected break waits in the journal for a reviewer, and nothing carries its slice on before that ([ADR 0033](docs/adr/0033-a-suspected-break-kept-in-the-journal.md)).
 - The runtime is Python 3.11 and the standard library only, and the state script has no network access ([ADR 0001](docs/adr/0001-python-311-standard-library.md)).
 - The script never writes to git, and reads other branches from git objects, never by a checkout ([ADR 0016](docs/adr/0016-plans-of-a-branch-from-git-objects.md)).
-- The installer writes only in its namespace, and creates no settings file ([ADR 0019](docs/adr/0019-ownership-by-namespace.md)).
+- The installer writes only in its namespace, creates no settings file and never runs git ([ADR 0039](docs/adr/0039-the-installer-owns-its-namespace-whatever-git-holds.md)).
 - No prompt pins or checks the session's model or effort ([ADR 0031](docs/adr/0031-session-model-left-to-the-developer.md)), and the chain ships no permission rule ([ADR 0032](docs/adr/0032-permissions-left-to-the-mode-no-tests-on-the-readme.md)).
 - Every agent is a leaf: no `Agent` tool, no `isolation`, no `permissionMode`. A role does its mandate itself, a slice's work must stay on the branch for the next step, and the host decides what runs unattended.
 - Every command sets `disable-model-invocation: true`: launching `/surface-execute` is an approval, which only the developer gives, and no sentence of a conversation approves a revision.
@@ -148,7 +148,7 @@ Exit code 0 means accepted or passed, 1 refused or failed, 2 a wrong call or an 
 
 `install.py` is Python, not shell, so it shares the gates and the tests; it parses on old interpreters to say it needs 3.11 instead of failing on syntax. Piped from the public repository, it downloads the archive of `--ref` (`main` by default), unpacks it by hand, and installs as from a clone.
 
-It owns `.claude/skills/surface-*/` and `.claude/agents/surface-*.md`, removes what the source dropped, and refuses to overwrite a file with uncommitted work unless `--force` ([ADR 0019](docs/adr/0019-ownership-by-namespace.md)). `--check` writes nothing and reports `missing`, `drift`, `orphan` and `uncommitted`.
+It owns `.claude/skills/surface-*/` and `.claude/agents/surface-*.md`, overwrites them whatever git holds of them, and removes what the source dropped ([ADR 0039](docs/adr/0039-the-installer-owns-its-namespace-whatever-git-holds.md)). `--check` writes nothing and reports `missing`, `drift` and `orphan`.
 
 ### Settings and language
 
