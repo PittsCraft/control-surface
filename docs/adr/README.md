@@ -8,7 +8,7 @@ The current architecture is described in [ARCHITECTURE.md](../../ARCHITECTURE.md
 | 0011 | [State is a pure fold; guards split by what they need](0011-pure-fold-and-two-families-of-guards.md) |
 | 0012 | [The script computes every derived field; the journal has one canonical form](0012-script-computes-derived-fields.md) |
 | 0016 | [The plans of a branch, from git objects](0016-plans-of-a-branch-from-git-objects.md) |
-| 0019 | [Ownership by namespace](0019-ownership-by-namespace.md), superseded by 0039 |
+| 0019 | [Ownership by namespace](0019-ownership-by-namespace.md) |
 | 0025 | [End to end tests on a toy project, in a container, on demand](0025-end-to-end-on-a-toy-project.md) |
 | 0031 | [The session's model and effort are the developer's; the chain pins only the agents' models](0031-session-model-left-to-the-developer.md) |
 | 0032 | [Permissions left to the mode, no tests on the README](0032-permissions-left-to-the-mode-no-tests-on-the-readme.md) |
