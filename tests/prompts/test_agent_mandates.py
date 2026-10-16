@@ -13,6 +13,7 @@ from chain_contract import (
     ALLOWED_IS_NOT_CHANGED,
     ASSUMPTION_OF_THE_PLAN,
     BLUEPRINT_ASPECTS,
+    BLUEPRINT_ASSUMPTIONS,
     BLUEPRINT_CLOSING,
     BLUEPRINT_ON_THE_COMMITS,
     BLUEPRINT_OPENING,
@@ -158,6 +159,8 @@ def test_extractor_frames_the_blueprint_with_sections_that_carry_no_number() -> 
     for heading in (*BLUEPRINT_OPENING, BLUEPRINT_CLOSING):
         assert any(line.startswith(f"- {heading}") for line in lines), heading
     assert "It opens with three sections, in this order" in writing
+    assert "when the plan marks a rule as an assumption of its own, one more" in writing
+    assert f"- {BLUEPRINT_ASSUMPTIONS}" in lines
     assert "It closes with one" in writing
     assert "No heading carries a number" in writing
     assert "a section is cited by its title, which an amendment does not move" in writing
@@ -222,11 +225,11 @@ def test_extractor_says_a_fact_once_on_the_whole_page_and_shows_behavior_not_cod
         "A fact is said once in prose on the whole page, the frame included",
         "the body shows what no criterion states",
         "The scope says what is left out: what is done stands in the criteria and in the body",
-        "point to the criterion or the section that holds its rule",
+        "The sensitive zones name each zone and its rule in a few words",
     ]
     positions = [writing.index(sentence) for sentence in said]
     assert positions == sorted(positions)
-    assert "names a criterion instead of saying it again" in writing
+    assert "names in a few words a rule a criterion states instead of saying it again" in writing
     # What must not be lost to brevity: the frame, a diagram, what stands nowhere else.
     assert "and a diagram may draw what the prose says" in writing
     assert "The acceptance criteria state the rules, carried whole" in writing
@@ -267,9 +270,102 @@ def test_extractor_shows_an_assumption_of_the_plan_as_one_that_approving_confirm
     form = template.read_text(encoding="utf-8")
     shown = "A rule the plan marks as an assumption of its own is shown as one where it is stated"
     assert f"{shown}, never as settled: approving the blueprint confirms it" in form
+    # Gathered under one callout after the opening, each with what the developer judges it by.
+    gathered = [
+        "Then gather every such rule in the section that follows the opening",
+        "so that none goes by unseen in the middle of a criterion or a paragraph",
+        "It opens on the one callout the template gives",
+        "where the page states it, why nothing settled it, and the alternative the plan set aside",
+        "The item names the rule and does not state it again",
+        "A plan that marks no such rule gets no such section",
+    ]
+    positions = [writing.index(sentence) for sentence in gathered]
+    assert positions == sorted(positions)
+    assumptions = form.split(f"## {BLUEPRINT_ASSUMPTIONS}\n", 1)[1].split("\n## ", 1)[0]
+    assert assumptions.lstrip().startswith("> [!IMPORTANT]")
+    for part in ("Why:", "Otherwise:"):
+        assert part in assumptions
+    # A label and a pointer name the rule; a line that told it again would say it twice.
+    assert "The plan:" not in assumptions
+    # What is no rule of the developer's is not shown as one: it would crowd out those that are.
+    others = "The plan's other assumptions, a matter of implementation or a premise of fact"
+    assert f"{others} the plan checks or adapts to, are not shown as assumptions" in writing
+    assert "is said in the sensitive zones, as what the plan does" in writing
     # The cross-check is left as it was: how a rule is shown is no omission.
     _, checker = read_agent("surface-checker")
     assert "assumption" not in checker.lower()
+
+
+def test_extractor_lists_an_enumeration_and_copies_no_inventory() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # A sentence that chains its items with semicolons is read through, never checked item by
+    # item.
+    listed = "An enumeration of more than three items, or of items that each carry a clause"
+    assert f"{listed}, is a list, one item per line" in writing
+    assert "never a sentence that parts them with semicolons" in writing
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
+    assert f"{listed}, is a list, never a sentence" in template.read_text(encoding="utf-8")
+    # What already exists is the source's, and the review checks it there: the developer decides
+    # nothing in a copy of it.
+    shown = writing.split("\n### The body\n", 1)[1].split("\n### ", 1)[0]
+    assert "An inventory of what already exists" in shown
+    assert "say what it covers and where it is taken from" in shown
+    assert "the review checks it against its source" in shown
+    assert "A name that places the change" in shown
+
+
+def test_extractor_writes_each_passage_to_be_understood_where_it_stands() -> None:
+    _, body = read_agent("surface-extractor")
+    writing = section(body, "What you write")
+    # The plan works by reference, for agents; the page is read once, top to bottom, by a person.
+    said = [
+        "The plan is written for agents, which work by reference",
+        "The page is read once, from top to bottom, by a person who decides",
+        "translate the plan, never copy that apparatus",
+        "Each passage is understood where it stands",
+        # A name and not a code: a label is decoded, a name is read.
+        "A thing is called by a short name in the words of the feature, never by a code",
+        "Numbers stay where they give an order, in a numbered list, and on the criteria",
+        # A reference may help a reader who wants more, never hold what the sentence says.
+        "A reference adds to a sentence, never stands in for it",
+        "taken away, the sentence still says what it means",
+        "a rule is stated whole once, and named wherever it is needed",
+        "Nor is the reader sent to a file they do not read",
+        # A symmetry stated once: the other side of a procedure is not copied line by line.
+        "What follows from a rule the page states is not written again",
+        "then only what departs from it",
+        "only where each says something the other does not",
+    ]
+    positions = [writing.index(sentence) for sentence in said]
+    assert positions == sorted(positions)
+    # What follows from a stated rule is not left out: the omission to fear is what the page
+    # does not let the developer tell.
+    assert "An omission is what the developer cannot tell from the page" in body
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
+    form = template.read_text(encoding="utf-8")
+    assert "Each passage is understood where it stands" in form
+    assert "a reference adds to a sentence and never stands in for it" in form
+
+
+def test_extractor_shows_a_document_by_what_it_does_not_by_its_text() -> None:
+    _, body = read_agent("surface-extractor")
+    shown = section(body, "What you write").split("\n### The body\n", 1)[1].split("\n### ", 1)[0]
+    # A notice or a guide is all text a person reads: the rule that keeps a message on the page
+    # would keep all of it, written twice, frozen in the contract.
+    said = [
+        "What a user, a file or another program sees stays on the page",
+        "A document the feature writes for a person",
+        "is no message: it is shown by what it does, not by its text",
+        "what it makes its reader do and what that changes",
+        "What the review checks of it stands in the criteria",
+        "Its text stays in the plan: its sections and their order, its wording",
+    ]
+    positions = [shown.index(sentence) for sentence in said]
+    assert positions == sorted(positions)
+    template = Path(__file__).resolve().parents[2] / "skills/surface-plan/templates/blueprint.md"
+    form = template.read_text(encoding="utf-8")
+    assert "A document the feature writes for a person is shown by what it does" in form
 
 
 def test_extractor_keeps_the_cut_of_the_previous_revision() -> None:
@@ -412,7 +508,7 @@ def test_extractor_says_how_far_the_plan_goes_into_a_zone_in_one_sentence() -> N
     writing = section(body, "What you write")
     # "Touched" alone would read as a change of the rule of the zone: the page says which of its
     # files the plan changes, and whether what the zone protects changes with them. One sentence,
-    # which points to the rule and tells nothing again.
+    # which names the rule and tells nothing again.
     said = [
         # One first sentence of fixed form, which the developer and the harness read.
         "The section opens on one sentence of fixed form, the one the template gives",
@@ -422,7 +518,7 @@ def test_extractor_says_how_far_the_plan_goes_into_a_zone_in_one_sentence() -> N
         "So a file stands in backticks there only when the plan changes it",
         "name the zone without that file",
         f"After that sentence, for each zone touched, {HOW_FAR}",
-        "which points to the criterion or the section that holds the rule instead of telling it",
+        "which names the rule in a few words instead of telling it again",
         "the plan changes what the zone protects",
         "or it changes something else the file holds, said in a few words",
         "and leaves what the zone protects as it is",
