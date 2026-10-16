@@ -34,7 +34,7 @@ The conformity check in a CI shaped checkout is `tests/ci/`: part of the gates, 
 
 From a clone, `python3 install.py <host>` installs or updates, `python3 install.py --check <host>` writes nothing and exits 1 on drift. Piped from the public repository, it downloads the archive of `--ref` (`main` by default) and installs from it as from a clone; `--archive-url` overrides where the archive comes from.
 
-Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and `.claude/agents/surface-*.md`. It overwrites them, removes those the source no longer has, and refuses when one of them holds uncommitted work or is not tracked by git, unless `--force` is given. It never touches anything else, and creates no settings file.
+Ownership is by namespace: the installer owns `.claude/skills/surface-*/` and `.claude/agents/surface-*.md`. It overwrites them, committed or not, and removes those the source no longer has. It never touches anything else, never runs git, and creates no settings file.
 
 ## State script
 

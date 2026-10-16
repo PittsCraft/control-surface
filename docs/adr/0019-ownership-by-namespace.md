@@ -1,6 +1,6 @@
 # 0019. Ownership by namespace
 
-Status: accepted
+Status: superseded by [0039](0039-the-installer-owns-its-namespace-whatever-git-holds.md)
 Date: 2026-09-29
 
 ## Context

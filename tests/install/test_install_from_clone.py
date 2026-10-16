@@ -1,7 +1,6 @@
-"""Installation by copy, the drift check and the namespace boundary (ADR 0019)."""
+"""Installation by copy, the drift check and the namespace boundary (ADR 0039)."""
 
 import json
-import os
 import subprocess
 from pathlib import Path
 
@@ -164,7 +163,6 @@ def test_check_reports_a_modified_installed_file(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert f"drift : {modified}" in result.stdout
-    assert f"uncommitted : {modified}" in result.stdout
     assert (host / modified).read_text(encoding="utf-8") == "edited in the host\n"  # writes nothing
 
 
@@ -181,56 +179,17 @@ def test_check_reports_a_missing_file(tmp_path: Path) -> None:
     assert not (host / ".claude/agents/surface-checker.md").exists()
 
 
-def test_check_reports_uncommitted_files(tmp_path: Path) -> None:
+def test_check_passes_on_an_installation_git_does_not_hold(tmp_path: Path) -> None:
     source = clone(tmp_path)
     host = tmp_path / "host"
     git_init(host)
-    run_clone(source, str(host))
-
-    fresh = run_clone(source, "--check", str(host))
-
-    assert fresh.returncode == 1
-    assert "uncommitted : .claude/agents/surface-executor.md" in fresh.stdout
-    assert "drift" not in fresh.stdout
-
-
-def test_check_reports_an_installed_file_covered_by_gitignore(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    host = tmp_path / "host"
-    git_init(host)
-    run_clone(source, str(host))
     (host / ".gitignore").write_text(".claude/agents/\n", encoding="utf-8")
-    commit_all(host)
-
-    result = run_clone(source, "--check", str(host))
-
-    assert result.returncode == 1
-    assert "uncommitted : .claude/agents/surface-executor.md" in result.stdout
-
-
-def test_check_finds_the_repository_of_a_host_below_its_root(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    repository = tmp_path / "repo"
-    git_init(repository)
-    host = repository / "packages" / "app"
-    run_clone(source, str(host))
-    commit_all(repository)
-    assert run_clone(source, "--check", str(host)).returncode == 0
-
-    (host / ".claude/agents/surface-checker.md").write_text("edited\n", encoding="utf-8")
-
-    result = run_clone(source, "--check", str(host))
-    assert "uncommitted : .claude/agents/surface-checker.md" in result.stdout
-
-
-def test_check_outside_git_reports_no_uncommitted(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    host = tmp_path / "host"
-    run_clone(source, str(host))
+    run_clone(source, str(host))  # never committed, part of it ignored
 
     result = run_clone(source, "--check", str(host))
 
     assert result.returncode == 0, result.stdout
+    assert "no drift" in result.stdout
 
 
 def test_orphan_is_reported_by_check_and_removed_by_install(tmp_path: Path) -> None:
@@ -408,6 +367,9 @@ def test_the_repository_installs_and_its_script_runs_without_settings(tmp_path: 
     assert json.loads(listed.stdout) == {"v": 1, "plans": []}
 
 
+# The namespace is the installer's (ADR 0039): what git holds of it changes nothing.
+
+
 def committed_install(tmp_path: Path) -> tuple[Path, Path]:
     source = clone(tmp_path)
     host = tmp_path / "host"
@@ -417,36 +379,37 @@ def committed_install(tmp_path: Path) -> tuple[Path, Path]:
     return source, host
 
 
-def test_install_refuses_to_overwrite_a_modified_file(tmp_path: Path) -> None:
-    source, host = committed_install(tmp_path)
-    modified = ".claude/skills/surface-plan/SKILL.md"
-    (host / modified).write_text("local work\n", encoding="utf-8")
+def test_an_update_overwrites_an_installation_git_does_not_hold(tmp_path: Path) -> None:
+    source = clone(tmp_path)
+    host = tmp_path / "host"
+    git_init(host)
+    run_clone(source, str(host))  # never committed
     (source / "agents/surface-checker.md").write_text("new checker\n", encoding="utf-8")
 
     result = run_clone(source, str(host))
 
-    assert result.returncode == 2
-    assert modified in result.stderr
-    assert "--force" in result.stderr
-    assert (host / modified).read_text(encoding="utf-8") == "local work\n"
-    assert (host / ".claude/agents/surface-checker.md").read_text(
-        encoding="utf-8"
-    ) != "new checker\n"
+    assert result.returncode == 0, result.stderr
+    checker = host / ".claude/agents/surface-checker.md"
+    assert checker.read_text(encoding="utf-8") == "new checker\n"
 
 
-def test_install_refuses_to_remove_an_untracked_orphan(tmp_path: Path) -> None:
+def test_install_overwrites_an_edit_and_removes_an_orphan_git_does_not_hold(
+    tmp_path: Path,
+) -> None:
     source, host = committed_install(tmp_path)
-    orphan = ".claude/agents/surface-old.md"
-    (host / orphan).write_text("never committed\n", encoding="utf-8")
+    modified = host / ".claude/skills/surface-plan/SKILL.md"
+    modified.write_text("local work\n", encoding="utf-8")
+    orphan = host / ".claude/agents/surface-old.md"
+    orphan.write_text("never committed\n", encoding="utf-8")
 
     result = run_clone(source, str(host))
 
-    assert result.returncode == 2
-    assert orphan in result.stderr
-    assert (host / orphan).exists()
+    assert result.returncode == 0, result.stderr
+    assert modified.read_text(encoding="utf-8") == "plan skill main\n"
+    assert not orphan.exists()
 
 
-def test_install_refuses_to_overwrite_an_untracked_file(tmp_path: Path) -> None:
+def test_install_overwrites_a_file_of_the_namespace_it_did_not_write(tmp_path: Path) -> None:
     source = clone(tmp_path)
     host = tmp_path / "host"
     git_init(host)
@@ -456,36 +419,11 @@ def test_install_refuses_to_overwrite_an_untracked_file(tmp_path: Path) -> None:
 
     result = run_clone(source, str(host))
 
-    assert result.returncode == 2
-    assert ".claude/agents/surface-checker.md" in result.stderr
-    assert target.read_text(encoding="utf-8") == "mine, not in git\n"
-    assert not (host / ".claude/agents/surface-executor.md").exists()  # nothing was written
-
-
-def test_force_overrides_the_guard(tmp_path: Path) -> None:
-    source, host = committed_install(tmp_path)
-    modified = host / ".claude/skills/surface-plan/SKILL.md"
-    modified.write_text("local work\n", encoding="utf-8")
-    orphan = host / ".claude/agents/surface-old.md"
-    orphan.write_text("never committed\n", encoding="utf-8")
-
-    result = run_clone(source, "--force", str(host))
-
     assert result.returncode == 0, result.stderr
-    assert modified.read_text(encoding="utf-8") == "plan skill main\n"
-    assert not orphan.exists()
+    assert target.read_text(encoding="utf-8") != "mine, not in git\n"
 
 
-def test_the_guard_does_not_apply_outside_git(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    host = tmp_path / "host"
-    run_clone(source, str(host))
-    (host / ".claude/skills/surface-plan/SKILL.md").write_text("local\n", encoding="utf-8")
-
-    assert run_clone(source, str(host)).returncode == 0
-
-
-def test_nothing_outside_the_namespace_is_removed_even_when_unsaved(tmp_path: Path) -> None:
+def test_nothing_outside_the_namespace_is_touched_whatever_git_holds(tmp_path: Path) -> None:
     source, host = committed_install(tmp_path)
     outside = {
         ".claude/agents/reviewer.md": "untracked agent\n",
@@ -498,7 +436,7 @@ def test_nothing_outside_the_namespace_is_removed_even_when_unsaved(tmp_path: Pa
     (source / "agents/surface-executor.md").unlink()
     (host / ".claude/surface.md").write_text("edited settings\n", encoding="utf-8")
 
-    result = run_clone(source, "--force", str(host))
+    result = run_clone(source, str(host))
 
     assert result.returncode == 0, result.stderr
     assert not (host / ".claude/agents/surface-executor.md").exists()
@@ -507,81 +445,18 @@ def test_nothing_outside_the_namespace_is_removed_even_when_unsaved(tmp_path: Pa
     assert (host / ".claude/surface.md").read_text(encoding="utf-8") == "edited settings\n"
 
 
-# The guard fails closed: inside a git work tree, a git that cannot answer is a refusal.
-
-
-def env_without_git(tmp_path: Path) -> dict[str, str]:
-    empty = tmp_path / "no-git-here"
-    empty.mkdir()
-    return {**GIT_ENV, "PATH": str(empty)}
-
-
-def env_with_broken_git(tmp_path: Path, message: str) -> dict[str, str]:
-    """Put a `git` that refuses every command with a message ahead of the real one on the PATH."""
-    shim = tmp_path / "broken-git"
-    shim.mkdir()
-    program = shim / "git"
-    program.write_text(f"#!/bin/sh\necho '{message}' >&2\nexit 128\n", encoding="utf-8")
-    program.chmod(0o755)
-    return {**GIT_ENV, "PATH": f"{shim}{os.pathsep}{GIT_ENV['PATH']}"}
-
-
-def refused_and_untouched(result: subprocess.CompletedProcess[str], host: Path) -> None:
-    assert result.returncode == 2
-    assert "--force" in result.stderr
-    assert not (host / ".claude").exists()  # nothing was written
-
-
-def test_install_refuses_when_git_is_missing_inside_a_work_tree(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    host = tmp_path / "host"
-    git_init(host)
-
-    result = run_clone(source, str(host), env=env_without_git(tmp_path))
-
-    refused_and_untouched(result, host)
-    assert "git could not run" in result.stderr
-
-
-def test_install_refuses_when_git_finds_dubious_ownership(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    host = tmp_path / "host"
-    git_init(host)
-    message = "fatal: detected dubious ownership in repository"
-
-    result = run_clone(source, str(host), env=env_with_broken_git(tmp_path, message))
-
-    refused_and_untouched(result, host)
-    assert "dubious ownership" in result.stderr
-
-
-def test_install_refuses_when_git_fails_for_another_reason(tmp_path: Path) -> None:
+def test_install_and_check_never_run_git(tmp_path: Path) -> None:
     source = clone(tmp_path)
     host = tmp_path / "host"
     git_init(host)
     (host / ".git/HEAD").write_text("garbage\n", encoding="utf-8")  # a repository git cannot read
+    empty = tmp_path / "no-git-here"
+    empty.mkdir()
+    without_git = {**GIT_ENV, "PATH": str(empty)}
 
-    result = run_clone(source, str(host))
+    installed = run_clone(source, str(host), env=without_git)
+    checked = run_clone(source, "--check", str(host), env=without_git)
 
-    refused_and_untouched(result, host)
-
-
-def test_force_installs_when_git_cannot_answer(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    host = tmp_path / "host"
-    git_init(host)
-
-    result = run_clone(source, "--force", str(host), env=env_without_git(tmp_path))
-
-    assert result.returncode == 0, result.stderr
+    assert installed.returncode == 0, installed.stderr
     assert (host / ".claude/agents/surface-checker.md").is_file()
-
-
-def test_the_guard_does_not_apply_outside_git_even_without_git(tmp_path: Path) -> None:
-    source = clone(tmp_path)
-    host = tmp_path / "host"
-
-    result = run_clone(source, str(host), env=env_without_git(tmp_path))
-
-    assert result.returncode == 0, result.stderr
-    assert (host / ".claude/agents/surface-checker.md").is_file()
+    assert checked.returncode == 0, checked.stdout
