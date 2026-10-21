@@ -80,7 +80,7 @@ python3 evals/run.py report --against evals/reports/<kept>/summary.json --keep
 
 The gate builds the image, mounts this clone read-only at `/clone` and the campaign folder at `/out`, and runs `evals/run.py` in the container. The campaign folder is `.evals/` at the root of the clone, ignored by git, or the one `EVALS_OUT` names. Commands add to it: run them one at a time, and choose another folder for another campaign.
 
-`judge` keeps the scores in `judge.json` and the counts in `count.json`, and makes only the one a run lacks: the runs of a campaign judged before the judge counted can still be counted, and its scores stay as they were.
+`judge` keeps the scores in `judge.json` and the counts in `count.json`, and makes only the one a run lacks: the runs of a campaign judged before the judge counted can still be counted, and its scores stay as they were. A run counted before a measure of the count was added holds none of it, and the report folds the measures it holds.
 
 `--max-usd` and `--max-week-points` stop a command before it starts a session past a ceiling. The folder keeps `ledger.json`: the cost at list price, which the stream of a session reports, and, on a subscription, how far the weekly gauge rose while sessions ran. That gauge moves by whole points and counts every use of the account meanwhile: it is a ceiling on the safe side, not a bill.
 
@@ -141,7 +141,7 @@ Judged by a model against `evals/judge/rubric.md`, each judgement with its score
 
 The rubric says where the chain does on purpose what a strict reader would fault, so that the judge and the prompts hold the same idea of a good run:
 
-- `blueprint.no-padding`: what the frame of a blueprint asks for is not padding: the closing line, the statement of the critical zones, with the one sentence that says how far the plan goes into a zone it touches, and the boundaries between components, which are the developer's to decide.
+- `blueprint.no-padding`: what the frame of a blueprint asks for is not padding: the closing line, the statement of the critical zones, with the one sentence that says how far the plan goes into a zone it touches, the section of the assumptions that approval confirms, and the boundaries between components, which are the developer's to decide. Nor is a fact named in a few words where a passage needs it.
 - `blueprint.diagrams`: a diagram may draw what the prose says where the shape is real, and a chain with a single fork is no shape.
 - `messages.clear`: the words of the chain that its README and its guide teach are the developer's, and a message may use them. The name of any agent but the reviewer and the paths of the reports are the chain's insides, which a final message keeps out. The blueprint and a plan change proposal are no reports, and the description of the pull request, which a script writes, links the files it lists.
 - `messages.right-length`: the hand back at conformity is one line on purpose: it says that the plan is conformant, names the files of the critical zones to read when there are any, and ends on the developer's step. Conformant means every criterion is proved, so that line owes no account of the run, and the description of the pull request lists what the agents decided on their way.
@@ -150,19 +150,20 @@ The rubric says where the chain does on purpose what a strict reader would fault
 
 The judge is checked without a human (`surface_evals/judge_check.py`). `evals/judge/spoiled/` holds documents of the toy spoiled in one known way each, with the criterion that way must lower: a padded blueprint, one stripped of the rules the interview settled, an interview with questions the need and the code already answer. The padded blueprint is padded from a lean one of its own, since padding added to a page that already repeats itself shows nothing.
 
-Each must score below its original. A spoiled document that does not is a criterion on which the judge is not to be trusted, and the report says so.
+Each must score below its original on its criterion. A spoiled document that does not is a criterion on which the judge is not to be trusted, and the report says so.
 
-### What the developer would skip, counted
+### The blueprint, counted
 
 A score from 1 to 5 is too coarse to follow a change of the blueprint, so the judge also counts (`surface_evals/count.py`), in a call of its own that leaves the criteria of the rubric as they are asked. It is given the blueprint alone and the method of `evals/judge/count.md`. Per run:
 
-- `repeated_in_prose`: the facts the page states more than once in prose. A later passage that adds a reason, a consequence, an edge case or a worked example is not a repeat, nor is a pointer to a criterion, nor are two lines of the frame, the bare line of the critical zones and the closing line, nor the one sentence that says how far the plan goes into a zone it touches, which the page is asked for. A fact that only a diagram draws again is listed and not counted, since a diagram may draw what the prose says.
+- `repeated_in_prose`: the facts the page states more than once in prose. A later passage that adds a reason, a consequence, an edge case or a worked example is not a repeat, nor is a fact named in a few words where a passage needs it. Nor is what the frame asks for: the bare line of the critical zones, the closing line, the one sentence on how far the plan goes into a zone it touches, and the section of the assumptions, which names rules stated elsewhere. A fact that only a diagram draws again is listed and not counted, since a diagram may draw what the prose says.
 - `implementation_details`: the details of implementation that are not the developer's to decide: the name of a function, a constant or a helper, a call to a library, where a piece of code sits in a file. The boundaries between components, which component calls which and what each answers for, are theirs to decide and are not counted, nor is what the one sentence on a zone the plan touches says the plan changes in a file of that zone, which the page is asked for.
-- `skippable_percent`: the share of the words of the page the developer could skip, the judge's estimate, to the nearest five. It tells what the two counts cannot, a page padded with whole sections: the padded page of the check says fewer facts twice than a long blueprint does, and holds far more to skip.
+- `references_standing_in`: the passages that, their reference taken away, no longer say what they mean: a reference by the number of a criterion, a label or a title, or to a file the developer does not read, in place of what the passage needs. A reference that adds to a sentence complete without it is not counted. It tells what the other counts reward: a page that refers in place of saying counts fewer facts said twice.
+- `skippable_percent`: the share of the words of the page the developer could skip, the judge's estimate, to the nearest five. It tells what the counts cannot, a page padded with whole sections: the padded page of the check says fewer facts twice than a long blueprint does, and holds far more to skip.
 
 Lower is better for each.
 
-The two counts are made by the script, from lists: the judge gives each fact with every statement of it, its place on the page and the passage that makes it, and each detail with its passage, never a total. `count.json`, in the folder of the run, keeps them: a count is checked by reading its passages against the page.
+The three counts are made by the script, from lists: the judge gives each fact with every statement of it, its place on the page and the passage that makes it, and each detail and each reference with its passage, never a total. `count.json`, in the folder of the run, keeps them: a count is checked by reading its passages against the page.
 
 The script holds the rest of what it can:
 
@@ -172,7 +173,7 @@ The script holds the rest of what it can:
 - A run that handed no blueprint over has no count, where a zero would read as the best of pages.
 - A run that stopped at the hand over has its blueprint, whole: it is counted like any other, under the same names, and its counts join the same spread.
 
-The count is checked on the lean blueprint and its padded version: each of the three must be higher on the padded page. One that is not is a measure on which the judge is not to be trusted.
+The count is checked on pages spoiled from the lean blueprint, each on the measures its pair names. The padded page must count more facts said twice, more details and more to skip, and need hold no more references. A page that holds the facts of the lean one, with references in place of the words that name them, must count more references: it spoils no criterion of the rubric, and the count alone checks it. A measure that is not higher is one on which the judge is not to be trusted.
 
 To read them: a fact has no sharp edge, and two readings of the same page by hand differed by one fact in seven, so one or two facts between two runs say nothing. `evals/reports/README.md` gives a scale, counted by hand.
 
@@ -184,7 +185,7 @@ The count holds no score of its own, which would be a second score of `blueprint
 
 With `--against`, it lists what moved since an earlier campaign: a measure moved when its values lie wholly outside those of the campaign before, so that the spread between runs is not read as a change, and it is called better or worse when it has a better way.
 
-A measure of the script that one of the two summaries alone holds, since the harness no longer makes it, did not make it yet, or no run of that campaign gave it, is named as not compared, where silence would read as a measure that did not move. So are the counts against a campaign that holds none, where "nothing moved" would read as counts that stayed where they were.
+A measure of the script that one of the two summaries alone holds, since the harness no longer makes it, did not make it yet, or no run of that campaign gave it, is named as not compared, where silence would read as a measure that did not move. So are the counts against a campaign that holds none, where "nothing moved" would read as counts that stayed where they were, and a measure of the count that one summary alone holds.
 
 `--keep` copies both files to `evals/reports/<date>-<version of the chain>/`, to commit: that is what the next campaign is compared with. The version is a hash of `agents/` and `skills/`. The streams and the projects stay in the campaign folder, out of git.
 

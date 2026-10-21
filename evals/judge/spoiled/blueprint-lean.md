@@ -21,11 +21,20 @@ A new command prints the books of a shelf file as CSV, for the bookshop's spread
 
 Out of scope: any other format, writing to a file.
 
+## Assumptions that approval confirms
+
+> [!IMPORTANT]
+> Approving this blueprint confirms each assumption below.
+
+- **Lines end with a line feed** (The export command).
+  - Why: the bookshop has not said how its spreadsheet reads the end of a line.
+  - Otherwise: the carriage return and line feed Python's `csv` module writes by default, for a
+    spreadsheet that would need them.
+
 ## The export command
 
-The year is printed as the whole number the shelf file holds. Lines end with a line feed, not
-with the carriage return and line feed Python's `csv` module writes by default: an assumption,
-to confirm with the bookshop.
+The year is printed as the whole number the shelf file holds. Lines end with a line feed: an
+assumption of the plan, which approving the blueprint confirms.
 
 ## Sensitive zones
 

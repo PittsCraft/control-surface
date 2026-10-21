@@ -1,11 +1,12 @@
-"""What a developer would skip on a blueprint: counted by a model, beside the scores of the judge.
+"""What a developer would skip on a blueprint, or not understand where it stands, counted.
 
 A score from 1 to 5 is too coarse to follow a change of the blueprint: the same score went to
 pages that a reader who counts tells apart at once. So the judge also counts, in a call of its
 own that leaves the criteria of the rubric as they are asked, on the blueprint alone and by the
 method `evals/judge/count.md` writes down: the facts the page states more than once, the details
-of implementation that are not the developer's to decide, and the share of the page to skip.
-Each fact comes with the passages that state it, each detail with the passage that holds it.
+of implementation that are not the developer's to decide, the references that stand in for what
+a passage says, and the share of the page to skip. Each fact comes with the passages that state
+it, each detail and each reference with the passage that holds it.
 
 The script holds what a script can. An answer that is not the form asked for is refused. A
 passage that is not on the page is marked as not grounded, and one that only a diagram holds is
@@ -32,14 +33,22 @@ from surface_evals.sessions import ask
 INSTRUCTIONS = JUDGE / "count.md"
 COUNTED = "count.json"
 # Where a statement stands on the page: the frame, the body between, a diagram wherever it is.
-PLACES = ("idea", "criteria", "scope", "body", "diagram", "sensitive-zones", "closing-line")
+PLACES = (
+    "idea",
+    "criteria",
+    "scope",
+    "assumptions",
+    "body",
+    "diagram",
+    "sensitive-zones",
+    "closing-line",
+)
 DIAGRAM = "diagram"
-# The measures a count gives. Each is something to skip: the lower, the better.
-REPEATED, DETAILS, SKIPPABLE = "repeated_in_prose", "implementation_details", "skippable_percent"
-COUNTS = (REPEATED, DETAILS, SKIPPABLE)
+# The measures a count gives, each of something the page should not hold: the lower, the better.
+REPEATED, DETAILS = "repeated_in_prose", "implementation_details"
+STANDING_IN, SKIPPABLE = "references_standing_in", "skippable_percent"
+COUNTS = (REPEATED, DETAILS, STANDING_IN, SKIPPABLE)
 GROUNDED = "count_grounded"  # the share of the passages the counts rest on that are on the page
-# The criterion of the rubric the count stands beside: its spoiled documents check the count too.
-BESIDE = ("blueprint", "no-padding")
 TWICE = 2  # a fact is repeated from its second statement
 WHOLE = 100  # the share to skip is a percentage
 
@@ -72,18 +81,27 @@ class Detail:
 
 
 @dataclass(frozen=True, slots=True)
+class Reference:
+    reference: str
+    passage: str
+    grounded: bool
+
+
+@dataclass(frozen=True, slots=True)
 class Count:
     facts: tuple[Fact, ...]
     details: tuple[Detail, ...]
-    skippable_percent: int  # the reader's estimate, where the two other measures are counted
+    references: tuple[Reference, ...]
+    skippable_percent: int  # the reader's estimate, where the other measures are counted
     would_skip: str
 
     @property
     def numbers(self) -> dict[str, int]:
-        """The measures of the page: two counted from the lists, and the share as estimated."""
+        """The measures of the page: three counted from the lists, and the share as estimated."""
         return {
             REPEATED: sum(1 for fact in self.facts if fact.in_prose),
             DETAILS: len(self.details),
+            STANDING_IN: len(self.references),
             SKIPPABLE: self.skippable_percent,
         }
 
@@ -91,6 +109,7 @@ class Count:
         """Give what is kept of a count: its measures, then the lists and their passages."""
         rests = [stated.grounded for fact in self.facts for stated in fact.statements]
         rests += [detail.grounded for detail in self.details]
+        rests += [reference.grounded for reference in self.references]
         return {
             **self.numbers,
             "would_skip": self.would_skip,
@@ -105,6 +124,7 @@ class Count:
                 for fact in self.facts
             ],
             "details": [asdict(detail) for detail in self.details],
+            "references": [asdict(reference) for reference in self.references],
         }
 
 
@@ -125,6 +145,7 @@ def prompt(asked: str, page: str) -> str:
         '{"repeated_facts": [{"fact": "<a few words>", "statements": '
         f"[{stated}, {stated}]}}],"
         f' "implementation_details": [{{"detail": "<a few words>", {passage}}}],'
+        f' "references_standing_in": [{{"reference": "<a few words>", {passage}}}],'
         ' "skippable_percent": <a whole number from 0 to 100>,'
         ' "would_skip": "<one sentence, or nothing>"}'
     )
@@ -201,13 +222,14 @@ def _fact(item: Mapping[str, object], page: _Page) -> Fact:
     return Fact(name, tuple(statements))
 
 
-def _detail(item: Mapping[str, object], text: str) -> Detail:
-    name = _said(item, "detail")
+def _held(item: Mapping[str, object], key: str, text: str) -> tuple[str, str, bool]:
+    """Read an item named under `key` with the passage that holds it, and whether it stands."""
+    name = _said(item, key)
     if not name:
-        message = f"count: a detail of implementation has a name, not {item!r}"
+        message = f"count: a {key} has a name, not {item!r}"
         raise JudgeError(message)
     passage = _said(item, "passage")
-    return Detail(name, passage, bool(passage) and passage in text)
+    return name, passage, bool(passage) and passage in text
 
 
 def _share(holder: Mapping[str, object]) -> int:
@@ -231,7 +253,14 @@ def parse(answer: str, page: str) -> Count:
     read = _read(page)
     return Count(
         facts=tuple(_fact(item, read) for item in _items(given, "repeated_facts")),
-        details=tuple(_detail(item, read.text) for item in _items(given, "implementation_details")),
+        details=tuple(
+            Detail(*_held(item, "detail", read.text))
+            for item in _items(given, "implementation_details")
+        ),
+        references=tuple(
+            Reference(*_held(item, "reference", read.text))
+            for item in _items(given, "references_standing_in")
+        ),
         skippable_percent=_share(given),
         would_skip=_said(given, "would_skip"),
     )
@@ -272,7 +301,10 @@ def count_run(root: Path, case: Case, *, model: str, repeats: int, ledger: Ledge
 
 
 def counts_of(root: Path) -> dict[str, float]:
-    """Fold the counts of a run: the mean of each measure, and the share of grounded passages."""
+    """Fold the counts of a run: the mean of each measure, and the share of grounded passages.
+
+    A run counted before a measure was added holds none of it: the measures it holds are folded.
+    """
     path = root / COUNTED
     if not path.is_file():
         return {}
@@ -280,7 +312,11 @@ def counts_of(root: Path) -> dict[str, float]:
     counts = cast("list[dict[str, int]]", kept["counts"])
     if not counts:
         return {}
-    found = {name: round(fmean(item[name] for item in counts), 4) for name in COUNTS}
+    found = {
+        name: round(fmean(item[name] for item in counts), 4)
+        for name in COUNTS
+        if all(name in item for item in counts)
+    }
     passages = sum(item["passages"] for item in counts)
     if passages:
         grounded = sum(item["passages_grounded"] for item in counts)

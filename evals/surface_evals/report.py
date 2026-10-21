@@ -323,15 +323,17 @@ def compare(after: Mapping[str, object], before: Mapping[str, object]) -> list[M
     return [move for move in moves if move.measure != CORRECTIONS or move.scope not in apart]
 
 
-def _one_sided(after: Mapping[str, object], before: Mapping[str, object]) -> list[str]:
-    """Name the measures of the script that one summary alone holds, over all its runs.
+def _one_sided(
+    after: Mapping[str, object], before: Mapping[str, object], kind: str = "measures"
+) -> list[str]:
+    """Name the measures of a kind that one summary alone holds, over all its runs.
 
     A measure is compared only where both campaigns hold it. One that the harness no longer
     makes, or did not make yet, or that no run of a campaign gave, is in one summary alone:
     said of nothing, it would read as a measure that did not move.
     """
     held = [
-        set(cast("dict[str, object]", cast("dict[str, object]", summary["all"])["measures"]))
+        set(cast("dict[str, object]", cast("dict[str, object]", summary["all"]).get(kind, {})))
         for summary in (after, before)
     ]
     lines: list[str] = []
@@ -349,9 +351,10 @@ def uncompared(after: Mapping[str, object], before: Mapping[str, object]) -> lis
     """Say what two summaries cannot be compared on, where silence would read as "unchanged".
 
     The measures of the script that one of them alone holds. The counts, when one of them holds
-    none: a campaign judged before the judge counted has no count. The corrections of a case
-    that expects one, when one of the two summaries was kept before the case said so and counts
-    it with the others.
+    none: a campaign judged before the judge counted has no count. Else the measures of the
+    count that one of them alone holds: a campaign counted before a measure was added has none
+    of it. The corrections of a case that expects one, when one of the two summaries was kept
+    before the case said so and counts it with the others.
     """
     left_out = _one_sided(after, before)
     now, then = (
@@ -362,6 +365,8 @@ def uncompared(after: Mapping[str, object], before: Mapping[str, object]) -> lis
         left_out.append(
             f"Not compared: the counts of the blueprint, which {without} does not hold."
         )
+    elif now:
+        left_out += _one_sided(after, before, "count")
     recounted = _recounted(after, before)
     if recounted:
         named = ", ".join(f"`{name}`" for name in recounted)
@@ -436,14 +441,15 @@ def _counted(summary: Mapping[str, object]) -> list[str]:
         return []
     return [
         "",
-        "## What the developer would skip on the blueprint",
+        "## The blueprint, counted",
         "",
         (
             "Counted by the judge on the blueprint alone, lower being better: the facts the page"
             " says more than once in prose, the details of implementation that are not the"
-            " developer's to decide, and the share of its words they could skip, in percent,"
-            f" which is an estimate. `{GROUNDED}` is the share of the passages these counts rest"
-            " on that stand on the page. The facts, the details and their passages are in the"
+            " developer's to decide, the references that stand in for what a passage says, and"
+            " the share of its words they could skip, in percent, which is an estimate."
+            f" `{GROUNDED}` is the share of the passages these counts rest on that stand on the"
+            " page. The facts, the details, the references and their passages are in the"
             " `count.json` of each run."
         ),
         "",

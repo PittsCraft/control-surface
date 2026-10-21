@@ -7,8 +7,10 @@ where the toy's would not do: a blueprint is padded from a lean one, since paddi
 page that already repeats itself shows nothing. A judge that scores the spoiled one as
 high as the original cannot be trusted on that criterion, and the report says so.
 
-The count of the blueprint is checked on the same documents, the other way up: the padded page
-must count more than the lean one, on each of its measures.
+The count of the blueprint is checked the other way up: a pair names the measures of the count
+its spoiled page must raise, since the padded page need not hold more references, nor a page
+that refers in place of saying more facts said twice. A pair may name measures and no criterion:
+it checks the count alone.
 """
 
 import json
@@ -22,7 +24,7 @@ import toy
 
 from surface_evals import JUDGE
 from surface_evals.budget import Ledger
-from surface_evals.count import BESIDE, COUNTS, count
+from surface_evals.count import count
 from surface_evals.judge import Dimension, JudgeError, Judgement, judge, load_rubric
 
 SPOILED = JUDGE / "spoiled"
@@ -34,7 +36,8 @@ class Pair:
     name: str
     what: str
     dimension: str
-    criterion: str
+    criterion: str | None  # the criterion of the rubric it must lower, None for the count alone
+    raises: tuple[str, ...]  # the measures of the count it must raise
     replaces: str  # the document of the originals the spoiled one takes the place of
     original: str | None  # the pair's own original of that document, else the toy's
     spoiled: str  # its text
@@ -46,18 +49,19 @@ def originals() -> dict[str, str]:
 
 def load_pairs() -> list[Pair]:
     listed = cast(
-        "list[dict[str, str | None]]", json.loads((SPOILED / "pairs.json").read_text("utf-8"))
+        "list[dict[str, object]]", json.loads((SPOILED / "pairs.json").read_text("utf-8"))
     )
 
-    def text(name: str | None) -> str | None:
-        return None if name is None else (SPOILED / name).read_text(encoding="utf-8")
+    def text(name: object) -> str | None:
+        return None if name is None else (SPOILED / str(name)).read_text(encoding="utf-8")
 
     return [
         Pair(
             name=str(item["name"]),
             what=str(item["what"]),
             dimension=str(item["dimension"]),
-            criterion=str(item["criterion"]),
+            criterion=None if item["criterion"] is None else str(item["criterion"]),
+            raises=tuple(str(name) for name in cast("list[object]", item["raises"])),
             replaces=str(item["replaces"]),
             original=text(item["original"]),
             spoiled=str(text(item["with"])),
@@ -81,8 +85,9 @@ def check_counts(
 ) -> tuple[list[dict[str, object]], list[str]]:
     """Count the pages of the pairs the count is checked on, the original then the spoiled one.
 
-    Those are the pairs of the criterion the count stands beside. Give, per measure of the
-    count, whether the spoiled page rose above its original, then the answers that were refused.
+    Those are the pairs that name measures of the count. Give, per measure a pair names, whether
+    its spoiled page rose above its original, then the answers that were refused. An original
+    that several pairs share is counted once.
     """
     refused: list[str] = []
 
@@ -99,13 +104,17 @@ def check_counts(
                 refused.append(str(error))
         return found
 
+    originals_counted: dict[str, list[dict[str, int]]] = {}
     results: list[dict[str, object]] = []
     for pair in pairs:
-        if (pair.dimension, pair.criterion) != BESIDE:
+        if not pair.raises:
             continue
-        original = counted(pair, "original", spoiled=False)
+        page = documents(pair, spoiled=False)[pair.replaces]
+        if page not in originals_counted:
+            originals_counted[page] = counted(pair, "original", spoiled=False)
+        original = originals_counted[page]
         spoiled = counted(pair, "spoiled", spoiled=True)
-        for name in COUNTS:
+        for name in pair.raises:
             before = [found[name] for found in original]
             after = [found[name] for found in spoiled]
             results.append(
@@ -148,6 +157,8 @@ def check(out: Path, *, model: str, repeats: int, ledger: Ledger) -> Path:
     originals_judged: dict[tuple[str, str], list[Judgement]] = {}
     results: list[dict[str, object]] = []
     for pair in pairs:
+        if pair.criterion is None:
+            continue  # a pair of the count alone
         given = documents(pair, spoiled=False)
         key = (pair.dimension, given[pair.replaces])
         if key not in originals_judged:

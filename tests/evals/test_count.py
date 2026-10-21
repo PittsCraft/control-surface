@@ -8,17 +8,18 @@ from typing import cast
 import pytest
 from support import case, kept_run
 
-from surface_evals import CASES, REPORTS, cli, count, judge, judge_check
+from surface_evals import CASES, REPORTS, blueprint, cli, count, judge, judge_check
 from surface_evals.budget import Ledger
 from surface_evals.count import (
-    BESIDE,
     COUNTED,
     COUNTS,
     GROUNDED,
     PLACES,
+    STANDING_IN,
     Count,
     Detail,
     Fact,
+    Reference,
     Statement,
     count_run,
     counts_of,
@@ -50,7 +51,7 @@ Out of scope: reminders.
 ## The overdue command
 
 The command prints one line for each late loan, the latest first. The helper `late_first` in
-`cli.py` sorts them.
+`cli.py` sorts them. Check: the one of criterion 2.
 
 ```mermaid
 flowchart TD
@@ -81,10 +82,14 @@ FACTS: list[dict[str, object]] = [
 DETAILS: list[dict[str, object]] = [
     {"detail": "the helper late_first", "passage": "The helper `late_first` in `cli.py`"}
 ]
+REFERENCES: list[dict[str, object]] = [
+    {"reference": "the check of criterion 2", "passage": "Check: the one of criterion 2."}
+]
 NOTHING = json.dumps(
     {
         "repeated_facts": [],
         "implementation_details": [],
+        "references_standing_in": [],
         "skippable_percent": 0,
         "would_skip": "Nothing.",
     }
@@ -92,12 +97,15 @@ NOTHING = json.dumps(
 # The first campaign kept: judged before the judge counted, so its summary holds no count.
 OLD = REPORTS / "2026-10-03-6bf7c06609a6" / "summary.json"
 OLD_CASE = "01-overdue-list"
+# A campaign kept counted before the references were: its summary holds the other counts.
+COUNTED_BEFORE = REPORTS / "2026-10-07-9d5de55f57a9" / "summary.json"
 
 
 def _answer(**changes: object) -> str:
     given: dict[str, object] = {
         "repeated_facts": FACTS,
         "implementation_details": DETAILS,
+        "references_standing_in": REFERENCES,
         "skippable_percent": 30,
         "would_skip": "The second half of the body.",
     }
@@ -105,13 +113,19 @@ def _answer(**changes: object) -> str:
     return "Here is the count.\n" + json.dumps(kept)
 
 
-def _count(repeated: int, details: int, share: int, *, grounded: bool = True) -> Count:
-    """Make a count of that many facts said twice in prose, details, and percent to skip."""
+def _count(
+    repeated: int, details: int, share: int, *, references: int = 0, grounded: bool = True
+) -> Count:
+    """Make a count of that many facts said twice in prose, details, references, and percent."""
     twice = (Statement("criteria", "a rule", grounded), Statement("body", "the rule", grounded))
     return Count(
         facts=tuple(Fact(f"fact {number}", twice) for number in range(repeated)),
         details=tuple(
             Detail(f"detail {number}", "a helper", grounded=True) for number in range(details)
+        ),
+        references=tuple(
+            Reference(f"reference {number}", "as criterion 1", grounded=True)
+            for number in range(references)
         ),
         skippable_percent=share,
         would_skip="The body.",
@@ -166,9 +180,19 @@ def test_the_method_names_what_is_counted_and_every_place_a_statement_may_stand_
     assert "List every fact the page states more than once" in asked
     assert "copied word for word from the page" in asked
     assert "Details of implementation that are not the developer's to decide" in asked
+    assert "References that stand in for what they say" in asked
+    assert "A passage that, its reference taken away, no longer says what it means" in asked
+    assert "A reference that adds to a sentence complete without it is not one" in asked
     assert "in percent of its words" in asked
     for place in PLACES:
         assert f"`{place}`" in asked
+    # The section of the assumptions is part of the frame: its callout and its items name rules.
+    assert "a section of the assumptions that approval confirms follows" in system
+    assert "Neither its callout nor an item is a statement of the rule the item names" in asked
+    assert "the section of the assumptions," in asked.split("are not to skip")[0]
+    # A fact named in a few words is no repeat, and a pointer is no way out of one.
+    assert "A fact named in a few words where a passage needs it is not a repeat" in asked
+    assert "pointer" not in system + asked
     # What the frame asks for is not counted: its two lines, and the boundaries the page shows.
     assert "Two lines of the frame are not statements of it" in asked
     assert "and the closing line that names what does not change" in asked
@@ -187,8 +211,6 @@ def test_the_method_names_what_is_counted_and_every_place_a_statement_may_stand_
     # A count, beside the scores: the method gives no scale, and the rubric is asked as before.
     assert "score" not in system + asked
     head, dimensions = load_rubric()
-    assert BESIDE == ("blueprint", "no-padding")
-    assert BESIDE[1] in next(found.criteria for found in dimensions if found.id == BESIDE[0])
     assert "word for word from the page" not in head + "".join(found.text for found in dimensions)
 
 
@@ -214,6 +236,8 @@ def test_the_reader_is_given_the_method_the_page_alone_and_the_form_of_its_answe
         "passage",
         "implementation_details",
         "detail",
+        "references_standing_in",
+        "reference",
         "skippable_percent",
         "would_skip",
     ):
@@ -230,12 +254,14 @@ def test_the_totals_are_counted_from_the_lists_and_a_diagram_is_not_a_repeat_in_
     assert found.numbers == {
         "repeated_in_prose": 1,
         "implementation_details": 1,
+        "references_standing_in": 1,
         "skippable_percent": 30,
     }
     assert tuple(found.numbers) == COUNTS
     assert found.would_skip == "The second half of the body."
     kept = found.kept()
-    assert (kept["repeated_in_prose"], kept["passages"], kept["passages_grounded"]) == (1, 6, 5)
+    assert (kept["repeated_in_prose"], kept["passages"], kept["passages_grounded"]) == (1, 7, 6)
+    assert kept["references"] == [{**REFERENCES[0], "grounded": True}]
     assert json.loads(json.dumps(kept))["facts"][0]["statements"][0] == {
         "place": "criteria",
         "passage": "`overdue` prints one line per late loan.",
@@ -282,8 +308,11 @@ def test_a_passage_that_is_not_on_the_page_is_marked() -> None:
     assert [stated.grounded for stated in said.statements] == [True, True, True]
     assert [stated.grounded for stated in drawn.statements] == [True, False]
     assert found.details[0].grounded
+    assert found.references[0].grounded
     missing = parse(_answer(implementation_details=[{"detail": "a constant"}]), PAGE)
     assert (missing.details[0].passage, missing.details[0].grounded) == ("", False)
+    elsewhere = [{"reference": "a step", "passage": "undone by step R5"}]
+    assert not parse(_answer(references_standing_in=elsewhere), PAGE).references[0].grounded
     # The same passage given twice is two statements only where the page holds it twice.
     once = {"place": "criteria", "passage": "The latest comes first."}
     twice = {"place": "body", "passage": "one line per late loan"}
@@ -349,6 +378,9 @@ def test_a_share_written_as_a_text_is_the_number(share: object, read: int) -> No
         _answer(implementation_details=None),
         _answer(implementation_details=["late_first"]),
         _answer(implementation_details=[{"passage": "The helper `late_first`"}]),
+        _answer(references_standing_in=None),
+        _answer(references_standing_in=["criterion 2"]),
+        _answer(references_standing_in=[{"passage": "Check: the one of criterion 2."}]),
         _answer(skippable_percent=None),
         _answer(skippable_percent=130),
         _answer(skippable_percent=-5),
@@ -418,17 +450,51 @@ def _padded_count() -> str:
             "implementation_details": [
                 {"detail": detail, "passage": passage} for detail, passage in details.items()
             ],
+            "references_standing_in": [],
             "skippable_percent": 60,
             "would_skip": "The background, the walk through the code, the diagram and the tests.",
         }
     )
 
 
+def _referring_count() -> str:
+    """Count the page of the check that refers in place of saying, by hand, by the method."""
+    references = {
+        "an assumption called by its label and the label of a step": "**Assumption A1** (step E3).",
+        "a step that is a criterion's number": "**E1.** As criterion 1.",
+        "the header and the order, by their criteria": (
+            "The header of criterion 2, then the lines in the order of criterion 4."
+        ),
+        "a line and its quoting, by their criteria": (
+            "Each line as criterion 3 says, quoted as criterion 5 says."
+        ),
+        "the check of criterion 6": "Check: the one of criterion 6.",
+    }
+    return json.dumps(
+        {
+            "repeated_facts": [],
+            "implementation_details": [],
+            "references_standing_in": [
+                {"reference": reference, "passage": passage}
+                for reference, passage in references.items()
+            ],
+            "skippable_percent": 20,
+            "would_skip": "The steps that only send back to the criteria.",
+        }
+    )
+
+
+def _pair(name: str) -> judge_check.Pair:
+    (pair,) = (found for found in judge_check.load_pairs() if found.name == name)
+    return pair
+
+
 def test_the_padded_page_of_the_check_counts_in_the_form_asked_for_and_the_lean_one_does_not() -> (
     None
 ):
-    (pair,) = (found for found in judge_check.load_pairs() if found.name == "padded-blueprint")
-    assert (pair.dimension, pair.criterion) == BESIDE
+    pair = _pair("padded-blueprint")
+    # It raises what padding adds, and need hold no more references than the lean page.
+    assert pair.raises == ("repeated_in_prose", "implementation_details", "skippable_percent")
     lean, padded = (
         judge_check.documents(pair, spoiled=spoiled)[pair.replaces] for spoiled in (False, True)
     )
@@ -439,6 +505,7 @@ def test_the_padded_page_of_the_check_counts_in_the_form_asked_for_and_the_lean_
     assert found.numbers == {
         "repeated_in_prose": 6,
         "implementation_details": 7,
+        "references_standing_in": 0,
         "skippable_percent": 60,
     }
     kept = found.kept()
@@ -447,6 +514,44 @@ def test_the_padded_page_of_the_check_counts_in_the_form_asked_for_and_the_lean_
     elsewhere = parse(_padded_count(), lean).kept()
     assert cast("int", elsewhere["passages_grounded"]) < cast("int", elsewhere["passages"]) // 2
     assert parse(NOTHING, lean).numbers == dict.fromkeys(COUNTS, 0)
+
+
+def test_the_page_that_refers_in_place_of_saying_holds_the_facts_of_the_lean_one() -> None:
+    pair = _pair("referring-blueprint")
+    # The count alone checks it: it spoils no criterion of the rubric, and raises one measure.
+    assert (pair.dimension, pair.criterion, pair.raises) == ("blueprint", None, (STANDING_IN,))
+    lean, referring = (
+        blueprint.parse(judge_check.documents(pair, spoiled=spoiled)[pair.replaces])
+        for spoiled in (False, True)
+    )
+    # The same frame, and the same text in it but for the name of the assumption.
+    assert lean.titles == referring.titles
+    changed = {"Assumptions that approval confirms", "The export command"}
+    for was, now in zip(lean.sections, referring.sections, strict=True):
+        assert (was.text == now.text) == (was.title not in changed)
+    # The facts of the body stay, said where they were; the references take the place of names.
+    body = referring.body[0].text
+    for said in lean.body[0].text.replace("\n", " ").split(". "):
+        assert said.rstrip(".") in body.replace("\n  ", " ")
+    assert "Lines end with a line feed" not in referring.sections[3].text
+    found = parse(_referring_count(), str(pair.spoiled))
+    assert found.numbers[STANDING_IN] == 5
+    assert all(reference.grounded for reference in found.references)
+    # The reference the lean page holds adds to a sentence complete without it: none to count.
+    assert "fixed by criteria 2 and 3" in lean.zones
+    assert parse(NOTHING, judge_check.documents(pair, spoiled=False)["blueprint"]).numbers == (
+        dict.fromkeys(COUNTS, 0)
+    )
+
+
+def test_each_measure_of_the_count_is_raised_by_a_spoiled_page_and_no_other_measure_is_named() -> (
+    None
+):
+    raised = [name for pair in judge_check.load_pairs() for name in pair.raises]
+    assert sorted(raised) == sorted(COUNTS)
+    # A pair of the count alone judges nothing, and a pair that judges names a criterion.
+    for pair in judge_check.load_pairs():
+        assert pair.criterion is not None or pair.raises
 
 
 def test_the_blueprint_of_a_run_is_counted_and_an_answer_refused_is_kept_as_such(
@@ -478,8 +583,9 @@ def test_the_blueprint_of_a_run_is_counted_and_an_answer_refused_is_kept_as_such
     assert counts_of(root) == {
         "repeated_in_prose": 1.0,
         "implementation_details": 1.0,
+        "references_standing_in": 1.0,
         "skippable_percent": 35.0,
-        GROUNDED: round(10 / 12, 4),
+        GROUNDED: round(12 / 14, 4),
     }
 
 
@@ -501,26 +607,36 @@ def test_a_run_that_handed_no_blueprint_over_keeps_no_count(
     assert counts_of(tmp_path / "elsewhere") == {}
 
 
-def test_the_count_is_checked_on_the_padded_page_which_must_count_more_than_the_lean_one(
+def test_the_count_is_checked_on_each_spoiled_page_which_must_raise_the_measures_it_names(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     pairs = judge_check.load_pairs()
     ledger = Ledger(path=tmp_path / "ledger.json")
-    padded = Reader(lambda asked: _padded_count() if "## Background" in asked else NOTHING)
-    monkeypatch.setattr(count, "ask", padded)
+
+    def answer(asked: str) -> str:
+        if "## Background" in asked:
+            return _padded_count()
+        return _referring_count() if "**E1.**" in asked else NOTHING
+
+    reader = Reader(answer)
+    monkeypatch.setattr(count, "ask", reader)
     results, refused = judge_check.check_counts(
         pairs, tmp_path / "logs", model="opus", repeats=2, ledger=ledger
     )
-    # One pair spoils the criterion the count stands beside: its two pages, twice each.
-    assert len(padded.asked) == 4
+    # Two pairs name measures of the count, and share the lean page: three pages, twice each.
+    assert len(reader.asked) == 6
     assert refused == []
     assert [(found["name"], found["count"]) for found in results] == [
-        ("padded-blueprint", name) for name in COUNTS
+        ("padded-blueprint", "repeated_in_prose"),
+        ("padded-blueprint", "implementation_details"),
+        ("padded-blueprint", "skippable_percent"),
+        ("referring-blueprint", "references_standing_in"),
     ]
     assert [(found["original"], found["spoiled"]) for found in results] == [
         ([0, 0], [6, 6]),
         ([0, 0], [7, 7]),
         ([0, 0], [60, 60]),
+        ([0, 0], [5, 5]),
     ]
     assert all(found["above"] for found in results)
     # A reader that counts the same on both pages is one whose count is not to be trusted.
@@ -528,14 +644,14 @@ def test_the_count_is_checked_on_the_padded_page_which_must_count_more_than_the_
     results, _ = judge_check.check_counts(
         pairs, tmp_path / "logs", model="opus", repeats=1, ledger=ledger
     )
-    assert [found["above"] for found in results] == [False, False, False]
+    assert [found["above"] for found in results] == [False] * 4
     # And one whose answers are all refused has shown nothing.
     monkeypatch.setattr(count, "ask", Reader(lambda _: "I cannot count this."))
     results, refused = judge_check.check_counts(
         pairs, tmp_path / "logs", model="opus", repeats=1, ledger=ledger
     )
-    assert len(refused) == 2
-    assert [(found["original"], found["above"]) for found in results] == [([], False)] * 3
+    assert len(refused) == 3
+    assert [(found["original"], found["above"]) for found in results] == [([], False)] * 4
 
 
 def _campaign(out: Path, name: str, *counts: Count) -> Path:
@@ -547,9 +663,12 @@ def _campaign(out: Path, name: str, *counts: Count) -> Path:
 
 def test_the_report_gives_the_counts_with_their_spread_and_says_what_moved(tmp_path: Path) -> None:
     name = min(path.name for path in CASES.iterdir() if (path / "case.json").is_file())
-    made_up = [_count(14, 8, 40, grounded=False), _count(15, 9, 40, grounded=False)]
+    made_up = [
+        _count(14, 8, 40, references=5, grounded=False),
+        _count(15, 9, 40, references=6, grounded=False),
+    ]
     before = _campaign(tmp_path / "before", name, *made_up)
-    after = _campaign(tmp_path / "after", name, _count(2, 1, 10), _count(4, 1, 15))
+    after = _campaign(tmp_path / "after", name, _count(2, 1, 10), _count(4, 1, 15, references=1))
     summary = summarize(after)
     cases = cast("dict[str, dict[str, dict[str, dict[str, float]]]]", summary["cases"])
     everything = cast("dict[str, dict[str, dict[str, float]]]", summary["all"])
@@ -564,14 +683,17 @@ def test_the_report_gives_the_counts_with_their_spread_and_says_what_moved(tmp_p
     kept, _ = write(before, None)
     _, report = write(after, kept)
     text = report.read_text(encoding="utf-8")
-    assert "## What the developer would skip on the blueprint" in text
+    assert "## The blueprint, counted" in text
+    assert "the references that stand in for what a passage says" in text
     assert "| `repeated_in_prose` | 3 (2 to 4) | 3 (2 to 4) |" in text
     assert "| `implementation_details` | 1 | 1 |" in text
+    assert "| `references_standing_in` | 0.5 (0 to 1) | 0.5 (0 to 1) |" in text
     assert "| `skippable_percent` | 12.5 (10 to 15) | 12.5 (10 to 15) |" in text
     assert f"| `{GROUNDED}` | 1 | 1 |" in text
     # Fewer facts said twice, fewer details and less to skip: each is better when it falls.
     assert f"- `{name}` `repeated_in_prose`: 14.5 (14 to 15) then 3 (2 to 4), better." in text
     assert "- `all` `implementation_details`: 8.5 (8 to 9) then 1, better." in text
+    assert "- `all` `references_standing_in`: 5.5 (5 to 6) then 0.5 (0 to 1), better." in text
     assert "- `all` `skippable_percent`: 40 then 12.5 (10 to 15), better." in text
     assert "Not compared" not in text
     back = {
@@ -579,7 +701,7 @@ def test_the_report_gives_the_counts_with_their_spread_and_says_what_moved(tmp_p
         for move in compare(summarize(before), summary)
         if move.scope == "all"
     }
-    assert [back[measure] for measure in COUNTS] == ["worse", "worse", "worse"]
+    assert [back[measure] for measure in COUNTS] == ["worse"] * len(COUNTS)
     # The share of grounded passages says how far to trust a count, not how good a page is.
     assert back[GROUNDED] == "moved"
 
@@ -614,8 +736,29 @@ def test_a_campaign_kept_before_the_count_is_compared_without_a_word_on_counts_t
     # The report of the campaign kept before still reads, and says nothing of a count.
     again = render(old)
     assert "## The judge, checked" in again
-    assert "would skip" not in again
+    assert "## The blueprint, counted" not in again
     assert "| Count |" not in again
+
+
+def test_a_campaign_counted_before_a_measure_is_compared_on_the_others_and_says_so(
+    tmp_path: Path,
+) -> None:
+    kept = cast("dict[str, object]", json.loads(COUNTED_BEFORE.read_text(encoding="utf-8")))
+    held = cast("dict[str, object]", cast("dict[str, object]", kept["all"])["count"])
+    assert STANDING_IN not in held
+    assert {"repeated_in_prose", "implementation_details", "skippable_percent"} <= set(held)
+    # A run counted then folds the measures it holds, and no zero stands for the one it lacks.
+    root = kept_run(tmp_path / "old-run", journal=[])
+    counted = {"repeat": 1, **_count(2, 1, 10).kept()}
+    del counted[STANDING_IN]
+    (root / COUNTED).write_text(json.dumps({"v": 1, "counts": [counted]}), encoding="utf-8")
+    assert set(counts_of(root)) == {*COUNTS, GROUNDED} - {STANDING_IN}
+    new = summarize(_campaign(tmp_path / "new", OLD_CASE, _count(2, 1, 10, references=3)))
+    told = f"Not compared: `{STANDING_IN}`, which the campaign before does not hold."
+    assert told in uncompared(new, kept)
+    assert told.replace("the campaign before", "this campaign") in uncompared(kept, new)
+    assert "Not compared: the counts of the blueprint" not in " ".join(uncompared(new, kept))
+    assert [move for move in compare(new, kept) if move.measure == STANDING_IN] == []
 
 
 def test_the_report_says_whether_each_count_rose_on_the_padded_page(tmp_path: Path) -> None:

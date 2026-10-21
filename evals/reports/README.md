@@ -6,7 +6,7 @@ Read this before a move against one of these campaigns, and add to it when you k
 
 ## The one to compare the next with
 
-`2026-10-07-*` is the first campaign that plays the six cases twice on one version, the first judged by the four lines the rubric drew for what a blueprint and a message do on purpose, and the first counted by the method as it stands. It is the one to compare the next with.
+`2026-10-07-*` is the first campaign that plays the six cases twice on one version, and the first judged by the four lines the rubric drew for what a blueprint and a message do on purpose. It is the one to compare the next with: "The judge and its count" below says which of its measures a change of the judge touched since.
 
 ## The judge and its count
 
@@ -14,6 +14,7 @@ Read this before a move against one of these campaigns, and add to it when you k
 - **`2026-10-03-*`** were judged before the judge counted, and hold no count: the report says that the counts are not compared. Their runs can still be counted, as the guide says of `judge`.
 - **`2026-10-05-*`**, the one of the four that holds counts, was counted before the method set aside what the frame asks for: a move of a count may come from the judge.
 - **`2026-10-07-*`** was judged before the lines of `messages.right-length` and `following.why-stopped`: a move of either may come from the judge. It was judged and counted before the sentence on how far the plan goes into a zone was set aside, and its pages held no such sentence: a move of `blueprint.no-padding` or of a count may come from the judge too.
+- **Every campaign kept** was judged, and counted where it holds counts, before the method set aside the section of the assumptions and a fact named in a few words, and its pages held no such section: a move of `blueprint.no-padding`, `repeated_in_prose` or `skippable_percent` may come from the judge. None was counted for `references_standing_in`, which the report says is not compared.
 
 ## The image
 
