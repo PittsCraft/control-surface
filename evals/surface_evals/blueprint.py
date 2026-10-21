@@ -1,8 +1,9 @@
 """The form of a blueprint, read from its text: the frame, the cut of the body, the diagrams.
 
 The frame is the one the extractor is held to: three opening sections and a closing one, with no
-number on a heading. What stands between them is the body, cut for the feature. A test holds
-these headings equal to those of the template the extractor is given.
+number on a heading, and after the opening the assumptions, when the plan marks any. What stands
+between them is the body, cut for the feature. A test holds these headings equal to those of the
+template the extractor is given.
 """
 
 import re
@@ -10,6 +11,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 OPENING = ("The idea in one sentence", "Acceptance criteria", "Scope and out of scope")
+# Written after the opening only when the plan marks a rule as an assumption of its own.
+ASSUMPTIONS = "Assumptions that approval confirms"
 CLOSING = "Sensitive zones"
 CLOSING_LINE = "No change:"
 # The words the closing section opens on, the head of the lead-in the template gives: the
@@ -101,7 +104,10 @@ class Blueprint:
     @property
     def body(self) -> tuple[Section, ...]:
         """The sections between the frame, or all of them when the frame is not there."""
-        return self.sections[len(OPENING) : -1] if self.framed else self.sections
+        if not self.framed:
+            return self.sections
+        inner = self.sections[len(OPENING) : -1]
+        return inner[1:] if inner and inner[0].title == ASSUMPTIONS else inner
 
     @property
     def numbered(self) -> tuple[str, ...]:

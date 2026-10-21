@@ -15,6 +15,7 @@ from chain_contract import (
     ASSUMPTION_OF_THE_PLAN,
     ATTRIBUTION_WORDS,
     BLUEPRINT_ASPECTS,
+    BLUEPRINT_ASSUMPTIONS,
     BLUEPRINT_CLOSING,
     BLUEPRINT_OPENING,
     CLOSING_LINE,
@@ -697,11 +698,12 @@ def test_the_blueprint_template_holds_the_frame_around_a_body_and_no_slice() -> 
     template = _template("blueprint.md")
     headings = _headings(template)
     assert headings[: len(BLUEPRINT_OPENING)] == list(BLUEPRINT_OPENING)
+    assert headings[len(BLUEPRINT_OPENING)] == BLUEPRINT_ASSUMPTIONS
     assert headings[-1] == BLUEPRINT_CLOSING
-    body = headings[len(BLUEPRINT_OPENING) : -1]
+    body = headings[len(BLUEPRINT_OPENING) + 1 : -1]
     assert body == ["<A section of the body, titled in the words of the feature>"]
     _, extractor = (AGENTS / "surface-extractor.md").read_text(encoding="utf-8").split("\n---\n", 1)
-    for heading in (*BLUEPRINT_OPENING, BLUEPRINT_CLOSING):
+    for heading in (*BLUEPRINT_OPENING, BLUEPRINT_ASSUMPTIONS, BLUEPRINT_CLOSING):
         assert heading in extractor
     for heading in headings:
         assert "slice" not in heading.lower()
@@ -895,6 +897,17 @@ def test_the_plan_marks_a_rule_it_settles_on_its_own_as_an_assumption_to_confirm
     assert "Wherever the plan states that rule, an acceptance criterion included" in opening
     assert "where a rule stated as settled would be one they never decided" in opening
     assert "would see, is no such assumption." in opening
+    # The blueprint gives the developer what to judge such a rule by, and the plan alone holds it.
+    assert "what leaves it open and the alternative it set aside, with what that would change" in (
+        opening
+    )
+    # A premise of fact is the plan's to check or to adapt to: it never reaches the developer
+    # as an assumption, where it would crowd out the rules that are theirs.
+    premise = "Nor is a premise of fact the plan rests on and could not check"
+    assert premise in opening
+    assert "the plan checks it in the slice that rests on it, or says what that slice does" in (
+        opening
+    )
     # The line between a rule of the developer and a matter of implementation is the interview's,
     # in its words.
     steps = section(_body(), "First launch, with specs")

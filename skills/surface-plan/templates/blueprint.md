@@ -1,6 +1,6 @@
 # <Feature>: blueprint
 
-Revision <N>, drawn from `plan.md`. The page the developer reads to approve the work, then the contract the work is judged against: frozen at approval. Written in the language `exploration.md` names in its repository rules: translate the headings. As long as the feature needs, and no longer. A fact is said once in prose on the whole page: what a criterion states is not told again in the scope, the body or the sensitive zones. A rule the plan marks as an assumption of its own is shown as one where it is stated, never as settled: approving the blueprint confirms it. No heading carries a number. The three opening sections and the closing one are always written. Between them, the body is cut for the feature: as many sections as it has things to decide separately, titled in its own words. The closing line names the aspects the plan leaves alone, among the data schema, the architecture and its boundaries, the sequences, the state machines and the algorithms, and goes when the plan changes all five. A mermaid diagram where what it shows has a shape that prose flattens, in the section it serves. Neither the order of construction nor the distribution of tests: they belong to the plan.
+Revision <N>, drawn from `plan.md`. The page the developer reads to approve the work, then the contract the work is judged against: frozen at approval. Written in the language `exploration.md` names in its repository rules: translate the headings. As long as the feature needs, and no longer. A fact is said once in prose on the whole page: what a criterion states is not told again in the scope, the body or the sensitive zones. A rule the plan marks as an assumption of its own is shown as one where it is stated, never as settled: approving the blueprint confirms it. An enumeration of more than three items, or of items that each carry a clause, is a list, never a sentence that parts them with semicolons. Each passage is understood where it stands: a thing is called by a name in the words of the feature, never by a code, a reference adds to a sentence and never stands in for it, and what follows from a rule the page states is not written again. A document the feature writes for a person is shown by what it does, not by its text. No heading carries a number. The three opening sections and the closing one are always written. The assumptions follow the opening when the plan marks any. Then the body is cut for the feature: as many sections as it has things to decide separately, titled in its own words. The closing line names the aspects the plan leaves alone, among the data schema, the architecture and its boundaries, the sequences, the state machines and the algorithms, and goes when the plan changes all five. A mermaid diagram where what it shows has a shape that prose flattens, in the section it serves. Neither the order of construction nor the distribution of tests: they belong to the plan.
 
 ## The idea in one sentence
 
@@ -13,6 +13,15 @@ Numbered, taken from the specs and the interview.
 ## Scope and out of scope
 
 What the feature explicitly does not do. What it does stands in the criteria and in the body.
+
+## Assumptions that approval confirms
+
+> [!IMPORTANT]
+> Approving this blueprint confirms each assumption below.
+
+- **<The rule the plan settles, in a few words>** (<the criterion or the section that states it>).
+  - Why: <what the specs, the developer's answers and the code leave open>.
+  - Otherwise: <the alternative it set aside, and what that would change>.
 
 ## <A section of the body, titled in the words of the feature>
 
