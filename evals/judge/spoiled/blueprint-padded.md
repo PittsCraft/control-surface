@@ -29,11 +29,20 @@ line, then one line per book, with the title, the author and the year of each bo
 
 Out of scope: any other format, writing to a file.
 
+## Assumptions that approval confirms
+
+> [!IMPORTANT]
+> Approving this blueprint confirms each assumption below.
+
+- **Lines end with a line feed** (The export command).
+  - Why: the bookshop has not said how its spreadsheet reads the end of a line.
+  - Otherwise: the carriage return and line feed Python's `csv` module writes by default, for a
+    spreadsheet that would need them.
+
 ## The export command
 
-The year is printed as the whole number the shelf file holds. Lines end with a line feed, not
-with the carriage return and line feed Python's `csv` module writes by default: an assumption,
-to confirm with the bookshop.
+The year is printed as the whole number the shelf file holds. Lines end with a line feed: an
+assumption of the plan, which approving the blueprint confirms.
 
 As said above, the columns are the title, the author and the year, in this order, and the ISBN is
 not one of them: the CSV has three columns, and its lines are sorted by author, then by title.

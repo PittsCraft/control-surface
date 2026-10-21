@@ -190,11 +190,11 @@ A run plays the developer's side on a synthetic host. It types the need of a cas
 
 - A script measures what a script can, from the journal, the plan folder, the streams, the delivered code and what the stand-in `gh` kept: the outcome, the passes, acceptance tests kept from the agents, the critical zones, the form of the blueprint and the state of the pull request.
 - A model judges the rest against a written rubric, the blueprint, the interview, the messages, each judgement with the passage it rests on.
-- In a call of its own, that judge counts what the developer would skip on the blueprint: the facts said more than once in prose, the details of implementation that are not theirs to decide, the share of the page.
+- In a call of its own, that judge counts on the blueprint what the developer would skip, the facts said more than once in prose, the details of implementation that are not theirs to decide and the share of the page, and the references that stand in for what a passage would say.
 
 Apart from the runs, on the toy, a script tells whether a fault put there on purpose is found by the cross-check and classified by the review.
 
-The judge is itself checked: a document spoiled in a known way must score below its original, and the padded blueprint must count more than the lean one.
+The judge is itself checked: a document spoiled in a known way must score below its original on the criterion of the rubric it spoils, and count more than it on the measures of the count it spoils.
 
 A measure is kept as its spread over the runs, and the report says what lies outside the spread of the campaign before: there is no threshold, since what to hold is decided once the measures have been observed. A ledger stops a campaign before a ceiling, in USD at list price or in points of the subscription's weekly gauge.
 

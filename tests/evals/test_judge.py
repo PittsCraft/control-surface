@@ -76,9 +76,17 @@ def test_the_rubric_does_not_fault_what_the_chain_does_on_purpose() -> None:
     }
     # What the frame of a blueprint asks for is not padding, and a diagram may draw the prose.
     padding = criteria["blueprint.no-padding"]
-    assert "Three things the frame of a blueprint asks for are not padding" in padding
-    for asked in ("the closing line", "the statement of the critical zones", "the boundaries"):
+    assert "Four things the frame of a blueprint asks for are not padding" in padding
+    for asked in (
+        "the closing line",
+        "the statement of the critical zones",
+        "the section of the assumptions that approval confirms",
+        "the boundaries",
+    ):
         assert asked in padding
+    # Its callout, its items and the mark where a rule is stated name the rule, as a few words do.
+    assert "names rules the page states elsewhere" in padding
+    assert "nor a fact named in a few words where a passage needs it" in padding
     # Bare lines only: the rule of a zone told again in full is still a fact said twice.
     assert "The first two are bare lines, and say no fact twice" in padding
     # Nor the sentence the page is asked for on a zone it touches, its rule left alone or not.
@@ -273,20 +281,21 @@ def test_each_spoiled_document_lowers_a_criterion_of_the_rubric_and_differs_from
     originals = judge_check.originals()
     pairs = judge_check.load_pairs()
     # The three the evaluation asks for: a padded blueprint, one stripped of a decision, an
-    # interview with a question already answered.
+    # interview with a question already answered. Then a page the count alone checks.
     assert [(pair.dimension, pair.criterion) for pair in pairs] == [
         ("blueprint", "no-padding"),
         ("blueprint", "decidable"),
         ("interview", "not-already-answered"),
+        ("blueprint", None),
     ]
     for pair in pairs:
-        assert pair.criterion in criteria[pair.dimension]
+        assert pair.criterion is None or pair.criterion in criteria[pair.dimension]
         assert pair.replaces in reads[pair.dimension]
         original = judge_check.documents(pair, spoiled=False)
         spoiled = judge_check.documents(pair, spoiled=True)
         # One document differs, the one the pair spoils.
         assert [name for name in original if original[name] != spoiled[name]] == [pair.replaces]
-    padded, stripped, answered = (pair.spoiled for pair in pairs)
+    padded, stripped, answered, _ = (pair.spoiled for pair in pairs)
     # The padded blueprint is its own lean original with padding added, nothing taken away.
     lean = pairs[0].original
     assert lean is not None
@@ -296,3 +305,37 @@ def test_each_spoiled_document_lowers_a_criterion_of_the_rubric_and_differs_from
     assert len(originals["blueprint"]) > len(stripped)
     assert "An empty shelf prints the header alone" not in stripped
     assert answered.count("### Q") == originals["interview"].count("### Q") + 2
+
+
+def test_the_check_scores_each_pair_of_a_criterion_and_leaves_a_pair_of_the_count_to_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    judged: list[tuple[str, str]] = []
+
+    def scored(
+        dimension: Dimension, documents: dict[str, str], log: Path, **_: object
+    ) -> list[judge.Judgement]:
+        judged.append((dimension.id, log.stem))
+        spoiled = any(pair.spoiled in documents.values() for pair in judge_check.load_pairs())
+        return [
+            judge.Judgement(dimension.id, criterion, 2 if spoiled else 4, "why", "", grounded=True)
+            for criterion in dimension.criteria
+        ]
+
+    def uncounted(*_: object, **__: object) -> tuple[list[dict[str, object]], list[str]]:
+        return [], []
+
+    monkeypatch.setattr(judge_check, "judge", scored)
+    monkeypatch.setattr(judge_check, "check_counts", uncounted)
+    kept = judge_check.check(
+        tmp_path, model="opus", repeats=1, ledger=Ledger(path=tmp_path / "ledger.json")
+    )
+    found = json.loads(kept.read_text(encoding="utf-8"))
+    # The pair of the count alone is neither judged nor listed among the pairs of the rubric.
+    assert [pair["name"] for pair in found["pairs"]] == [
+        "padded-blueprint",
+        "stripped-blueprint",
+        "answered-question",
+    ]
+    assert all(pair["below"] for pair in found["pairs"])
+    assert not any("referring" in log for _, log in judged)
